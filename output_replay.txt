@@ -1,0 +1,30 @@
+[?25l[?2004h###
+>>>
+# github.com/ansel1/tang/tui
+
+PASSED: 0 passed, 0 failed, 0 skipped, 0 running, 0 total
+###
+>>>
+# github.com/ansel1/tang/tui
+tui/model.go:88:30: cannot use event (variable of struct type "github.com/ansel1/tang/parser".TestEvent) as *"github.com/ansel1/tang/parser".TestEvent value in argument to append
+
+PASSED: 0 passed, 0 failed, 0 skipped, 0 running, 0 total
+###
+>>>
+# github.com/ansel1/tang/tui
+tui/model.go:88:30: cannot use event (variable of struct type "github.com/ansel1/tang/parser".TestEvent) as *"github.com/ansel1/tang/parser".TestEvent value in argument to append
+
+PASSED: 0 passed, 0 failed, 0 skipped, 0 running, 0 total
+###
+>>>
+# github.com/ansel1/tang/tui
+tui/model.go:88:30: cannot use event (variable of struct type "github.com/ansel1/tang/parser".TestEvent) as *"github.com/ansel1/tang/parser".TestEvent value in argument to append
+?   	github.com/ansel1/tang	[no test files]
+
+PASSED: 0 passed, 0 failed, 0 skipped, 0 running, 0 total
+# github.com/ansel1/tang/tui
+tui/model.go:88:30: cannot use event (variable of struct type "github.com/ansel1/tang/parser".TestEvent) as *"github.com/ansel1/tang/parser".TestEvent value in argument to append
+
+github.com/ansel1/tang[0m                                       ✓ 0  ✗ 0  ∅ 0  0.0s
+--------------------------------------------------------------------------------
+PASSED: 0 passed, 0 failed, 0 skipped, 0 running, 0 total[0m                   0.0s[D[2K[?2004l[?25h[?1002l[?1003l[?1006l

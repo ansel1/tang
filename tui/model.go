@@ -197,7 +197,8 @@ func NewModel(replayMode bool, replayRate float64) *Model {
 	s := spinner.New()
 	s.Spinner = spinner.Jump
 
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("2")) // Green for passing
+	s.Spinner = spinner.Jump
+	// s.Style is left empty so we can apply styles dynamically
 
 	return &Model{
 		Packages:       make(map[string]*PackageState),
@@ -304,7 +305,7 @@ func (m *Model) handleTestEvent(event parser.TestEvent) {
 				m.NonTestOutput = append(m.NonTestOutput, strings.TrimRight(event.Output, "\n"))
 			}
 			if event.Action == "build-fail" {
-				m.spinner.Style = m.failStyle
+				// m.spinner.Style = m.failStyle // Don't mutate global style
 			}
 		}
 		return
@@ -391,7 +392,7 @@ func (m *Model) handleTestEvent(event parser.TestEvent) {
 		pkgState.Failed++
 		m.Running--
 		m.Failed++
-		m.spinner.Style = m.failStyle
+		// m.spinner.Style = m.failStyle // Don't mutate global style
 
 	case "skip":
 		testState.Status = "skipped"
@@ -474,6 +475,7 @@ func (m *Model) renderHierarchical() string {
 
 	// Render non-test output first (build errors, etc.)
 	for _, line := range m.NonTestOutput {
+		b.WriteString("  ") // Add padding
 		b.WriteString(line)
 		b.WriteString("\n")
 	}
@@ -710,7 +712,12 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *PackageState, wPass
 	rightPart = fmt.Sprintf("%s  %s  %s  %s", passedStr, failedStr, skippedStr, elapsedStr)
 	leftPart = pkg.Name
 
-	m.renderAlignedLine(b, leftPart, rightPart)
+	prefix := "  "
+	if pkg.Status == "running" {
+		prefix = m.getSpinnerPrefix(pkg.Failed > 0)
+	}
+
+	m.renderAlignedLine(b, leftPart, rightPart, prefix)
 }
 
 // renderTest renders a test and its output lines
@@ -731,7 +738,14 @@ func (m *Model) renderTest(b *strings.Builder, test *TestState, maxLines int) {
 	}
 	elapsedVal = formatElapsedTime(currentElapsed)
 
-	m.renderAlignedLine(b, summary, elapsedVal)
+	prefix := "  "
+	if test.Status == "running" {
+		prefix = m.getSpinnerPrefix(false)
+	} else if test.Status == "paused" {
+		prefix = "= "
+	}
+
+	m.renderAlignedLine(b, summary, elapsedVal, prefix)
 	maxLines--
 
 	// Render output lines
@@ -739,7 +753,7 @@ func (m *Model) renderTest(b *strings.Builder, test *TestState, maxLines int) {
 		if maxLines <= 0 {
 			break
 		}
-		line := fmt.Sprintf("    %s", outputLine)
+		line := fmt.Sprintf("      %s", outputLine) // Increased indent (2 padding + 4 indent)
 		b.WriteString(truncateLine(line, m.TerminalWidth))
 		b.WriteString("\033[0m\n")
 		maxLines--
@@ -755,28 +769,46 @@ func (m *Model) formatTestSummary(test *TestState) string {
 	return fmt.Sprintf("  === RUN   %s", test.Name)
 }
 
+// getSpinnerPrefix returns the spinner string with appropriate color
+func (m *Model) getSpinnerPrefix(failed bool) string {
+	spinnerView := m.spinner.View()
+	if failed {
+		return m.failStyle.Render(spinnerView) + " "
+	}
+	return m.passStyle.Render(spinnerView) + " " // Use passStyle (green) for neutral
+}
+
 // renderAlignedLine renders a line with left-aligned and right-aligned content
-func (m *Model) renderAlignedLine(b *strings.Builder, left, right string) {
+func (m *Model) renderAlignedLine(b *strings.Builder, left, right, prefix string) {
+	// Construct the full line with prefix
+	// Note: left usually doesn't have padding yet, except for test summary which had "  " in formatTestSummary.
+	// I removed the "  " from formatTestSummary in the previous step (chunk 5).
+
+	fullLeft := prefix + left
+
 	if right == "" {
-		b.WriteString(left)
+		b.WriteString(fullLeft)
 		b.WriteString("\n")
 		return
 	}
 
 	rightWidth := lipgloss.Width(right)
-	leftWidth := lipgloss.Width(left)
+	leftWidth := lipgloss.Width(fullLeft)
 
 	availableWidth := m.TerminalWidth - rightWidth - 2
+	if availableWidth < 0 {
+		availableWidth = 0
+	}
 
 	if leftWidth >= availableWidth {
-		left = truncateLine(left, availableWidth)
-		b.WriteString(left)
+		fullLeft = truncateLine(fullLeft, availableWidth)
+		b.WriteString(fullLeft)
 		b.WriteString("\033[0m")
 		b.WriteString("  ")
 		b.WriteString(right)
 	} else {
 		padding := availableWidth - leftWidth
-		b.WriteString(left)
+		b.WriteString(fullLeft)
 		b.WriteString("\033[0m")
 		b.WriteString(strings.Repeat(" ", padding))
 		b.WriteString("  ")
@@ -807,8 +839,8 @@ func (m *Model) renderSummaryLine(b *strings.Builder, wElapsed int) {
 
 	var leftPart string
 	if !m.Finished {
-		leftPart = fmt.Sprintf("%s RUNNING: %d passed, %d failed, %d skipped, %d running, %d total",
-			m.spinner.View(), m.Passed, m.Failed, m.Skipped, m.Running, total)
+		leftPart = fmt.Sprintf("RUNNING: %d passed, %d failed, %d skipped, %d running, %d total",
+			m.Passed, m.Failed, m.Skipped, m.Running, total)
 	} else {
 		statusPrefix := "PASSED"
 		if m.Failed > 0 {
@@ -818,5 +850,10 @@ func (m *Model) renderSummaryLine(b *strings.Builder, wElapsed int) {
 			statusPrefix, m.Passed, m.Failed, m.Skipped, m.Running, total)
 	}
 
-	m.renderAlignedLine(b, leftPart, elapsedStr)
+	prefix := "  "
+	if !m.Finished {
+		prefix = m.getSpinnerPrefix(m.Failed > 0)
+	}
+
+	m.renderAlignedLine(b, leftPart, elapsedStr, prefix)
 }
