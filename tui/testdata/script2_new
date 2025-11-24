@@ -1,0 +1,40 @@
+###
+{"Time":"2025-11-02T10:12:06.221831-06:00","Action":"start","Package":"github.com/ansel1/tang/testdata2"}
+{"Time":"2025-11-02T10:12:06.671481-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1"}
+>>>
+github.com/ansel1/tang/testdata2                         0 passed, 0 failed 0.0s
+  === RUN   TestPass1                                                       0.0s
+###
+{"Time":"2025-11-02T10:12:06.671526-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1","Output":"=== RUN   TestPass1\n"}
+{"Time":"2025-11-02T10:12:06.671572-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1","Output":"    sample_test.go:9: This test passes\n"}
+{"Time":"2025-11-02T10:12:06.671604-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1","Output":"--- PASS: TestPass1 (0.00s)\n"}
+{"Time":"2025-11-02T10:12:06.671611-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1","Elapsed":0}
+>>>
+--- PASS: TestPass1 (0.00s)
+    sample_test.go:9: This test passes
+PASSED: 1 passed, 0 failed, 0 skipped, 0 running, total 1
+###
+{"Time":"2025-11-02T10:12:06.671614-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2"}
+{"Time":"2025-11-02T10:12:06.671617-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2","Output":"=== RUN   TestPass2\n"}
+{"Time":"2025-11-02T10:12:06.671619-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2","Output":"    sample_test.go:13: Another passing test\n"}
+{"Time":"2025-11-02T10:12:06.671621-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2","Output":"--- PASS: TestPass2 (0.00s)\n"}
+{"Time":"2025-11-02T10:12:06.671622-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2","Elapsed":0}
+>>>
+PASSED: 2 passed, 0 failed, 0 skipped, 0 running, total 2
+###
+{"Time":"2025-11-02T10:12:06.671664-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow"}
+>>>
+github.com/ansel1/tang/testdata2                         2 passed, 0 failed 0.0s
+  === RUN   TestSlow
+###
+{"Time":"2025-11-02T10:12:06.67167-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow","Output":"=== RUN   TestSlow\n"}
+{"Time":"2025-11-02T10:12:06.671672-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow","Output":"    sample_test.go:17: This test takes a moment\n"}
+{"Time":"2025-11-02T10:12:06.772843-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow","Output":"--- PASS: TestSlow (0.10s)\n"}
+{"Time":"2025-11-02T10:12:06.772883-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow","Elapsed":0.1}
+>>>
+PASSED: 3 passed, 0 failed, 0 skipped, 0 running, total 3
+###
+{"Time":"2025-11-02T10:12:06.775461-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest"}
+>>>
+github.com/ansel1/tang/testdata2                         3 passed, 0 failed 0.0s
+  === RUN   TestSubtest

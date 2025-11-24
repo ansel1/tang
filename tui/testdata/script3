@@ -1,0 +1,88 @@
+###
+{"Time":"2025-11-06T18:12:30.60188-06:00","Action":"start","Package":"github.com/ansel1/tang/testdata2"}
+{"Time":"2025-11-06T18:12:30.9766-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1"}
+{"Time":"2025-11-06T18:12:30.976698-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1","Output":"=== RUN   TestPass1\n"}
+{"Time":"2025-11-06T18:12:30.976731-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1","Output":"    sample_test.go:9: This test passes\n"}
+{"Time":"2025-11-06T18:12:30.976795-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1","Output":"--- PASS: TestPass1 (0.00s)\n"}
+{"Time":"2025-11-06T18:12:30.976805-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass1","Elapsed":0}
+{"Time":"2025-11-06T18:12:30.976812-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2"}
+{"Time":"2025-11-06T18:12:30.976817-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2","Output":"=== RUN   TestPass2\n"}
+{"Time":"2025-11-06T18:12:30.976822-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2","Output":"    sample_test.go:13: Another passing test\n"}
+{"Time":"2025-11-06T18:12:30.976827-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2","Output":"--- PASS: TestPass2 (0.00s)\n"}
+{"Time":"2025-11-06T18:12:30.976832-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata2","Test":"TestPass2","Elapsed":0}
+{"Time":"2025-11-06T18:12:30.976836-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow"}
+{"Time":"2025-11-06T18:12:30.97684-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow","Output":"=== RUN   TestSlow\n"}
+{"Time":"2025-11-06T18:12:30.976845-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow","Output":"    sample_test.go:17: This test takes a moment\n"}
+{"Time":"2025-11-06T18:12:31.078431-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow","Output":"--- PASS: TestSlow (0.10s)\n"}
+{"Time":"2025-11-06T18:12:31.078544-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata2","Test":"TestSlow","Elapsed":0.1}
+{"Time":"2025-11-06T18:12:31.078606-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest"}
+{"Time":"2025-11-06T18:12:31.078613-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest","Output":"=== RUN   TestSubtest\n"}
+{"Time":"2025-11-06T18:12:31.07862-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest1"}
+{"Time":"2025-11-06T18:12:31.078625-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest1","Output":"=== RUN   TestSubtest/Subtest1\n"}
+{"Time":"2025-11-06T18:12:31.078632-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest1","Output":"    sample_test.go:23: This is subtest 1\n"}
+{"Time":"2025-11-06T18:12:31.580474-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest1","Output":"--- PASS: TestSubtest/Subtest1 (0.50s)\n"}
+{"Time":"2025-11-06T18:12:31.5806-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest1","Elapsed":0.5}
+{"Time":"2025-11-06T18:12:31.580621-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest2"}
+{"Time":"2025-11-06T18:12:31.580629-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest2","Output":"=== RUN   TestSubtest/Subtest2\n"}
+{"Time":"2025-11-06T18:12:31.580635-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest2","Output":"    sample_test.go:28: This is subtest 2\n"}
+{"Time":"2025-11-06T18:12:32.081312-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest2","Output":"--- PASS: TestSubtest/Subtest2 (0.50s)\n"}
+{"Time":"2025-11-06T18:12:32.081446-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/Subtest2","Elapsed":0.5}
+{"Time":"2025-11-06T18:12:32.081569-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest"}
+{"Time":"2025-11-06T18:12:32.081579-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest","Output":"=== RUN   TestSubtest/SubtestWithSubtest\n"}
+{"Time":"2025-11-06T18:12:32.081627-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest","Output":"    sample_test.go:33: This is subtest has a subtest\n"}
+{"Time":"2025-11-06T18:12:32.081688-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Subsubtest"}
+{"Time":"2025-11-06T18:12:32.081745-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Subsubtest","Output":"=== RUN   TestSubtest/SubtestWithSubtest/Subsubtest\n"}
+{"Time":"2025-11-06T18:12:32.081761-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Subsubtest","Output":"    sample_test.go:35: This is a subsubtest\n"}
+{"Time":"2025-11-06T18:12:32.582904-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Subsubtest","Output":"--- PASS: TestSubtest/SubtestWithSubtest/Subsubtest (0.50s)\n"}
+{"Time":"2025-11-06T18:12:32.584045-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Subsubtest","Elapsed":0.5}
+{"Time":"2025-11-06T18:12:32.58409-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/failing_subtest"}
+{"Time":"2025-11-06T18:12:32.584135-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/failing_subtest","Output":"=== RUN   TestSubtest/SubtestWithSubtest/failing_subtest\n"}
+{"Time":"2025-11-06T18:12:32.584143-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/failing_subtest","Output":"    sample_test.go:39: This is a failing subtest\n"}
+{"Time":"2025-11-06T18:12:33.0837-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/failing_subtest","Output":"--- FAIL: TestSubtest/SubtestWithSubtest/failing_subtest (0.50s)\n"}
+{"Time":"2025-11-06T18:12:33.08385-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/failing_subtest","Elapsed":0.5}
+{"Time":"2025-11-06T18:12:33.083877-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest"}
+{"Time":"2025-11-06T18:12:33.083883-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest","Output":"=== RUN   TestSubtest/SubtestWithSubtest/Skipped_subtest\n"}
+{"Time":"2025-11-06T18:12:33.083888-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest","Output":"    sample_test.go:45: skipping subsubtest\n"}
+{"Time":"2025-11-06T18:12:33.083924-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest","Output":"--- SKIP: TestSubtest/SubtestWithSubtest/Skipped_subtest (0.00s)\n"}
+{"Time":"2025-11-06T18:12:33.083943-06:00","Action":"skip","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest","Elapsed":0}
+{"Time":"2025-11-06T18:12:33.083958-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest","Output":"--- FAIL: TestSubtest/SubtestWithSubtest (1.00s)\n"}
+{"Time":"2025-11-06T18:12:33.083978-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest/SubtestWithSubtest","Elapsed":1}
+{"Time":"2025-11-06T18:12:33.08399-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest","Output":"--- FAIL: TestSubtest (2.01s)\n"}
+{"Time":"2025-11-06T18:12:33.083996-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata2","Test":"TestSubtest","Elapsed":2.01}
+{"Time":"2025-11-06T18:12:33.084002-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Output":"FAIL\n"}
+{"Time":"2025-11-06T18:12:33.085301-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata2","Output":"FAIL\tgithub.com/ansel1/tang/testdata2\t2.483s\n"}
+{"Time":"2025-11-06T18:12:33.085322-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata2","Elapsed":2.483}
+===
+=== RUN   TestPass1
+    sample_test.go:9: This test passes
+--- PASS: TestPass1 (0.00s)
+=== RUN   TestPass2
+    sample_test.go:13: Another passing test
+--- PASS: TestPass2 (0.00s)
+=== RUN   TestSlow
+    sample_test.go:17: This test takes a moment
+--- PASS: TestSlow (0.10s)
+=== RUN   TestSubtest
+=== RUN   TestSubtest/Subtest1
+    sample_test.go:23: This is subtest 1
+--- PASS: TestSubtest/Subtest1 (0.50s)
+=== RUN   TestSubtest/Subtest2
+    sample_test.go:28: This is subtest 2
+--- PASS: TestSubtest/Subtest2 (0.50s)
+=== RUN   TestSubtest/SubtestWithSubtest
+    sample_test.go:33: This is subtest has a subtest
+=== RUN   TestSubtest/SubtestWithSubtest/Subsubtest
+    sample_test.go:35: This is a subsubtest
+--- PASS: TestSubtest/SubtestWithSubtest/Subsubtest (0.50s)
+=== RUN   TestSubtest/SubtestWithSubtest/failing_subtest
+    sample_test.go:39: This is a failing subtest
+--- FAIL: TestSubtest/SubtestWithSubtest/failing_subtest (0.50s)
+=== RUN   TestSubtest/SubtestWithSubtest/Skipped_subtest
+    sample_test.go:45: skipping subsubtest
+--- SKIP: TestSubtest/SubtestWithSubtest/Skipped_subtest (0.00s)
+--- FAIL: TestSubtest/SubtestWithSubtest (1.00s)
+--- FAIL: TestSubtest (2.01s)
+FAIL
+FAIL	github.com/ansel1/tang/testdata2	2.483s
+
+FAILED: 6 passed, 3 failed, 1 skipped, 0 running, 10 total

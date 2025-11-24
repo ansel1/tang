@@ -1,0 +1,30 @@
+###
+{"ImportPath":"github.com/ansel1/tang/tui","Action":"build-output","Output":"# github.com/ansel1/tang/tui\n"}
+>>>
+# github.com/ansel1/tang/tui
+
+PASSED: 0 passed, 0 failed, 0 skipped, 0 running, 0 total
+###
+{"ImportPath":"github.com/ansel1/tang/tui","Action":"build-output","Output":"tui/model.go:88:30: cannot use event (variable of struct type \"github.com/ansel1/tang/parser\".TestEvent) as *\"github.com/ansel1/tang/parser\".TestEvent value in argument to append\n"}
+>>>
+# github.com/ansel1/tang/tui
+tui/model.go:88:30: cannot use event (variable of struct type "github.com/ansel1/tang/parser".TestEvent) as *"github.com/ansel1/tang/parser".TestEvent value in argument to append
+
+PASSED: 0 passed, 0 failed, 0 skipped, 0 running, 0 total
+###
+{"ImportPath":"github.com/ansel1/tang/tui","Action":"build-fail"}
+>>>
+# github.com/ansel1/tang/tui
+tui/model.go:88:30: cannot use event (variable of struct type "github.com/ansel1/tang/parser".TestEvent) as *"github.com/ansel1/tang/parser".TestEvent value in argument to append
+
+PASSED: 0 passed, 0 failed, 0 skipped, 0 running, 0 total
+###
+{"Time":"2025-11-01T15:43:02.993511-05:00","Action":"start","Package":"github.com/ansel1/tang"}
+{"Time":"2025-11-01T15:43:02.993565-05:00","Action":"output","Package":"github.com/ansel1/tang","Output":"?   \tgithub.com/ansel1/tang\t[no test files]\n"}
+{"Time":"2025-11-01T15:43:02.993579-05:00","Action":"skip","Package":"github.com/ansel1/tang","Elapsed":0}
+>>>
+# github.com/ansel1/tang/tui
+tui/model.go:88:30: cannot use event (variable of struct type "github.com/ansel1/tang/parser".TestEvent) as *"github.com/ansel1/tang/parser".TestEvent value in argument to append
+?   	github.com/ansel1/tang	[no test files]
+
+PASSED: 0 passed, 0 failed, 0 skipped, 0 running, 0 total
