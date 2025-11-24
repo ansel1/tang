@@ -6,7 +6,8 @@ import (
 )
 
 func TestBleed(t *testing.T) {
-	m := NewModel(false, 1.0)
+	collector := NewSummaryCollector()
+	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
 	m.TerminalHeight = 20
 

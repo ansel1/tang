@@ -106,6 +106,20 @@ TODO
 - [ ] final summary, including failed tests with last 20 lines of output, slow tests, and skipped tests
 - [ ] if quitting the tui with ctrl-c, print the summary to the terminal
 - [ ] if just passing file, and not replaying, don't use tui, just print summary
+- [ ] if ctrl-c is pressed, the package that was still in progress is not displayed in the summary
+- [ ] in the packages summary, the elapsed times are if different formats.  Just use the full format
+![alt text](image.png)
+- [ ] in the overall results summary, move the icons to the left of the count
+![alt text](image-1.png)
+- [ ] in the failures section, the === RUN line is showing up the output.  Don't need it.
+![alt text](image-2.png)
+- [ ] same with skipped tests.  Don't need the === RUN line or the --- SKIP line
+![alt text](image-3.png)
+- [ ] in the slow test section, the line is wrapping
+![alt text](image-4.png)
+  anyway, maybe that section should be layed out like the other sections: grouped by package
+- [ ] maybe ditch the package stats?  not very useful.
+
 
 **Browse**
 - [ ] add browse command: must pass a file, and opens a tui which lets user navigate to any test run, and view the output
@@ -113,3 +127,9 @@ TODO
 
 **junit**
 - [ ] -junitfile <filename>: write junit xml to the specified file
+
+**optimizations**
+- [ ] The replay reader parses each line.  The same line gets parsed again later.  So we're double parsing.  Would be more efficient to implement the replay logic later in the data pipeline.  Also, the replay reader reads all the lines into memory.
+- [ ] The "NonTestOutput" in the model is probably not needed.  Non test output can just flow directly to tea.Println()
+- [ ] Model.events can be removed
+- [ ] Model.ReplayMode looks unneeded

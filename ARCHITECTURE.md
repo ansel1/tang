@@ -44,14 +44,34 @@
         │  (buffered)  │
         └──────┬───────┘
                │
+               ▼
+        ┌──────────────┐
+        │  Event       │
+        │  Fan-out     │
+        │  (main.go)   │
+        └──────┬───────┘
+               │
+       ┌───────┼────────┬──────────────┐
+       │       │        │              │
+       ▼       ▼        ▼              ▼
+┌──────────┐ ┌────┐ ┌────────┐  ┌──────────────┐
+│   TUI    │ │Sim-│ │Summary │  │   Future     │
+│ (Model)  │ │ple │ │Collec- │  │  Consumers   │
+│          │ │Out │ │tor     │  │ (JUnit, etc) │
+│Minimal   │ │put │ │        │  └──────────────┘
+│State     │ │    │ │Detailed│
+│          │ │    │ │State   │
+└────┬─────┘ └─┬──┘ └───┬────┘
+     │         │        │
+     │         │        │ (thread-safe)
+     │         │        │
+     ▼         ▼        ▼
+┌──────────────────────────────┐
+│   Summary Formatter          │
+│   (shared by all consumers)  │
+└──────────────┬───────────────┘
+               │
        ┌───────┴────────┐
-       │                │
-       ▼                ▼
-┌─────────────┐  ┌─────────────┐
-│     TUI     │  │   Simple    │
-│   (Model)   │  │   Output    │
-└─────────────┘  └─────────────┘
-       │                │
        ▼                ▼
   Interactive      Text Output
    Terminal          (stdout)
@@ -61,7 +81,7 @@
 
 ```
 tang/
-├── main.go              # Entry point, CLI flag parsing, wiring
+├── main.go              # Entry point, CLI flag parsing, event fan-out wiring
 ├── engine/              # Event processing and streaming
 │   ├── engine.go        # Core engine implementation
 │   └── engine_test.go   # Engine tests
@@ -70,9 +90,11 @@ tang/
 ├── output/              # Output format consumers
 │   ├── simple.go        # Simple text output
 │   └── simple_test.go   # Simple output tests
-└── tui/                 # Terminal UI
-    ├── model.go         # Bubbletea model
-    └── tui_test.go      # TUI tests
+└── tui/                 # Terminal UI and summary
+    ├── model.go         # Bubbletea model (minimal state)
+    ├── summary.go       # Summary collector (detailed state)
+    ├── summary_*.go     # Summary computation and formatting
+    └── *_test.go        # Tests
 ```
 
 ## Core Components
@@ -144,19 +166,17 @@ type TestEvent struct {
 
 The TUI is a consumer that:
 - Receives events via Bubbletea messages
-- Maintains its own model state (test counts, output lines)
+- Maintains **minimal state** for real-time display (running, passed, failed, skipped counts)
 - Renders live updates during test execution
-- Displays final summary with styled output
+- Retrieves detailed summary from Summary Collector when complete
 
 **Key Types:**
 
 ```go
 type Model struct {
-    events         []parser.TestEvent
     output         []string
-    packageResults map[string]*PackageResult
-    testResults    map[string]string
     passed, failed, skipped, running int
+    summaryCollector *SummaryCollector  // Reference to shared collector
     // Styling...
 }
 
@@ -164,10 +184,59 @@ type EngineEventMsg engine.Event  // Wrapper for Bubbletea
 ```
 
 **Design Decisions:**
-- **Independent State**: TUI maintains its own copy of test state
+- **Minimal State**: TUI only tracks lightweight counters for real-time display
+- **Shared Summary**: Delegates detailed tracking to Summary Collector
 - **Event Wrapper**: `EngineEventMsg` adapts engine events to Bubbletea's message system
 - **Backward Compatible**: Still accepts direct `parser.TestEvent` messages for testing
 - **Lipgloss Styling**: Green/red/yellow colored output
+
+### 3a. Summary Collector (`tui/summary.go`)
+
+**Responsibility:** Independent consumer that accumulates detailed test results
+
+The Summary Collector is a **parallel consumer** that:
+- Runs in its own goroutine, consuming events from a dedicated channel
+- Maintains comprehensive test state (all test results, package data, output)
+- Provides thread-safe access to summary data via mutex
+- Computes final statistics when requested
+
+**Key Types:**
+
+```go
+type SummaryCollector struct {
+    packages      map[string]*PackageResult
+    testResults   map[string]*TestResult
+    startTime     time.Time
+    endTime       time.Time
+    packageOrder  []string
+    mu            sync.RWMutex  // Thread-safe access
+}
+
+type PackageResult struct {
+    Name          string
+    Status        string
+    Elapsed       time.Duration
+    PassedTests   int
+    FailedTests   int
+    SkippedTests  int
+    Output        string
+}
+
+type TestResult struct {
+    Package       string
+    Name          string
+    Status        string
+    Elapsed       time.Duration
+    Output        []string
+}
+```
+
+**Design Decisions:**
+- **Independent Consumer**: Runs in parallel with TUI/Simple Output
+- **Thread-Safe**: Uses `sync.RWMutex` for concurrent access
+- **Detailed State**: Keeps all test results and output for final summary
+- **Shared by All Consumers**: Both TUI and Simple Output use the same collector
+- **No Duplication**: Summary logic exists in one place only
 
 ### 4. Simple Output (`output/simple.go`)
 
@@ -185,19 +254,101 @@ The simple output consumer:
 
 ### 5. Main (`main.go`)
 
-**Responsibility:** CLI entry point, component wiring
+**Responsibility:** CLI entry point, component wiring, event fan-out
 
 The main function:
 - Parses command-line flags
 - Sets up input source (stdin or file)
 - Creates engine with options (raw/JSON output files)
+- **Implements event fan-out** to multiple consumers
 - Routes events to appropriate consumer (TUI or simple)
+- Manages Summary Collector lifecycle
 - Handles exit codes (planned)
 
+**Event Fan-out Pattern:**
+
+```go
+// Create engine and get event stream
+eng := engine.NewEngine(opts...)
+events := eng.Stream(inputSource)
+
+// Create channels for each consumer
+tuiEvents := make(chan engine.Event, 100)
+summaryEvents := make(chan engine.Event, 100)
+
+// Create and start summary collector
+summaryCollector := tui.NewSummaryCollector()
+go summaryCollector.ProcessEvents(summaryEvents)
+
+// Fan out events to all consumers
+go func() {
+    for evt := range events {
+        tuiEvents <- evt
+        summaryEvents <- evt
+    }
+    close(tuiEvents)
+    close(summaryEvents)
+}()
+
+// TUI or Simple Output consumes tuiEvents
+// When complete, retrieve summary from collector
+summary := tui.ComputeSummary(summaryCollector, 10*time.Second)
+```
+
 **Design Decisions:**
+- **Event Fan-out**: Broadcasts each event to multiple consumers via separate channels
+- **Parallel Consumers**: Summary collector runs independently of display consumers
+- **Shared Summary**: Both TUI and Simple Output use the same collector instance
+- **Channel Management**: Main is responsible for creating and closing all channels
 - **Minimal Logic**: Just wiring, no business logic
-- **Flag-Based Routing**: `-notty` flag selects output mode
-- **Goroutine for TUI**: Events forwarded to Bubbletea via `Send()`
+
+## Hybrid Architecture: Minimal vs. Detailed State
+
+The system uses a **hybrid approach** where different consumers maintain different levels of state:
+
+### Minimal State (TUI/Simple Output)
+
+**Purpose:** Real-time display and immediate feedback
+
+**What's Tracked:**
+- Running test count (incremented on "run", decremented on "pass"/"fail"/"skip")
+- Passed test count
+- Failed test count
+- Skipped test count
+- Recent output lines (for display)
+
+**Benefits:**
+- Lightweight memory footprint
+- Fast updates for real-time display
+- Simple state management
+- Can drop old output to save memory
+
+### Detailed State (Summary Collector)
+
+**Purpose:** Comprehensive final summary
+
+**What's Tracked:**
+- All test results with full metadata
+- All package results with timing
+- Complete failure output (up to 10 lines per test)
+- Complete skip reasons (up to 3 lines per test)
+- Package chronological order
+- Slow test detection data
+
+**Benefits:**
+- Complete data for final summary
+- No information loss
+- Shared across all consumers
+- Single source of truth for statistics
+
+### Why This Approach?
+
+1. **No Duplication of Complex Logic**: Summary computation exists in one place
+2. **Minimal Duplication of Simple State**: Lightweight counters are cheap to duplicate
+3. **Independent Evolution**: Can enhance summary without touching TUI rendering
+4. **Memory Efficiency**: TUI can drop old output while summary keeps statistics
+5. **Testability**: Summary collector can be tested in isolation
+6. **Reusability**: Same summary works for TUI and `-notty` modes
 
 ## Data Flow
 
@@ -205,17 +356,38 @@ The main function:
 
 1. **Input** → Lines read from stdin or file
 2. **Engine** → Parses each line, emits events to channel
-3. **Consumer** → Receives events, updates model state
-4. **Output** → Renders/writes final results
+3. **Fan-out** → Broadcasts events to multiple consumer channels
+4. **Consumers** → Receive events in parallel, update their respective states
+5. **Summary** → Retrieved from collector when complete
+6. **Output** → Renders/writes final results
 
 ### Event Types and Handling
 
-| Event Type | Trigger | Engine Action | TUI Action | Simple Action |
-|------------|---------|---------------|------------|---------------|
-| `EventRawLine` | Non-JSON line | Copy buffer, emit | Append to output | Append to output |
-| `EventTest` | Valid JSON | Parse, emit | Update model state | Update stats, append output |
-| `EventError` | Scanner error | Emit error | Display error | Append error |
-| `EventComplete` | EOF/error | Close channel | Quit program | Write all output |
+| Event Type | Trigger | Engine Action | TUI Action | Simple Action | Summary Collector Action |
+|------------|---------|---------------|------------|---------------|--------------------------|
+| `EventRawLine` | Non-JSON line | Copy buffer, emit | Append to output | Append to output | Ignore |
+| `EventTest` | Valid JSON | Parse, emit | Update counters | Update stats | Track detailed results |
+| `EventError` | Scanner error | Emit error | Display error | Append error | Ignore |
+| `EventComplete` | EOF/error | Close channel | Display summary, quit | Display summary | Finalize timing |
+
+### Parallel Event Processing
+
+```
+Engine Event → Fan-out ─┬→ TUI Channel → TUI Model (minimal state)
+                        │                     ↓
+                        │              Update counters only
+                        │
+                        ├→ Summary Channel → Summary Collector (detailed state)
+                        │                          ↓
+                        │                   Track all test results
+                        │
+                        └→ Future Consumer Channels
+                                   ↓
+                            (JUnit, etc.)
+
+On EventComplete:
+    TUI/Simple → summaryCollector.GetSummary() → Format → Display
+```
 
 ### File Output Flow
 
@@ -224,6 +396,74 @@ When `-outfile` or `-jsonfile` flags are used:
 - Raw output: Every line written (before parsing)
 - JSON output: Only successfully parsed test events
 - File writing happens synchronously in the engine goroutine
+
+## Thread-Safety Considerations
+
+### Summary Collector Concurrency
+
+The Summary Collector is designed for concurrent access:
+
+**Write Path (Event Processing):**
+- `ProcessEvents()` runs in its own goroutine
+- Consumes events from dedicated channel
+- Updates internal state without locks (single writer)
+- Terminates when channel closes
+
+**Read Path (Summary Retrieval):**
+- `GetSummary()` can be called from any goroutine
+- Uses `sync.RWMutex` for thread-safe reads
+- Can be called while `ProcessEvents()` is still running
+- Returns snapshot of current state
+
+**Synchronization Pattern:**
+
+```go
+type SummaryCollector struct {
+    mu sync.RWMutex
+    // ... state fields
+}
+
+// Single writer (no lock needed in ProcessEvents)
+func (sc *SummaryCollector) ProcessEvents(events <-chan Event) {
+    for evt := range events {
+        // Update state directly (no concurrent writers)
+        sc.packages[pkg] = result
+    }
+}
+
+// Multiple readers (lock required)
+func (sc *SummaryCollector) GetSummary() *Summary {
+    sc.mu.RLock()
+    defer sc.mu.RUnlock()
+    // Read state safely
+    return summary
+}
+```
+
+**Why This Works:**
+- **Single Writer Guarantee**: Only `ProcessEvents()` modifies state
+- **Channel Semantics**: Go channels provide synchronization
+- **Read Lock Only**: `GetSummary()` uses read lock for concurrent reads
+- **No Write Lock Needed**: Single writer doesn't need write lock for its own updates
+
+**Important Note:** If future features require multiple writers (e.g., manual state updates), write locks would be needed in modification methods.
+
+### Channel Management
+
+**Buffered Channels:**
+- All consumer channels use 100-event buffers
+- Prevents fan-out goroutine from blocking
+- Allows consumers to process at different speeds
+
+**Channel Lifecycle:**
+- Main creates all channels
+- Fan-out goroutine closes channels when engine completes
+- Consumers terminate when their channel closes
+
+**No Deadlocks:**
+- Engine never blocks on channel send (buffered)
+- Fan-out never blocks (buffered consumer channels)
+- Consumers never block (reading from channel)
 
 ## Key Design Decisions
 
@@ -240,6 +480,21 @@ When `-outfile` or `-jsonfile` flags are used:
 **Trade-offs:**
 - Slightly more complex than direct function calls
 - Requires goroutines for concurrent processing
+
+### 1a. Event Fan-out Pattern
+
+**Decision:** Broadcast events to multiple consumers via separate channels
+
+**Rationale:**
+- Consumers can process at different speeds
+- Easy to add new consumers without modifying existing ones
+- Each consumer gets its own buffered channel
+- No consumer can block others
+
+**Trade-offs:**
+- Small memory overhead (multiple channel buffers)
+- Requires goroutine for fan-out logic
+- Main is responsible for channel lifecycle management
 
 ### 2. Stateless Engine
 
@@ -277,6 +532,38 @@ When `-outfile` or `-jsonfile` flags are used:
 - Prevents engine from blocking while consumers process
 - Better throughput for high-volume test output
 - 100 events is ~10KB memory - acceptable overhead
+
+### 6. Hybrid State Management
+
+**Decision:** TUI maintains minimal state, Summary Collector maintains detailed state
+
+**Rationale:**
+- TUI needs fast updates for real-time display (lightweight counters)
+- Summary needs complete data for final report (all test results)
+- Avoids duplicating complex summary logic
+- Allows TUI to drop old output while preserving statistics
+- Single source of truth for summary data
+
+**Trade-offs:**
+- Small duplication of simple counters (acceptable)
+- Requires coordination between TUI and Summary Collector
+- Summary Collector must be thread-safe
+
+### 7. Independent Summary Collector
+
+**Decision:** Summary Collector runs as independent consumer in parallel
+
+**Rationale:**
+- Decouples summary logic from display logic
+- Can be shared by TUI and Simple Output
+- Testable in isolation
+- Can be enhanced without touching TUI code
+- Supports future consumers (JUnit, etc.)
+
+**Trade-offs:**
+- Requires event fan-out in main
+- Requires thread-safe access patterns
+- Slightly more complex wiring
 
 ## Technology Stack
 
@@ -357,21 +644,38 @@ func (j *JUnitWriter) ProcessEvents(events <-chan engine.Event) error {
 }
 ```
 
-**Integration:** Add `-junitfile` flag, wire up in `main.go`
+**Integration:** Add `-junitfile` flag, add to fan-out in `main.go`
+
+```go
+// Add JUnit channel to fan-out
+junitEvents := make(chan engine.Event, 100)
+junitWriter := output.NewJUnitWriter(junitFile)
+go junitWriter.ProcessEvents(junitEvents)
+
+// Update fan-out to include JUnit
+go func() {
+    for evt := range events {
+        tuiEvents <- evt
+        summaryEvents <- evt
+        junitEvents <- evt  // Add new consumer
+    }
+    close(tuiEvents)
+    close(summaryEvents)
+    close(junitEvents)  // Close new channel
+}()
+```
 
 ### 2. Multiple Output Formats
 
-**Pattern:** Fan-out events to multiple consumers
+**Pattern:** Already implemented via event fan-out
 
-```go
-func broadcastEvents(source <-chan Event, consumers ...chan<- Event) {
-    for evt := range source {
-        for _, c := range consumers {
-            c <- evt
-        }
-    }
-}
-```
+The fan-out pattern in `main.go` makes it trivial to add new consumers:
+1. Create channel for new consumer
+2. Start consumer goroutine
+3. Add channel to fan-out loop
+4. Close channel when engine completes
+
+**No changes needed to existing consumers!**
 
 ### 3. Multiple Test Run Detection
 

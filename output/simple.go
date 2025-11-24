@@ -4,29 +4,30 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
+	"github.com/ansel1/tang/tui"
 )
 
 // SimpleOutput writes simple text output for -notty mode
-// It accumulates output and summary data, then writes everything at completion
+// It accumulates output and displays summary at completion using shared summary collector
 type SimpleOutput struct {
-	writer io.Writer
-	output []string
+	writer           io.Writer
+	output           []string
+	summaryCollector *tui.SummaryCollector
 
-	// Summary statistics
-	passed  int
-	failed  int
-	skipped int
-	running int
+	// Lightweight counters for exit code determination
+	failed int
 }
 
 // NewSimpleOutput creates a simple output writer
-func NewSimpleOutput(w io.Writer) *SimpleOutput {
+func NewSimpleOutput(w io.Writer, summaryCollector *tui.SummaryCollector) *SimpleOutput {
 	return &SimpleOutput{
-		writer: w,
-		output: make([]string, 0),
+		writer:           w,
+		output:           make([]string, 0),
+		summaryCollector: summaryCollector,
 	}
 }
 
@@ -39,11 +40,11 @@ func (s *SimpleOutput) ProcessEvents(events <-chan engine.Event) error {
 			s.output = append(s.output, string(evt.RawLine))
 
 		case engine.EventTest:
-			// Process test event to update summary and accumulate output
+			// Track failures for exit code
 			s.handleTestEvent(evt.TestEvent)
 
 		case engine.EventComplete:
-			// Write all accumulated output
+			// Write all accumulated output and summary
 			return s.writeOutput()
 
 		case engine.EventError:
@@ -56,30 +57,9 @@ func (s *SimpleOutput) ProcessEvents(events <-chan engine.Event) error {
 
 // handleTestEvent processes a test event and updates state
 func (s *SimpleOutput) handleTestEvent(evt parser.TestEvent) {
-	// Track summary statistics
-	switch evt.Action {
-	case "run":
-		if evt.Test != "" {
-			s.running++
-		}
-
-	case "pass":
-		if evt.Test != "" {
-			s.passed++
-			s.running--
-		}
-
-	case "fail":
-		if evt.Test != "" {
-			s.failed++
-			s.running--
-		}
-
-	case "skip":
-		if evt.Test != "" {
-			s.skipped++
-			s.running--
-		}
+	// Track failures for exit code determination
+	if evt.Action == "fail" && evt.Test != "" {
+		s.failed++
 	}
 
 	// Accumulate output lines
@@ -90,16 +70,25 @@ func (s *SimpleOutput) handleTestEvent(evt parser.TestEvent) {
 
 // writeOutput writes all accumulated output and summary
 func (s *SimpleOutput) writeOutput() error {
-	// Write summary first
-	if err := s.writeSummary(); err != nil {
-		return err
-	}
-
-	// Write all output lines
+	// Write all output lines first
 	for _, line := range s.output {
 		if _, err := fmt.Fprintln(s.writer, line); err != nil {
 			return err
 		}
+	}
+
+	// Display summary using shared summary collector and formatter
+	if s.summaryCollector != nil {
+		// Compute summary with 10 second slow test threshold
+		summary := tui.ComputeSummary(s.summaryCollector, 10*time.Second)
+
+		// Format summary using default terminal width (80 columns)
+		formatter := tui.NewSummaryFormatter(80)
+		summaryText := formatter.Format(summary)
+
+		// Print summary
+		fmt.Fprintln(s.writer)
+		fmt.Fprintln(s.writer, summaryText)
 	}
 
 	return nil
@@ -108,19 +97,4 @@ func (s *SimpleOutput) writeOutput() error {
 // HasFailures returns true if any tests failed
 func (s *SimpleOutput) HasFailures() bool {
 	return s.failed > 0
-}
-
-// writeSummary writes the final summary line
-func (s *SimpleOutput) writeSummary() error {
-	total := s.passed + s.failed + s.skipped
-	statusWord := "PASSED"
-	if s.failed > 0 {
-		statusWord = "FAILED"
-	}
-
-	summary := fmt.Sprintf("%s: %d passed, %d failed, %d skipped, %d running, %d total",
-		statusWord, s.passed, s.failed, s.skipped, s.running, total)
-
-	_, err := fmt.Fprintln(s.writer, summary)
-	return err
 }

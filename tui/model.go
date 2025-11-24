@@ -135,7 +135,8 @@ func (ps *PackageState) GetElapsedTime() float64 {
 // - Packages contains all package states indexed by package name
 // - PackageOrder maintains chronological order of package starts for consistent display
 // - NonTestOutput stores build errors and compilation output to display at the top
-// - Summary counters track overall test results
+// - Summary counters track overall test results (lightweight for realtime display)
+// - SummaryCollector maintains detailed state for final summary display
 // - TerminalWidth is used for line truncation and separator rendering
 // - Timer ticks update elapsed times for running tests every second
 //
@@ -162,11 +163,14 @@ type Model struct {
 	// Non-test output (build errors, compilation errors, etc.)
 	NonTestOutput []string // Lines that are not part of a test
 
-	// Summary counters
+	// Summary counters (lightweight for realtime display)
 	Passed  int
 	Failed  int
 	Skipped int
 	Running int
+
+	// Summary collector (detailed state for final summary)
+	summaryCollector *SummaryCollector
 
 	// Terminal state
 	TerminalWidth  int
@@ -193,7 +197,7 @@ type Model struct {
 }
 
 // NewModel creates a new TUI model
-func NewModel(replayMode bool, replayRate float64) *Model {
+func NewModel(replayMode bool, replayRate float64, summaryCollector *SummaryCollector) *Model {
 	s := spinner.New()
 	s.Spinner = spinner.Jump
 
@@ -201,20 +205,21 @@ func NewModel(replayMode bool, replayRate float64) *Model {
 	// s.Style is left empty so we can apply styles dynamically
 
 	return &Model{
-		Packages:       make(map[string]*PackageState),
-		PackageOrder:   make([]string, 0),
-		NonTestOutput:  make([]string, 0),
-		TerminalWidth:  80,                                                  // Default width, will be updated by Bubbletea
-		TerminalHeight: 24,                                                  // Default height, will be updated by Bubbletea
-		passStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("2")), // green
-		failStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
-		skipStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
-		neutralStyle:   lipgloss.NewStyle(),
-		events:         make([]parser.TestEvent, 0),
-		spinner:        s,
-		ReplayMode:     replayMode,
-		ReplayRate:     replayRate,
-		StartTime:      time.Now(),
+		Packages:         make(map[string]*PackageState),
+		PackageOrder:     make([]string, 0),
+		NonTestOutput:    make([]string, 0),
+		summaryCollector: summaryCollector,
+		TerminalWidth:    80,                                                  // Default width, will be updated by Bubbletea
+		TerminalHeight:   24,                                                  // Default height, will be updated by Bubbletea
+		passStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color("2")), // green
+		failStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
+		skipStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
+		neutralStyle:     lipgloss.NewStyle(),
+		events:           make([]parser.TestEvent, 0),
+		spinner:          s,
+		ReplayMode:       replayMode,
+		ReplayRate:       replayRate,
+		StartTime:        time.Now(),
 	}
 }
 
@@ -241,6 +246,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Stream finished
 			m.Finished = true
 			m.TotalElapsedTime = time.Since(m.StartTime).Seconds()
+			// Don't display summary here - it will be displayed after TUI exits
 			return m, tea.Quit
 
 		case engine.EventError:
@@ -264,6 +270,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
+			// Don't display summary here - it will be displayed after TUI exits
 			return m, tea.Quit
 		}
 
@@ -303,9 +310,6 @@ func (m *Model) handleTestEvent(event parser.TestEvent) {
 			// These are non-test output lines (build errors, etc.)
 			if event.Output != "" {
 				m.NonTestOutput = append(m.NonTestOutput, strings.TrimRight(event.Output, "\n"))
-			}
-			if event.Action == "build-fail" {
-				// m.spinner.Style = m.failStyle // Don't mutate global style
 			}
 		}
 		return
@@ -860,4 +864,38 @@ func (m *Model) renderSummaryLine(b *strings.Builder, wElapsed int) {
 	}
 
 	m.renderAlignedLine(b, leftPart, elapsedStr, prefix)
+}
+
+// DisplaySummary retrieves the summary from the collector and displays it.
+//
+// This method is called after the TUI exits, either when tests complete
+// (EventComplete) or when the user interrupts the program (SIGINT/SIGTERM
+// via ctrl+c, q, or esc).
+//
+// It computes the summary from the collector, formats it, and prints it to stdout.
+// The summary includes:
+// - Package results with pass/fail/skip counts
+// - Overall statistics with percentages
+// - Failures (if any) with output
+// - Skipped tests (if any) with reasons
+// - Slow tests (if any) sorted by duration
+// - Package performance statistics
+//
+// Requirements: 7.1, 7.2, 7.3, 7.4
+func (m *Model) DisplaySummary() {
+	if m.summaryCollector == nil {
+		return
+	}
+
+	// Compute summary with 10 second slow test threshold
+	summary := ComputeSummary(m.summaryCollector, 10*time.Second)
+
+	// Format summary using terminal width
+	formatter := NewSummaryFormatter(m.TerminalWidth)
+	summaryText := formatter.Format(summary)
+
+	// Print summary to stdout
+	// Note: In TUI mode, this will appear after the TUI exits
+	fmt.Println()
+	fmt.Println(summaryText)
 }

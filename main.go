@@ -84,12 +84,40 @@ func main() {
 	eng := engine.NewEngine(opts...)
 	events := eng.Stream(inputSource)
 
+	// Create separate channels for consumers
+	// Buffer size of 100 to prevent blocking
+	tuiEvents := make(chan engine.Event, 100)
+	summaryEvents := make(chan engine.Event, 100)
+
+	// Create summary collector
+	summaryCollector := tui.NewSummaryCollector()
+
+	// Start summary collector goroutine
+	go summaryCollector.ProcessEvents(summaryEvents)
+
+	// Fan out events to all consumers
+	go func() {
+		for evt := range events {
+			// Broadcast to all consumers
+			tuiEvents <- evt
+			summaryEvents <- evt
+		}
+		// Close all consumer channels when engine stream completes
+		close(tuiEvents)
+		close(summaryEvents)
+	}()
+
 	var exitCode int
 
-	if *notty {
+	// Skip TUI if:
+	// 1. -notty flag is set, OR
+	// 2. -f is used without -replay (reading from file without replay)
+	skipTUI := *notty || (*infile != "" && !*replay)
+
+	if skipTUI {
 		// Simple output mode (no TUI)
-		simple := output.NewSimpleOutput(os.Stdout)
-		if err := simple.ProcessEvents(events); err != nil {
+		simple := output.NewSimpleOutput(os.Stdout, summaryCollector)
+		if err := simple.ProcessEvents(tuiEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			os.Exit(1)
 		}
@@ -101,12 +129,12 @@ func main() {
 		}
 	} else {
 		// TUI mode
-		m := tui.NewModel(*replay, *rate)
+		m := tui.NewModel(*replay, *rate, summaryCollector)
 		p := tea.NewProgram(m)
 
 		// Forward engine events to bubbletea
 		go func() {
-			for evt := range events {
+			for evt := range tuiEvents {
 				// Handle raw output lines directly using Println()
 				// This prints them above the TUI without mixing with test output
 				if evt.Type == engine.EventRawLine {
@@ -125,11 +153,16 @@ func main() {
 			os.Exit(1)
 		}
 
-		// Set exit code based on test failures
-		if model, ok := finalModel.(*tui.Model); ok && model.HasFailures() {
-			exitCode = 1
-		} else {
-			exitCode = 0
+		// Display summary after TUI exits
+		if model, ok := finalModel.(*tui.Model); ok {
+			model.DisplaySummary()
+
+			// Set exit code based on test failures
+			if model.HasFailures() {
+				exitCode = 1
+			} else {
+				exitCode = 0
+			}
 		}
 	}
 
