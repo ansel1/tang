@@ -34,8 +34,10 @@ func TestPackageSummaryLastOutput(t *testing.T) {
 
 	output := m.String()
 
-	// The output should contain the last output line
-	expected := "ok  \tgithub.com/test/pkg1\t0.10s"
+	// The output should contain the last output line (with tabs expanded)
+	// The original line is "ok  \tgithub.com/test/pkg1\t0.10s"
+	// After tab expansion, it becomes "ok      github.com/test/pkg1    0.10s"
+	expected := "ok      github.com/test/pkg1    0.10s"
 	if !strings.Contains(output, expected) {
 		t.Errorf("Expected output to contain last output line '%s'.\nGot:\n%s", expected, output)
 	}
