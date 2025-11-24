@@ -181,13 +181,17 @@ type Model struct {
 	// For backward compatibility - keep raw events
 	events []parser.TestEvent
 
+	// Replay state
+	ReplayMode bool
+	ReplayRate float64
+
 	// State tracking
 	Finished bool          // True if the event stream has completed
 	spinner  spinner.Model // Bubbles spinner component
 }
 
 // NewModel creates a new TUI model
-func NewModel() *Model {
+func NewModel(replayMode bool, replayRate float64) *Model {
 	s := spinner.New()
 	s.Spinner = spinner.Jump
 
@@ -205,6 +209,8 @@ func NewModel() *Model {
 		neutralStyle:   lipgloss.NewStyle(),
 		events:         make([]parser.TestEvent, 0),
 		spinner:        s,
+		ReplayMode:     replayMode,
+		ReplayRate:     replayRate,
 	}
 }
 
@@ -484,6 +490,16 @@ func (m *Model) renderHierarchical() string {
 			maxSkipped = skippedLen
 		}
 		elapsed := formatElapsedTime(pkg.GetElapsedTime())
+		if m.ReplayMode && m.ReplayRate != 1.0 && m.ReplayRate != 0 {
+			// In replay mode, we want to show the simulated original time
+			// For running packages, we scale the wall time by the rate (e.g. if rate is 0.5 (2x speed), 1s wall time = 2s simulated time)
+			// For finished packages, we show the original elapsed time
+			if pkg.Status == "running" {
+				elapsed = formatElapsedTime(pkg.GetElapsedTime() / m.ReplayRate)
+			} else {
+				elapsed = formatElapsedTime(pkg.ElapsedTime)
+			}
+		}
 		if elapsedLen := len(elapsed); elapsedLen > maxElapsed {
 			maxElapsed = elapsedLen
 		}
@@ -673,7 +689,18 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *PackageState, wPass
 	}
 
 	// Elapsed column
-	elapsedVal := formatElapsedTime(pkg.GetElapsedTime())
+	var elapsedVal string
+	currentElapsed := pkg.GetElapsedTime()
+	if m.ReplayMode && m.ReplayRate != 1.0 && m.ReplayRate != 0 {
+		if pkg.Status == "running" {
+			// Scale wall time to simulated time
+			currentElapsed = currentElapsed / m.ReplayRate
+		} else {
+			// Show original elapsed time
+			currentElapsed = pkg.ElapsedTime
+		}
+	}
+	elapsedVal = formatElapsedTime(currentElapsed)
 	elapsedStr := fmt.Sprintf("%*s", wElapsed, elapsedVal)
 
 	rightPart = fmt.Sprintf("%s  %s  %s  %s", passedStr, failedStr, skippedStr, elapsedStr)
@@ -686,7 +713,21 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *PackageState, wPass
 func (m *Model) renderTest(b *strings.Builder, test *TestState, maxLines int) {
 	// Render test summary line
 	summary := m.formatTestSummary(test)
-	m.renderAlignedLine(b, summary, formatElapsedTime(test.GetElapsedTime()))
+
+	var elapsedVal string
+	currentElapsed := test.GetElapsedTime()
+	if m.ReplayMode && m.ReplayRate != 1.0 && m.ReplayRate != 0 {
+		if test.Status == "running" || test.Status == "paused" {
+			// Scale wall time to simulated time
+			currentElapsed = currentElapsed / m.ReplayRate
+		} else {
+			// Show original elapsed time
+			currentElapsed = test.ElapsedTime
+		}
+	}
+	elapsedVal = formatElapsedTime(currentElapsed)
+
+	m.renderAlignedLine(b, summary, elapsedVal)
 	maxLines--
 
 	// Render output lines

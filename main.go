@@ -101,7 +101,7 @@ func main() {
 		}
 	} else {
 		// TUI mode
-		m := tui.NewModel()
+		m := tui.NewModel(*replay, *rate)
 		p := tea.NewProgram(m)
 
 		// Forward engine events to bubbletea

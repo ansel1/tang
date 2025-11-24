@@ -92,7 +92,7 @@ func parseScriptFile(filename string) ([]ScriptBlock, error) {
 
 // TestHierarchicalRendering validates the new hierarchical TUI format
 func TestHierarchicalRendering(t *testing.T) {
-	m := NewModel()
+	m := NewModel(false, 1.0)
 	m.TerminalWidth = 80
 
 	// Simulate test events for a complete test run
@@ -183,7 +183,7 @@ func TestHierarchicalRendering(t *testing.T) {
 
 // TestRunningPackagesShowTests verifies that running packages display their individual tests
 func TestRunningPackagesShowTests(t *testing.T) {
-	m := NewModel()
+	m := NewModel(false, 1.0)
 	m.TerminalWidth = 80
 
 	// Simulate a running test (not yet completed)
@@ -293,7 +293,7 @@ func TestRunScripts(t *testing.T) {
 func TestRunScript1WithTeatest(t *testing.T) {
 	t.Skip("not working: the output from the tea program seems to have wierd whitespace issues.")
 	// Create a new model
-	m := NewModel()
+	m := NewModel(false, 1.0)
 
 	// Create a teatest model that wraps our model
 	tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(80, 24))
@@ -368,7 +368,7 @@ func TestRunScriptsWithTeatest(t *testing.T) {
 				t.Fatalf("Failed to parse script file: %v", err)
 			}
 
-			m := NewModel()
+			m := NewModel(false, 1.0)
 			// Create a teatest model that wraps our model
 			tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(80, 24))
 			t.Cleanup(func() {
