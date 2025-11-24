@@ -95,14 +95,12 @@ TODO
 - [ ] -slow-threshold: set slow test threshold
 - [x] -notty: don't use the tui, just stream results to terminal, then print the summary
 - [x] -help
-- [ ] LICENSE
+- [x] LICENSE
 - [x] if output lines have escape sequences, they bleed into the tui.  Need to reset terminal state after test output
 - [x] elide output lines from all finished tests (even failed tests)
-- [ ] add a slow icon on slow test lines, next to the test's elapsed time
-- [ ] try a spinner column on the left for the status of each package and test.  Use the colors to indicate the status. When a package is finished, replace the spinner with a checkmark or xmark.
+- [x] try a spinner column on the left for the status of each package and test.  Use the colors to indicate the status. When a package is finished, replace the spinner with a checkmark or xmark.
 - [x] when in replay mode using a sped up rate, show the elapsed time of the original test run next to the elapsed time of the replayed run.
 - [x] add an elapsed time to the tui summary line
-- [ ] move the summary counts in the final line to columns on the right, just like the package and test lines.
 
 **Summary**
 - [ ] final summary, including failed tests with last 20 lines of output, slow tests, and skipped tests

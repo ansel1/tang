@@ -711,6 +711,10 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *PackageState, wPass
 
 	rightPart = fmt.Sprintf("%s  %s  %s  %s", passedStr, failedStr, skippedStr, elapsedStr)
 	leftPart = pkg.Name
+	if pkg.Status != "running" && pkg.LastOutputLine != "" {
+		// Expand tabs to ensure correct width calculation
+		leftPart = expandTabs(pkg.LastOutputLine, 8)
+	}
 
 	prefix := "  "
 	if pkg.Status == "running" {
