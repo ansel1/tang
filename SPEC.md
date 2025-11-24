@@ -101,7 +101,8 @@ TODO
 - [ ] add a slow icon on slow test lines, next to the test's elapsed time
 - [ ] try a spinner column on the left for the status of each package and test.  Use the colors to indicate the status. When a package is finished, replace the spinner with a checkmark or xmark.
 - [x] when in replay mode using a sped up rate, show the elapsed time of the original test run next to the elapsed time of the replayed run.
-- [ ] add an elapsed time to the tui summary line
+- [x] add an elapsed time to the tui summary line
+- [ ] move the summary counts in the final line to columns on the right, just like the package and test lines.
 
 **Summary**
 - [ ] final summary, including failed tests with last 20 lines of output, slow tests, and skipped tests

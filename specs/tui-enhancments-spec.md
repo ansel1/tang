@@ -209,6 +209,44 @@ Edge cases and special scenarios
 - Elapsed times for each running test should update independently
 - The package-level pass/fail counts should sum across all tests in that package
 
+Spinner indicators
+------------------
+
+**Purpose:**
+Spinners provide visual feedback that tests and packages are actively running, helping users understand that the system hasn't stalled.
+
+**Spinner Placement:**
+- Package lines: Display a spinner on the left side of the package name while the package is running
+- Test lines: Display a spinner on the left side of the test summary while the test is running
+- Summary line: Display a spinner on the left side of the summary text while tests are running (already implemented)
+
+**Spinner Behavior:**
+- **Running state**: Spinner is visible and animating
+- **Finished state**: Spinner is hidden (no character displayed in its place)
+- **Package with failures**: When a package finishes with failures, the spinner color changes to red before being hidden
+
+**Spacing:**
+- One space of padding between the spinner and the text it precedes
+- The spinner character itself takes one character width
+- Total overhead: 2 characters (spinner + space) when visible
+
+**Visual Format:**
+```
+<spinner> <text>                                                    <right-aligned-info>
+```
+
+When not running:
+```
+<text>                                                              <right-aligned-info>
+```
+
+**Implementation Notes:**
+- Use the same spinner component (bubbles/spinner) that's already used in the summary line
+- The spinner should animate at the same rate across all lines
+- Package spinners should turn red when `pkg.Failed > 0` and `pkg.Status != "running"`
+- Test spinners should be neutral colored (match the current summary spinner color)
+- When rendering, check the status to determine whether to show the spinner
+
 Display examples and mockups
 ----------------------------
 

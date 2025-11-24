@@ -641,7 +641,7 @@ func (m *Model) renderHierarchical() string {
 	}
 
 	// Add summary line
-	m.renderSummaryLine(&b)
+	m.renderSummaryLine(&b, maxElapsed)
 
 	return b.String()
 }
@@ -786,7 +786,7 @@ func (m *Model) renderAlignedLine(b *strings.Builder, left, right string) {
 }
 
 // renderSummaryLine renders the final summary line
-func (m *Model) renderSummaryLine(b *strings.Builder) {
+func (m *Model) renderSummaryLine(b *strings.Builder, wElapsed int) {
 	total := m.Passed + m.Failed + m.Skipped + m.Running
 
 	// Calculate total elapsed time
@@ -802,21 +802,21 @@ func (m *Model) renderSummaryLine(b *strings.Builder) {
 		elapsed = elapsed / m.ReplayRate
 	}
 
-	elapsedStr := formatElapsedTime(elapsed)
+	elapsedVal := formatElapsedTime(elapsed)
+	elapsedStr := fmt.Sprintf("%*s", wElapsed, elapsedVal)
 
+	var leftPart string
 	if !m.Finished {
-		summary := fmt.Sprintf("%s RUNNING: %d passed, %d failed, %d skipped, %d running, %d total (%s)\n",
-			m.spinner.View(), m.Passed, m.Failed, m.Skipped, m.Running, total, elapsedStr)
-		b.WriteString(summary)
-		return
+		leftPart = fmt.Sprintf("%s RUNNING: %d passed, %d failed, %d skipped, %d running, %d total",
+			m.spinner.View(), m.Passed, m.Failed, m.Skipped, m.Running, total)
+	} else {
+		statusPrefix := "PASSED"
+		if m.Failed > 0 {
+			statusPrefix = "FAILED"
+		}
+		leftPart = fmt.Sprintf("%s: %d passed, %d failed, %d skipped, %d running, %d total",
+			statusPrefix, m.Passed, m.Failed, m.Skipped, m.Running, total)
 	}
 
-	statusPrefix := "PASSED"
-	if m.Failed > 0 {
-		statusPrefix = "FAILED"
-	}
-
-	summary := fmt.Sprintf("%s: %d passed, %d failed, %d skipped, %d running, %d total (%s)\n",
-		statusPrefix, m.Passed, m.Failed, m.Skipped, m.Running, total, elapsedStr)
-	b.WriteString(summary)
+	m.renderAlignedLine(b, leftPart, elapsedStr)
 }
