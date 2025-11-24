@@ -186,8 +186,10 @@ type Model struct {
 	ReplayRate float64
 
 	// State tracking
-	Finished bool          // True if the event stream has completed
-	spinner  spinner.Model // Bubbles spinner component
+	Finished         bool          // True if the event stream has completed
+	StartTime        time.Time     // When the TUI started
+	TotalElapsedTime float64       // Final elapsed time (set when finished)
+	spinner          spinner.Model // Bubbles spinner component
 }
 
 // NewModel creates a new TUI model
@@ -211,6 +213,7 @@ func NewModel(replayMode bool, replayRate float64) *Model {
 		spinner:        s,
 		ReplayMode:     replayMode,
 		ReplayRate:     replayRate,
+		StartTime:      time.Now(),
 	}
 }
 
@@ -236,6 +239,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case engine.EventComplete:
 			// Stream finished
 			m.Finished = true
+			m.TotalElapsedTime = time.Since(m.StartTime).Seconds()
 			return m, tea.Quit
 
 		case engine.EventError:
@@ -785,9 +789,24 @@ func (m *Model) renderAlignedLine(b *strings.Builder, left, right string) {
 func (m *Model) renderSummaryLine(b *strings.Builder) {
 	total := m.Passed + m.Failed + m.Skipped + m.Running
 
+	// Calculate total elapsed time
+	var elapsed float64
+	if m.Finished {
+		elapsed = m.TotalElapsedTime
+	} else {
+		elapsed = time.Since(m.StartTime).Seconds()
+	}
+
+	// Apply replay rate scaling if needed
+	if m.ReplayMode && m.ReplayRate != 1.0 && m.ReplayRate != 0 {
+		elapsed = elapsed / m.ReplayRate
+	}
+
+	elapsedStr := formatElapsedTime(elapsed)
+
 	if !m.Finished {
-		summary := fmt.Sprintf("%s RUNNING: %d passed, %d failed, %d skipped, %d running, %d total\n",
-			m.spinner.View(), m.Passed, m.Failed, m.Skipped, m.Running, total)
+		summary := fmt.Sprintf("%s RUNNING: %d passed, %d failed, %d skipped, %d running, %d total (%s)\n",
+			m.spinner.View(), m.Passed, m.Failed, m.Skipped, m.Running, total, elapsedStr)
 		b.WriteString(summary)
 		return
 	}
@@ -797,7 +816,7 @@ func (m *Model) renderSummaryLine(b *strings.Builder) {
 		statusPrefix = "FAILED"
 	}
 
-	summary := fmt.Sprintf("%s: %d passed, %d failed, %d skipped, %d running, %d total\n",
-		statusPrefix, m.Passed, m.Failed, m.Skipped, m.Running, total)
+	summary := fmt.Sprintf("%s: %d passed, %d failed, %d skipped, %d running, %d total (%s)\n",
+		statusPrefix, m.Passed, m.Failed, m.Skipped, m.Running, total, elapsedStr)
 	b.WriteString(summary)
 }
