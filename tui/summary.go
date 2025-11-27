@@ -559,34 +559,31 @@ func NewSummaryFormatter(width int) *SummaryFormatter {
 func (sf *SummaryFormatter) Format(summary *Summary) string {
 	var result string
 
-	// 1. Package section
-	result += sf.formatPackageSection(summary.Packages)
-	result += "\n"
-
-	// 2. Overall results
-	result += sf.formatOverallResults(summary)
-	result += "\n"
-
-	// 3. Failures (if any)
+	// 1. Failures (if any)
 	if len(summary.Failures) > 0 {
 		result += sf.formatFailures(summary.Failures)
 		result += "\n"
 	}
 
-	// 4. Skipped tests (if any)
+	// 2. Skipped tests (if any)
 	if len(summary.Skipped) > 0 {
 		result += sf.formatSkipped(summary.Skipped)
 		result += "\n"
 	}
 
-	// 5. Slow tests (if any)
+	// 3. Slow tests (if any)
 	if len(summary.SlowTests) > 0 {
 		result += sf.formatSlowTests(summary.SlowTests)
 		result += "\n"
 	}
 
-	// 6. Package statistics
-	result += sf.formatPackageStats(summary)
+	// 4. Package section
+	result += sf.formatPackageSection(summary.Packages)
+	result += "\n"
+
+	// 5. Overall results
+	result += sf.formatOverallResults(summary)
+	result += "\n"
 
 	return result
 }
@@ -899,58 +896,6 @@ func (sf *SummaryFormatter) formatSlowTests(slowTests []*TestResult) string {
 			maxNameLen, test.Name,
 			maxPkgLen, test.Package,
 			formatDuration(test.Elapsed))
-	}
-
-	result += sf.horizontalLine()
-	return result
-}
-
-// formatPackageStats formats the package statistics section.
-//
-// This method displays performance metrics for packages (fastest, slowest,
-// most tests) with aligned columns.
-//
-// Format:
-//
-//	PACKAGE STATISTICS
-//	------------------
-//	Fastest:     package/name  X.Xs
-//	Slowest:     package/name  HH:MM:SS.mmm
-//	Most tests:  package/name  123 tests
-//
-// Parameters:
-//   - summary: The Summary containing package statistics
-//
-// Returns:
-//   - Formatted package statistics string
-func (sf *SummaryFormatter) formatPackageStats(summary *Summary) string {
-	if summary.PackageCount == 0 {
-		return ""
-	}
-
-	var result string
-	result += "PACKAGE STATISTICS\n"
-	result += sf.horizontalLine() + "\n"
-
-	if summary.FastestPackage != nil {
-		result += fmt.Sprintf("Fastest:     %-40s  %s\n",
-			summary.FastestPackage.Name,
-			formatDuration(summary.FastestPackage.Elapsed))
-	}
-
-	if summary.SlowestPackage != nil {
-		result += fmt.Sprintf("Slowest:     %-40s  %s\n",
-			summary.SlowestPackage.Name,
-			formatDuration(summary.SlowestPackage.Elapsed))
-	}
-
-	if summary.MostTestsPackage != nil {
-		testCount := summary.MostTestsPackage.PassedTests +
-			summary.MostTestsPackage.FailedTests +
-			summary.MostTestsPackage.SkippedTests
-		result += fmt.Sprintf("Most tests:  %-40s  %d tests\n",
-			summary.MostTestsPackage.Name,
-			testCount)
 	}
 
 	result += sf.horizontalLine()
