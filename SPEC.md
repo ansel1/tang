@@ -105,7 +105,7 @@ TODO
 **Summary**
 - [ ] final summary, including failed tests with last 20 lines of output, slow tests, and skipped tests
 - [ ] if quitting the tui with ctrl-c, print the summary to the terminal
-- [ ] if just passing file, and not replaying, don't use tui, just print summary
+- [x] if just passing file, and not replaying, don't use tui, just print summary
 - [ ] if ctrl-c is pressed, the package that was still in progress is not displayed in the summary
 - [ ] in the packages summary, the elapsed times are if different formats.  Just use the full format
 ![alt text](image.png)

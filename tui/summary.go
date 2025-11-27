@@ -781,7 +781,7 @@ func (sf *SummaryFormatter) formatFailures(failures []*TestResult) string {
 			}
 
 			for _, line := range outputLines {
-				result += IndentLevel2 + line + "\n"
+				result += IndentLevel2 + ensureReset(line) + "\n"
 			}
 		}
 	}
@@ -846,7 +846,7 @@ func (sf *SummaryFormatter) formatSkipped(skipped []*TestResult) string {
 			}
 
 			for _, line := range outputLines {
-				result += IndentLevel2 + line + "\n"
+				result += IndentLevel2 + ensureReset(line) + "\n"
 			}
 		}
 	}

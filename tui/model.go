@@ -762,8 +762,9 @@ func (m *Model) renderTest(b *strings.Builder, test *TestState, maxLines int) {
 			break
 		}
 		line := fmt.Sprintf("      %s", outputLine) // Increased indent (2 padding + 4 indent)
-		b.WriteString(truncateLine(line, m.TerminalWidth))
-		b.WriteString("\033[0m\n")
+		b.WriteString(ensureReset(truncateLine(line, m.TerminalWidth)))
+		b.WriteString("\n")
+
 		maxLines--
 		_ = i // unused
 	}
