@@ -7,6 +7,7 @@ import (
 
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // SummaryCollector accumulates test events and package results during test execution.
@@ -27,12 +28,14 @@ import (
 //   - packageOrder: Chronological order of package starts
 //   - mu: Mutex for thread-safe access to collector state
 type SummaryCollector struct {
-	packages     map[string]*PackageResult
-	testResults  map[string]*TestResult
-	startTime    time.Time
-	endTime      time.Time
-	packageOrder []string // Chronological order of package starts
-	mu           sync.RWMutex
+	packages              map[string]*PackageResult
+	testResults           map[string]*TestResult
+	packageStartTimes     map[string]time.Time // Track event timestamp when each package started
+	packageWallStartTimes map[string]time.Time // Track wall clock time when each package started
+	startTime             time.Time
+	endTime               time.Time
+	packageOrder          []string // Chronological order of package starts
+	mu                    sync.RWMutex
 }
 
 // PackageResult represents the final result of a package's test run.
@@ -80,9 +83,11 @@ type TestResult struct {
 // NewSummaryCollector creates a new summary collector.
 func NewSummaryCollector() *SummaryCollector {
 	return &SummaryCollector{
-		packages:     make(map[string]*PackageResult),
-		testResults:  make(map[string]*TestResult),
-		packageOrder: make([]string, 0),
+		packages:              make(map[string]*PackageResult),
+		testResults:           make(map[string]*TestResult),
+		packageStartTimes:     make(map[string]time.Time),
+		packageWallStartTimes: make(map[string]time.Time),
+		packageOrder:          make([]string, 0),
 	}
 }
 
@@ -156,8 +161,35 @@ func (sc *SummaryCollector) addTestEventLocked(event parser.TestEvent) {
 		sc.endTime = event.Time
 	}
 
+	// Get or create package result for any event with a package name
+	// This ensures packages are registered in chronological order
+	pkgResult, exists := sc.packages[event.Package]
+	if !exists {
+		pkgResult = &PackageResult{
+			Name: event.Package,
+		}
+		sc.packages[event.Package] = pkgResult
+		sc.packageOrder = append(sc.packageOrder, event.Package)
+	}
+
 	// Handle package-level events (no test name)
 	if event.Test == "" {
+		if event.Action == "output" {
+			// Update output to the last line received
+			if event.Output != "" {
+				output := event.Output
+				// Remove trailing newline if present
+				if len(output) > 0 && output[len(output)-1] == '\n' {
+					output = output[:len(output)-1]
+				}
+				// Only update if not empty (ignore empty lines)
+				if output != "" {
+					pkgResult.Output = output
+				}
+			}
+			return
+		}
+
 		// Only process package completion events
 		if event.Action == "pass" || event.Action == "fail" || event.Action == "skip" {
 			status := "ok"
@@ -168,16 +200,6 @@ func (sc *SummaryCollector) addTestEventLocked(event parser.TestEvent) {
 			}
 
 			elapsed := time.Duration(event.Elapsed * float64(time.Second))
-
-			// Get or create package result (inline to avoid deadlock)
-			pkgResult, exists := sc.packages[event.Package]
-			if !exists {
-				pkgResult = &PackageResult{
-					Name: event.Package,
-				}
-				sc.packages[event.Package] = pkgResult
-				sc.packageOrder = append(sc.packageOrder, event.Package)
-			}
 
 			// Update package status and timing
 			pkgResult.Status = status
@@ -198,6 +220,12 @@ func (sc *SummaryCollector) addTestEventLocked(event parser.TestEvent) {
 			}
 		}
 		return
+	}
+
+	// Track package start time on first test from this package
+	if _, exists := sc.packageStartTimes[event.Package]; !exists {
+		sc.packageStartTimes[event.Package] = event.Time
+		sc.packageWallStartTimes[event.Package] = time.Now()
 	}
 
 	// Create unique key for test
@@ -307,6 +335,24 @@ func (sc *SummaryCollector) AddPackageResult(pkg string, status string, elapsed 
 //   - startTime: When collection started
 //   - endTime: When GetSummary was called
 func (sc *SummaryCollector) GetSummary() (packages []*PackageResult, testResults []*TestResult, startTime, endTime time.Time) {
+	return sc.GetSummaryWithReplay(false, 1.0)
+}
+
+// GetSummaryWithReplay extracts the collected data with replay rate adjustment.
+//
+// For interrupted packages, this applies replay rate adjustment to calculate
+// the simulated elapsed time based on wall clock time.
+//
+// Parameters:
+//   - replayMode: Whether replay mode is active
+//   - replayRate: Replay rate multiplier (e.g., 0.01 = 100x slower, 2.0 = 0.5x speed)
+//
+// Returns:
+//   - packages: Slice of PackageResult in chronological order
+//   - testResults: Slice of all TestResult entries
+//   - startTime: When collection started
+//   - endTime: When GetSummary was called
+func (sc *SummaryCollector) GetSummaryWithReplay(replayMode bool, replayRate float64) (packages []*PackageResult, testResults []*TestResult, startTime, endTime time.Time) {
 	sc.mu.RLock()
 	defer sc.mu.RUnlock()
 
@@ -321,6 +367,58 @@ func (sc *SummaryCollector) GetSummary() (packages []*PackageResult, testResults
 	for _, pkgName := range sc.packageOrder {
 		if pkg, exists := sc.packages[pkgName]; exists {
 			packages = append(packages, pkg)
+		}
+	}
+
+	// Find packages with tests but no completion event (interrupted packages)
+	// These are packages that have test results but no PackageResult entry
+	packagesWithTests := make(map[string]bool)
+	for _, testResult := range sc.testResults {
+		packagesWithTests[testResult.Package] = true
+	}
+
+	// Add incomplete packages with status "?" and aggregate their test counts
+	for pkgName := range packagesWithTests {
+		if _, exists := sc.packages[pkgName]; !exists {
+			// Calculate elapsed time for interrupted package
+			var elapsed time.Duration
+			if wallStart, hasStart := sc.packageWallStartTimes[pkgName]; hasStart {
+				// Use wall clock time (time.Since) for interrupted packages
+				wallElapsed := time.Since(wallStart)
+
+				// Apply replay rate adjustment if in replay mode
+				if replayMode && replayRate != 0 && replayRate != 1.0 {
+					// Scale wall time to simulated time
+					// e.g., if rate=0.01 (100x slower) and wall time is 30s, simulated time is 30s/0.01 = 3000s
+					elapsed = time.Duration(float64(wallElapsed) / replayRate)
+				} else {
+					elapsed = wallElapsed
+				}
+			}
+
+			// Create a PackageResult for this incomplete package
+			pkgResult := &PackageResult{
+				Name:    pkgName,
+				Status:  "?",
+				Elapsed: elapsed,
+			}
+
+			// Aggregate test counts from test results
+			// Only count completed tests (pass/fail/skip), not running tests
+			for _, testResult := range sc.testResults {
+				if testResult.Package == pkgName {
+					switch testResult.Status {
+					case "pass":
+						pkgResult.PassedTests++
+					case "fail":
+						pkgResult.FailedTests++
+					case "skip":
+						pkgResult.SkippedTests++
+					}
+				}
+			}
+
+			packages = append(packages, pkgResult)
 		}
 	}
 
@@ -385,7 +483,24 @@ type Summary struct {
 // Returns:
 //   - Summary with all computed statistics
 func ComputeSummary(collector *SummaryCollector, slowThreshold time.Duration) *Summary {
-	packages, testResults, startTime, endTime := collector.GetSummary()
+	return ComputeSummaryWithReplay(collector, slowThreshold, false, 1.0)
+}
+
+// ComputeSummaryWithReplay calculates summary statistics with replay rate adjustment.
+//
+// This function is like ComputeSummary but applies replay rate adjustments to
+// interrupted package elapsed times when in replay mode.
+//
+// Parameters:
+//   - collector: The SummaryCollector with accumulated test data
+//   - slowThreshold: Duration threshold for slow test detection (e.g., 10s)
+//   - replayMode: Whether replay mode is active
+//   - replayRate: Replay rate multiplier (e.g., 0.01 = 100x slower, 2.0 = 0.5x speed)
+//
+// Returns:
+//   - Summary with all computed statistics
+func ComputeSummaryWithReplay(collector *SummaryCollector, slowThreshold time.Duration, replayMode bool, replayRate float64) *Summary {
+	packages, testResults, startTime, endTime := collector.GetSummaryWithReplay(replayMode, replayRate)
 
 	summary := &Summary{
 		Packages:     packages,
@@ -482,12 +597,6 @@ func sortSlowTests(tests []*TestResult) {
 // Returns:
 //   - Formatted duration string
 func formatDuration(d time.Duration) string {
-	if d < 60*time.Second {
-		// Format as seconds with 1 decimal place
-		seconds := d.Seconds()
-		return fmt.Sprintf("%.1fs", seconds)
-	}
-
 	// Format as HH:MM:SS.mmm
 	hours := int(d.Hours())
 	minutes := int(d.Minutes()) % 60
@@ -518,8 +627,16 @@ const (
 //
 // Fields:
 //   - width: Terminal width for alignment calculations (default 80)
+//   - passStyle: Style for passing tests/packages (green)
+//   - failStyle: Style for failing tests/packages (red)
+//   - skipStyle: Style for skipped tests/packages (yellow)
+//   - neutralStyle: Style for neutral text
 type SummaryFormatter struct {
-	width int
+	width        int
+	passStyle    lipgloss.Style
+	failStyle    lipgloss.Style
+	skipStyle    lipgloss.Style
+	neutralStyle lipgloss.Style
 }
 
 // NewSummaryFormatter creates a new summary formatter.
@@ -534,7 +651,11 @@ func NewSummaryFormatter(width int) *SummaryFormatter {
 		width = 80
 	}
 	return &SummaryFormatter{
-		width: width,
+		width:        width,
+		passStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("2")), // green
+		failStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
+		skipStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
+		neutralStyle: lipgloss.NewStyle(),
 	}
 }
 
@@ -612,15 +733,23 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*PackageResult) stri
 	result += sf.horizontalLine() + "\n"
 
 	// Calculate column widths for alignment
-	maxNameLen := 0
+	maxOutputLen := 0
 	maxPassedLen := 0
 	maxFailedLen := 0
 	maxSkippedLen := 0
 	maxElapsedLen := 0
 
 	for _, pkg := range packages {
-		if len(pkg.Name) > maxNameLen {
-			maxNameLen = len(pkg.Name)
+		// Use Output if available, otherwise Name
+		// Replace tabs with spaces for consistent length calculation and alignment
+		output := pkg.Output
+		if output == "" {
+			output = pkg.Name
+		}
+		output = expandTabs(output, 8)
+
+		if len(output) > maxOutputLen {
+			maxOutputLen = len(output)
 		}
 
 		passedStr := fmt.Sprintf("%d", pkg.PassedTests)
@@ -647,29 +776,72 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*PackageResult) stri
 	// Format each package
 	for _, pkg := range packages {
 		symbol := SymbolPass
+		symbolStyle := sf.passStyle
 		if pkg.Status == "FAIL" {
 			symbol = SymbolFail
+			symbolStyle = sf.failStyle
 		} else if pkg.Status == "?" {
 			symbol = SymbolSkip
+			symbolStyle = sf.skipStyle
 		}
 
+		// Use Output if available, otherwise Name
+		output := pkg.Output
+		if output == "" {
+			output = pkg.Name
+		}
+		output = expandTabs(output, 8)
+
 		// Format counts with right-aligned numbers
+		// Omit counts if all are 0
 		counts := ""
 		if pkg.PassedTests > 0 || pkg.FailedTests > 0 || pkg.SkippedTests > 0 {
-			counts = fmt.Sprintf("%s %*d  %s %*d  %s %*d",
-				SymbolPass, maxPassedLen, pkg.PassedTests,
-				SymbolFail, maxFailedLen, pkg.FailedTests,
-				SymbolSkip, maxSkippedLen, pkg.SkippedTests)
-		} else {
-			counts = "[no test files]"
+			// Format each count with color
+			passedStr := fmt.Sprintf("%s %*d", SymbolPass, maxPassedLen, pkg.PassedTests)
+			if pkg.PassedTests > 0 {
+				passedStr = sf.passStyle.Render(passedStr)
+			} else {
+				passedStr = sf.neutralStyle.Render(passedStr)
+			}
+
+			failedStr := fmt.Sprintf("%s %*d", SymbolFail, maxFailedLen, pkg.FailedTests)
+			if pkg.FailedTests > 0 {
+				failedStr = sf.failStyle.Render(failedStr)
+			} else {
+				failedStr = sf.neutralStyle.Render(failedStr)
+			}
+
+			skippedStr := fmt.Sprintf("%s %*d", SymbolSkip, maxSkippedLen, pkg.SkippedTests)
+			if pkg.SkippedTests > 0 {
+				skippedStr = sf.skipStyle.Render(skippedStr)
+			} else {
+				skippedStr = sf.neutralStyle.Render(skippedStr)
+			}
+
+			counts = fmt.Sprintf("%s  %s  %s", passedStr, failedStr, skippedStr)
 		}
 
 		// Format line with alignment
-		result += fmt.Sprintf("%s %-*s  %s  %*s\n",
-			symbol,
-			maxNameLen, pkg.Name,
-			counts,
-			maxElapsedLen, formatDuration(pkg.Elapsed))
+		if counts != "" {
+			result += fmt.Sprintf("%s %-*s  %s  %*s\n",
+				symbolStyle.Render(symbol),
+				maxOutputLen, output,
+				counts,
+				maxElapsedLen, formatDuration(pkg.Elapsed))
+		} else {
+			// If no counts, print symbol, output, and elapsed time
+			// We align elapsed time to the right, leaving the counts column empty
+			// Calculate visual width of counts column:
+			// 3 symbols (length 1 each visually) + 7 spaces + max lengths
+			countsWidth := 3 + 7 + maxPassedLen + maxFailedLen + maxSkippedLen
+			emptyCounts := fmt.Sprintf("%*s", countsWidth, "")
+
+			result += fmt.Sprintf("%s %-*s  %s  %*s\n",
+				symbolStyle.Render(symbol),
+				maxOutputLen, output,
+				emptyCounts,
+				maxElapsedLen, formatDuration(pkg.Elapsed))
+		}
 	}
 
 	result += sf.horizontalLine()
@@ -880,22 +1052,18 @@ func (sf *SummaryFormatter) formatSlowTests(slowTests []*TestResult) string {
 
 	// Calculate column widths for alignment
 	maxNameLen := 0
-	maxPkgLen := 0
 	for _, test := range slowTests {
 		if len(test.Name) > maxNameLen {
 			maxNameLen = len(test.Name)
-		}
-		if len(test.Package) > maxPkgLen {
-			maxPkgLen = len(test.Package)
 		}
 	}
 
 	// Format each slow test
 	for _, test := range slowTests {
-		result += fmt.Sprintf("%-*s  %-*s  %s\n",
+		result += fmt.Sprintf("%-*s  %s\n",
 			maxNameLen, test.Name,
-			maxPkgLen, test.Package,
 			formatDuration(test.Elapsed))
+		result += fmt.Sprintf("  %s\n", test.Package)
 	}
 
 	result += sf.horizontalLine()

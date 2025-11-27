@@ -546,34 +546,17 @@ func TestPropertyTimeFormatConsistency(t *testing.T) {
 		for _, d := range durations {
 			formatted := formatDuration(d)
 
-			if d < 60*time.Second {
-				// Should be in "X.Xs" format
-				// Verify format matches pattern: digits, optional dot, optional digit, 's'
-				// Examples: "0.0s", "5.2s", "59.9s"
-				if !isSecondsFormat(formatted) {
-					t.Errorf("Iteration %d: Duration %v (< 60s) formatted as '%s', expected seconds format (X.Xs)",
-						i, d, formatted)
-				}
+			// Should be in "HH:MM:SS.mmm" format
+			// Verify format matches pattern: HH:MM:SS.mmm
+			if !isHMSFormat(formatted) {
+				t.Errorf("Iteration %d: Duration %v formatted as '%s', expected HH:MM:SS.mmm format",
+					i, d, formatted)
+			}
 
-				// Verify the numeric value is correct
-				expectedSeconds := d.Seconds()
-				if !verifySecondsFormat(formatted, expectedSeconds) {
-					t.Errorf("Iteration %d: Duration %v formatted as '%s', expected %.1fs",
-						i, d, formatted, expectedSeconds)
-				}
-			} else {
-				// Should be in "HH:MM:SS.mmm" format
-				// Verify format matches pattern: HH:MM:SS.mmm
-				if !isHMSFormat(formatted) {
-					t.Errorf("Iteration %d: Duration %v (>= 60s) formatted as '%s', expected HH:MM:SS.mmm format",
-						i, d, formatted)
-				}
-
-				// Verify the time components are correct
-				if !verifyHMSFormat(formatted, d) {
-					t.Errorf("Iteration %d: Duration %v formatted as '%s', components don't match",
-						i, d, formatted)
-				}
+			// Verify the time components are correct
+			if !verifyHMSFormat(formatted, d) {
+				t.Errorf("Iteration %d: Duration %v formatted as '%s', components don't match",
+					i, d, formatted)
 			}
 		}
 	}
@@ -637,59 +620,6 @@ func generateRandomDurations(seed int) []time.Duration {
 	)
 
 	return durations
-}
-
-// isSecondsFormat checks if a string matches the "X.Xs" format.
-func isSecondsFormat(s string) bool {
-	if len(s) < 2 {
-		return false
-	}
-	if s[len(s)-1] != 's' {
-		return false
-	}
-	// Check that everything before 's' is a valid float
-	numPart := s[:len(s)-1]
-	if len(numPart) == 0 {
-		return false
-	}
-	// Simple validation: should contain digits and at most one dot
-	dotCount := 0
-	for _, c := range numPart {
-		if c == '.' {
-			dotCount++
-			if dotCount > 1 {
-				return false
-			}
-		} else if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
-}
-
-// verifySecondsFormat checks if the formatted string matches the expected seconds value.
-func verifySecondsFormat(formatted string, expectedSeconds float64) bool {
-	// Parse the numeric part
-	if len(formatted) < 2 || formatted[len(formatted)-1] != 's' {
-		return false
-	}
-	numPart := formatted[:len(formatted)-1]
-
-	// Parse as float
-	var parsed float64
-	_, err := fmt.Sscanf(numPart, "%f", &parsed)
-	if err != nil {
-		return false
-	}
-
-	// The format uses %.1f which rounds to 1 decimal place
-	// We need to verify that the parsed value is within 0.06s of the expected value
-	// (since rounding can change the value by up to 0.05s, plus floating point errors)
-	diff := parsed - expectedSeconds
-	if diff < 0 {
-		diff = -diff
-	}
-	return diff < 0.06
 }
 
 // isHMSFormat checks if a string matches the "HH:MM:SS.mmm" format.

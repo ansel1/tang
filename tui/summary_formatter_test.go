@@ -39,9 +39,6 @@ func TestSummaryFormatterBasic(t *testing.T) {
 	if !strings.Contains(output, "OVERALL RESULTS") {
 		t.Error("Expected OVERALL RESULTS section")
 	}
-	if !strings.Contains(output, "PACKAGE STATISTICS") {
-		t.Error("Expected PACKAGE STATISTICS section")
-	}
 
 	// Verify symbols are used
 	if !strings.Contains(output, SymbolPass) {

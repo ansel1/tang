@@ -889,7 +889,8 @@ func (m *Model) DisplaySummary() {
 	}
 
 	// Compute summary with 10 second slow test threshold
-	summary := ComputeSummary(m.summaryCollector, 10*time.Second)
+	// Pass replay mode and rate for interrupted package elapsed time adjustment
+	summary := ComputeSummaryWithReplay(m.summaryCollector, 10*time.Second, m.ReplayMode, m.ReplayRate)
 
 	// Format summary using terminal width
 	formatter := NewSummaryFormatter(m.TerminalWidth)

@@ -103,11 +103,11 @@ TODO
 - [x] add an elapsed time to the tui summary line
 
 **Summary**
-- [ ] final summary, including failed tests with last 20 lines of output, slow tests, and skipped tests
-- [ ] if quitting the tui with ctrl-c, print the summary to the terminal
+- [x] final summary, including failed tests with last 20 lines of output, slow tests, and skipped tests
+- [x] if quitting the tui with ctrl-c, print the summary to the terminal
 - [x] if just passing file, and not replaying, don't use tui, just print summary
-- [ ] if ctrl-c is pressed, the package that was still in progress is not displayed in the summary
-- [ ] in the packages summary, the elapsed times are if different formats.  Just use the full format
+- [x] if ctrl-c is pressed, the package that was still in progress is not displayed in the summary
+- [x] in the packages summary, the elapsed times are if different formats.  Just use the full format
 ![alt text](image.png)
 - [ ] in the overall results summary, move the icons to the left of the count
 ![alt text](image-1.png)
@@ -115,10 +115,10 @@ TODO
 ![alt text](image-2.png)
 - [ ] same with skipped tests.  Don't need the === RUN line or the --- SKIP line
 ![alt text](image-3.png)
-- [ ] in the slow test section, the line is wrapping
+- [x] in the slow test section, the line is wrapping
 ![alt text](image-4.png)
   anyway, maybe that section should be layed out like the other sections: grouped by package
-- [ ] maybe ditch the package stats?  not very useful.
+- [x] maybe ditch the package stats?  not very useful.
 
 
 **Browse**
