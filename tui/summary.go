@@ -2,12 +2,14 @@ package tui
 
 import (
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/mattn/go-isatty"
 )
 
 // SummaryCollector accumulates test events and package results during test execution.
@@ -633,6 +635,7 @@ const (
 //   - neutralStyle: Style for neutral text
 type SummaryFormatter struct {
 	width        int
+	useColors    bool
 	passStyle    lipgloss.Style
 	failStyle    lipgloss.Style
 	skipStyle    lipgloss.Style
@@ -640,6 +643,8 @@ type SummaryFormatter struct {
 }
 
 // NewSummaryFormatter creates a new summary formatter.
+//
+// Colors are automatically enabled if stdout is a TTY.
 //
 // Parameters:
 //   - width: Terminal width for alignment (use 80 if unknown)
@@ -650,8 +655,12 @@ func NewSummaryFormatter(width int) *SummaryFormatter {
 	if width <= 0 {
 		width = 80
 	}
+	// Detect if stdout is a TTY
+	useColors := isatty.IsTerminal(os.Stdout.Fd())
+
 	return &SummaryFormatter{
 		width:        width,
+		useColors:    useColors,
 		passStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("2")), // green
 		failStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
 		skipStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
@@ -883,10 +892,20 @@ func (sf *SummaryFormatter) formatOverallResults(summary *Summary) string {
 		skipPercent = float64(summary.SkippedTests) / float64(summary.TotalTests) * 100
 	}
 
+	// Format icons with colors if TTY
+	passIcon := SymbolPass
+	failIcon := SymbolFail
+	skipIcon := SymbolSkipAlt
+	if sf.useColors {
+		passIcon = sf.passStyle.Render(SymbolPass)
+		failIcon = sf.failStyle.Render(SymbolFail)
+		skipIcon = sf.skipStyle.Render(SymbolSkipAlt)
+	}
+
 	result += fmt.Sprintf("Total tests:    %d\n", summary.TotalTests)
-	result += fmt.Sprintf("Passed:         %d %s (%.1f%%)\n", summary.PassedTests, SymbolPass, passPercent)
-	result += fmt.Sprintf("Failed:         %d %s (%.1f%%)\n", summary.FailedTests, SymbolFail, failPercent)
-	result += fmt.Sprintf("Skipped:        %d %s (%.1f%%)\n", summary.SkippedTests, SymbolSkipAlt, skipPercent)
+	result += fmt.Sprintf("Passed:         %d %s (%.1f%%)\n", summary.PassedTests, passIcon, passPercent)
+	result += fmt.Sprintf("Failed:         %d %s (%.1f%%)\n", summary.FailedTests, failIcon, failPercent)
+	result += fmt.Sprintf("Skipped:        %d %s (%.1f%%)\n", summary.SkippedTests, skipIcon, skipPercent)
 	result += fmt.Sprintf("Total time:     %s\n", formatDuration(summary.TotalTime))
 	result += fmt.Sprintf("Packages:       %d\n", summary.PackageCount)
 
