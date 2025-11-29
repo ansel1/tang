@@ -8,6 +8,7 @@ import (
 
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/output"
+	"github.com/ansel1/tang/results"
 	"github.com/ansel1/tang/tui"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -82,30 +83,16 @@ func main() {
 
 	// Create engine and start streaming
 	eng := engine.NewEngine(opts...)
-	events := eng.Stream(inputSource)
+	engineEvents := eng.Stream(inputSource)
 
-	// Create separate channels for consumers
-	// Buffer size of 100 to prevent blocking
-	tuiEvents := make(chan engine.Event, 100)
-	summaryEvents := make(chan engine.Event, 100)
+	// Create results collector
+	collector := results.NewCollector()
 
-	// Create summary collector
-	summaryCollector := tui.NewSummaryCollector()
+	// Start collector processing
+	go collector.ProcessEvents(engineEvents)
 
-	// Start summary collector goroutine
-	go summaryCollector.ProcessEvents(summaryEvents)
-
-	// Fan out events to all consumers
-	go func() {
-		for evt := range events {
-			// Broadcast to all consumers
-			tuiEvents <- evt
-			summaryEvents <- evt
-		}
-		// Close all consumer channels when engine stream completes
-		close(tuiEvents)
-		close(summaryEvents)
-	}()
+	// Subscribe to results
+	resultsEvents := collector.Subscribe()
 
 	var exitCode int
 
@@ -116,8 +103,8 @@ func main() {
 
 	if skipTUI {
 		// Simple output mode (no TUI)
-		simple := output.NewSimpleOutput(os.Stdout, summaryCollector)
-		if err := simple.ProcessEvents(tuiEvents); err != nil {
+		simple := output.NewSimpleOutput(os.Stdout, collector)
+		if err := simple.ProcessEvents(resultsEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			os.Exit(1)
 		}
@@ -129,21 +116,23 @@ func main() {
 		}
 	} else {
 		// TUI mode
-		m := tui.NewModel(*replay, *rate, summaryCollector)
+		m := tui.NewModel(*replay, *rate, collector)
 		p := tea.NewProgram(m)
 
-		// Forward engine events to bubbletea
+		// Forward results events to bubbletea
 		go func() {
-			for evt := range tuiEvents {
+			for evt := range resultsEvents {
 				// Handle raw output lines directly using Println()
 				// This prints them above the TUI without mixing with test output
-				if evt.Type == engine.EventRawLine {
+				if evt.Type == results.EventRawOutput {
 					p.Println(string(evt.RawLine))
 				} else {
 					// Send all other events to the model
-					p.Send(tui.EngineEventMsg(evt))
+					p.Send(tui.ResultsEventMsg(evt))
 				}
 			}
+			// Signal completion
+			p.Send(tui.EOFMsg{})
 		}()
 
 		// Run the program

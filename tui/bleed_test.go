@@ -3,10 +3,12 @@ package tui
 import (
 	"strings"
 	"testing"
+
+	"github.com/ansel1/tang/results"
 )
 
-func TestBleed(t *testing.T) {
-	collector := NewSummaryCollector()
+func TestBleedProtection(t *testing.T) {
+	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
 	m.TerminalHeight = 20

@@ -1,9 +1,11 @@
-package tui
+package format
 
 import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ansel1/tang/results"
 )
 
 // TestSummaryFormatterBasic tests basic formatting functionality
@@ -12,7 +14,7 @@ func TestSummaryFormatterBasic(t *testing.T) {
 
 	// Create a simple summary
 	summary := &Summary{
-		Packages: []*PackageResult{
+		Packages: []*results.PackageResult{
 			{
 				Name:         "github.com/user/project/pkg1",
 				Status:       "ok",
@@ -52,7 +54,7 @@ func TestSummaryFormatterWithFailures(t *testing.T) {
 
 	// Create summary with failures
 	summary := &Summary{
-		Packages: []*PackageResult{
+		Packages: []*results.PackageResult{
 			{
 				Name:         "github.com/user/project/pkg1",
 				Status:       "FAIL",
@@ -68,7 +70,7 @@ func TestSummaryFormatterWithFailures(t *testing.T) {
 		SkippedTests: 0,
 		TotalTime:    5 * time.Second,
 		PackageCount: 1,
-		Failures: []*TestResult{
+		Failures: []*results.TestResult{
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestFailing",
@@ -99,7 +101,7 @@ func TestSummaryFormatterWithSkipped(t *testing.T) {
 
 	// Create summary with skipped tests
 	summary := &Summary{
-		Packages: []*PackageResult{
+		Packages: []*results.PackageResult{
 			{
 				Name:         "github.com/user/project/pkg1",
 				Status:       "ok",
@@ -115,7 +117,7 @@ func TestSummaryFormatterWithSkipped(t *testing.T) {
 		SkippedTests: 2,
 		TotalTime:    5 * time.Second,
 		PackageCount: 1,
-		Skipped: []*TestResult{
+		Skipped: []*results.TestResult{
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestSkipped",
@@ -146,7 +148,7 @@ func TestSummaryFormatterWithSlowTests(t *testing.T) {
 
 	// Create summary with slow tests
 	summary := &Summary{
-		Packages: []*PackageResult{
+		Packages: []*results.PackageResult{
 			{
 				Name:         "github.com/user/project/pkg1",
 				Status:       "ok",
@@ -162,7 +164,7 @@ func TestSummaryFormatterWithSlowTests(t *testing.T) {
 		SkippedTests: 0,
 		TotalTime:    65 * time.Second,
 		PackageCount: 1,
-		SlowTests: []*TestResult{
+		SlowTests: []*results.TestResult{
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestSlow",
@@ -193,7 +195,7 @@ func TestSummaryFormatterNoFailuresOrSkips(t *testing.T) {
 
 	// Create summary with no failures or skips
 	summary := &Summary{
-		Packages: []*PackageResult{
+		Packages: []*results.PackageResult{
 			{
 				Name:         "github.com/user/project/pkg1",
 				Status:       "ok",
@@ -233,7 +235,7 @@ func TestSummaryFormatterOutputTruncation(t *testing.T) {
 	}
 
 	summary := &Summary{
-		Packages: []*PackageResult{
+		Packages: []*results.PackageResult{
 			{
 				Name:         "github.com/user/project/pkg1",
 				Status:       "FAIL",
@@ -249,7 +251,7 @@ func TestSummaryFormatterOutputTruncation(t *testing.T) {
 		SkippedTests: 0,
 		TotalTime:    5 * time.Second,
 		PackageCount: 1,
-		Failures: []*TestResult{
+		Failures: []*results.TestResult{
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestWithLongOutput",
@@ -296,7 +298,7 @@ func TestSummaryFormatterSkipTruncation(t *testing.T) {
 	}
 
 	summary := &Summary{
-		Packages: []*PackageResult{
+		Packages: []*results.PackageResult{
 			{
 				Name:         "github.com/user/project/pkg1",
 				Status:       "ok",
@@ -312,7 +314,7 @@ func TestSummaryFormatterSkipTruncation(t *testing.T) {
 		SkippedTests: 1,
 		TotalTime:    5 * time.Second,
 		PackageCount: 1,
-		Skipped: []*TestResult{
+		Skipped: []*results.TestResult{
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestWithLongSkipReason",
@@ -341,7 +343,7 @@ func TestSummaryFormatterPercentages(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
 	summary := &Summary{
-		Packages:     []*PackageResult{},
+		Packages:     []*results.PackageResult{},
 		TotalTests:   100,
 		PassedTests:  97,
 		FailedTests:  2,
@@ -369,7 +371,7 @@ func TestSummaryFormatterSymbols(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
 	summary := &Summary{
-		Packages: []*PackageResult{
+		Packages: []*results.PackageResult{
 			{
 				Name:         "pkg1",
 				Status:       "ok",
@@ -404,7 +406,7 @@ func TestSummaryFormatterSymbols(t *testing.T) {
 	if !strings.Contains(output, SymbolFail) {
 		t.Error("Expected fail symbol ✗")
 	}
-	if !strings.Contains(output, SymbolSkipAlt) {
+	if !strings.Contains(output, SymbolSkip) {
 		t.Error("Expected skip symbol ⊘ in overall results")
 	}
 }

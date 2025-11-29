@@ -8,7 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
+	"github.com/ansel1/tang/results"
 	teatest "github.com/charmbracelet/x/exp/teatest"
 	"github.com/stretchr/testify/require"
 )
@@ -92,51 +94,72 @@ func parseScriptFile(filename string) ([]ScriptBlock, error) {
 
 // TestHierarchicalRendering validates the new hierarchical TUI format
 func TestHierarchicalRendering(t *testing.T) {
-	collector := NewSummaryCollector()
+	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
 
+	// Setup event processing
+	engineEvents := make(chan engine.Event, 20)
+	go collector.ProcessEvents(engineEvents)
+	resultsEvents := collector.Subscribe()
+
+	// Feed events in background
+	go func() {
+		for evt := range resultsEvents {
+			m.Update(ResultsEventMsg(evt))
+		}
+	}()
+
 	// Simulate test events for a complete test run
+	now := time.Now()
 	events := []parser.TestEvent{
 		{
+			Time:    now,
 			Action:  "start",
 			Package: "github.com/test/pkg1",
 		},
 		{
+			Time:    now.Add(10 * time.Millisecond),
 			Action:  "run",
 			Package: "github.com/test/pkg1",
 			Test:    "TestFoo",
 		},
 		{
+			Time:    now.Add(20 * time.Millisecond),
 			Action:  "output",
 			Package: "github.com/test/pkg1",
 			Test:    "TestFoo",
 			Output:  "=== RUN   TestFoo\n",
 		},
 		{
+			Time:    now.Add(30 * time.Millisecond),
 			Action:  "output",
 			Package: "github.com/test/pkg1",
 			Test:    "TestFoo",
 			Output:  "    foo_test.go:10: Test output\n",
 		},
 		{
+			Time:    now.Add(40 * time.Millisecond),
 			Action:  "output",
 			Package: "github.com/test/pkg1",
 			Test:    "TestFoo",
 			Output:  "--- PASS: TestFoo (0.05s)\n",
 		},
 		{
+			Time:    now.Add(50 * time.Millisecond),
 			Action:  "pass",
 			Package: "github.com/test/pkg1",
 			Test:    "TestFoo",
 			Elapsed: 0.05,
 		},
 		{
+			Time:    now.Add(60 * time.Millisecond),
 			Action:  "output",
 			Package: "github.com/test/pkg1",
 			Output:  "ok\tgithub.com/test/pkg1\t0.10s\n",
 		},
 		{
+			Time:    now.Add(70 * time.Millisecond),
 			Action:  "pass",
 			Package: "github.com/test/pkg1",
 			Elapsed: 0.10,
@@ -144,8 +167,12 @@ func TestHierarchicalRendering(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		_, _ = m.Update(evt)
+		engineEvents <- engine.Event{Type: engine.EventTest, TestEvent: evt}
 	}
+	close(engineEvents)
+
+	// Wait a bit for processing
+	time.Sleep(50 * time.Millisecond)
 
 	// Mark as finished to get final summary instead of running status
 	m.Finished = true
@@ -184,28 +211,45 @@ func TestHierarchicalRendering(t *testing.T) {
 
 // TestRunningPackagesShowTests verifies that running packages display their individual tests
 func TestRunningPackagesShowTests(t *testing.T) {
-	collector := NewSummaryCollector()
+	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
 
+	// Setup event processing
+	engineEvents := make(chan engine.Event, 20)
+	go collector.ProcessEvents(engineEvents)
+	resultsEvents := collector.Subscribe()
+
+	// Feed events in background
+	go func() {
+		for evt := range resultsEvents {
+			m.Update(ResultsEventMsg(evt))
+		}
+	}()
+
 	// Simulate a running test (not yet completed)
+	now := time.Now()
 	events := []parser.TestEvent{
 		{
+			Time:    now,
 			Action:  "start",
 			Package: "github.com/test/pkg1",
 		},
 		{
+			Time:    now.Add(10 * time.Millisecond),
 			Action:  "run",
 			Package: "github.com/test/pkg1",
 			Test:    "TestBar",
 		},
 		{
+			Time:    now.Add(20 * time.Millisecond),
 			Action:  "output",
 			Package: "github.com/test/pkg1",
 			Test:    "TestBar",
 			Output:  "=== RUN   TestBar\n",
 		},
 		{
+			Time:    now.Add(30 * time.Millisecond),
 			Action:  "output",
 			Package: "github.com/test/pkg1",
 			Test:    "TestBar",
@@ -215,8 +259,12 @@ func TestRunningPackagesShowTests(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		_, _ = m.Update(evt)
+		engineEvents <- engine.Event{Type: engine.EventTest, TestEvent: evt}
 	}
+	close(engineEvents)
+
+	// Wait for processing
+	time.Sleep(50 * time.Millisecond)
 
 	output := m.String()
 
@@ -295,7 +343,7 @@ func TestRunScripts(t *testing.T) {
 func TestRunScript1WithTeatest(t *testing.T) {
 	t.Skip("not working: the output from the tea program seems to have wierd whitespace issues.")
 	// Create a new model
-	collector := NewSummaryCollector()
+	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
 
 	// Create a teatest model that wraps our model
@@ -371,7 +419,7 @@ func TestRunScriptsWithTeatest(t *testing.T) {
 				t.Fatalf("Failed to parse script file: %v", err)
 			}
 
-			collector := NewSummaryCollector()
+			collector := results.NewCollector()
 			m := NewModel(false, 1.0, collector)
 			// Create a teatest model that wraps our model
 			tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(80, 24))

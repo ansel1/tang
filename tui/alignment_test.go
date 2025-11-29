@@ -3,41 +3,62 @@ package tui
 import (
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
+	"github.com/ansel1/tang/results"
 	"github.com/charmbracelet/lipgloss"
 )
 
-func TestPackageSummaryAlignmentWithTabs(t *testing.T) {
-	collector := NewSummaryCollector()
+func TestAlignment(t *testing.T) {
+	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
+
+	// Setup event processing
+	engineEvents := make(chan engine.Event, 20)
+	go collector.ProcessEvents(engineEvents)
+	resultsEvents := collector.Subscribe()
+
+	// Feed events in background
+	go func() {
+		for evt := range resultsEvents {
+			m.Update(ResultsEventMsg(evt))
+		}
+	}()
 
 	// Create a package event with tabs in the output
 	// "ok\tgithub.com/test/pkg1\t0.10s"
 	// The tabs will expand, making the line longer than lipgloss.Width() thinks if not expanded.
+	now := time.Now()
 	events := []parser.TestEvent{
 		{
+			Time:    now,
 			Action:  "start",
 			Package: "github.com/test/pkg1",
 		},
 		{
+			Time:    now.Add(10 * time.Millisecond),
 			Action:  "run",
 			Package: "github.com/test/pkg1",
 			Test:    "TestExample",
 		},
 		{
+			Time:    now.Add(20 * time.Millisecond),
 			Action:  "pass",
 			Package: "github.com/test/pkg1",
 			Test:    "TestExample",
 			Elapsed: 0.05,
 		},
 		{
+			Time:    now.Add(30 * time.Millisecond),
 			Action:  "output",
 			Package: "github.com/test/pkg1",
 			Output:  "ok\tgithub.com/test/pkg1\t0.10s\n",
 		},
 		{
+			Time:    now.Add(40 * time.Millisecond),
 			Action:  "pass",
 			Package: "github.com/test/pkg1",
 			Elapsed: 0.10,
@@ -45,8 +66,12 @@ func TestPackageSummaryAlignmentWithTabs(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		_, _ = m.Update(evt)
+		engineEvents <- engine.Event{Type: engine.EventTest, TestEvent: evt}
 	}
+	close(engineEvents)
+
+	// Wait for processing
+	time.Sleep(50 * time.Millisecond)
 
 	output := m.String()
 	lines := strings.Split(output, "\n")

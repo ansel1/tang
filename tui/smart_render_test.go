@@ -4,10 +4,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ansel1/tang/results"
 )
 
 func TestSmartRendering(t *testing.T) {
-	collector := NewSummaryCollector()
+	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
 	m.TerminalHeight = 20 // Small height to force elision

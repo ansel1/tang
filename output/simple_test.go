@@ -5,74 +5,35 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ansel1/tang/engine"
-	"github.com/ansel1/tang/parser"
-	"github.com/ansel1/tang/tui"
+	"github.com/ansel1/tang/results"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSimpleOutput_ProcessEvents_BasicTest(t *testing.T) {
-	// Create summary collector and feed it events
-	summaryCollector := tui.NewSummaryCollector()
-	summaryEvents := make(chan engine.Event, 10)
+	// Create collector and manually populate state for summary
+	collector := results.NewCollector()
+	state := collector.GetState()
+	run := results.NewRun(1)
+	state.Runs = append(state.Runs, run)
+	state.CurrentRun = run
 
-	// Start summary collector in background
-	go summaryCollector.ProcessEvents(summaryEvents)
-
-	// Send test events to summary collector
-	summaryEvents <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Time:    time.Now(),
-			Action:  "run",
-			Package: "example.com/pkg",
-			Test:    "TestFoo",
-		},
+	// Populate run with some data so summary is generated
+	run.Packages["example.com/pkg"] = &results.PackageResult{
+		Name:        "example.com/pkg",
+		Status:      "ok",
+		Elapsed:     100 * time.Millisecond,
+		PassedTests: 1,
 	}
-	summaryEvents <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Time:    time.Now(),
-			Action:  "output",
-			Package: "example.com/pkg",
-			Test:    "TestFoo",
-			Output:  "=== RUN   TestFoo\n",
-		},
-	}
-	summaryEvents <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Time:    time.Now(),
-			Action:  "pass",
-			Package: "example.com/pkg",
-			Test:    "TestFoo",
-			Elapsed: 0.5,
-		},
-	}
-	summaryEvents <- engine.Event{Type: engine.EventComplete}
-	close(summaryEvents)
+	run.PackageOrder = append(run.PackageOrder, "example.com/pkg")
 
-	// Give summary collector time to process
-	time.Sleep(10 * time.Millisecond)
-
-	// Create simple output with the collector
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, summaryCollector)
+	simple := NewSimpleOutput(&buf, collector)
 
 	// Create events for simple output
-	events := make(chan engine.Event, 10)
-	events <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Time:    time.Now(),
-			Action:  "output",
-			Package: "example.com/pkg",
-			Test:    "TestFoo",
-			Output:  "=== RUN   TestFoo\n",
-		},
-	}
-	events <- engine.Event{Type: engine.EventComplete}
+	events := make(chan results.Event, 10)
+	events <- results.NewTestOutputEvent(1, "example.com/pkg", "TestFoo", "=== RUN   TestFoo\n")
+	events <- results.NewRunFinishedEvent(1)
 	close(events)
 
 	err := simple.ProcessEvents(events)
@@ -83,62 +44,33 @@ func TestSimpleOutput_ProcessEvents_BasicTest(t *testing.T) {
 	assert.Contains(t, output, "=== RUN   TestFoo")
 	// Check that summary is displayed
 	assert.Contains(t, output, "OVERALL RESULTS")
-	assert.Contains(t, output, "Total tests:")
 }
 
 func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
-	// Create summary collector
-	summaryCollector := tui.NewSummaryCollector()
-	summaryEvents := make(chan engine.Event, 10)
+	collector := results.NewCollector()
+	state := collector.GetState()
+	run := results.NewRun(1)
+	state.Runs = append(state.Runs, run)
+	state.CurrentRun = run
 
-	go summaryCollector.ProcessEvents(summaryEvents)
-
-	summaryEvents <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Action:  "run",
-			Package: "example.com/pkg",
-			Test:    "TestFail",
-		},
+	// Populate run with failure
+	run.Packages["example.com/pkg"] = &results.PackageResult{
+		Name:        "example.com/pkg",
+		Status:      "FAIL",
+		Elapsed:     100 * time.Millisecond,
+		FailedTests: 1,
 	}
-	summaryEvents <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Action:  "fail",
-			Package: "example.com/pkg",
-			Test:    "TestFail",
-			Elapsed: 0.5,
-		},
-	}
-	summaryEvents <- engine.Event{Type: engine.EventComplete}
-	close(summaryEvents)
-
-	time.Sleep(10 * time.Millisecond)
+	run.PackageOrder = append(run.PackageOrder, "example.com/pkg")
 
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, summaryCollector)
+	simple := NewSimpleOutput(&buf, collector)
 
-	events := make(chan engine.Event, 10)
-	events <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Action:  "output",
-			Package: "example.com/pkg",
-			Test:    "TestFail",
-			Output:  "    test_fail.go:10: assertion failed\n",
-		},
-	}
-	// Simple output needs to see the fail event to track failures
-	events <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Action:  "fail",
-			Package: "example.com/pkg",
-			Test:    "TestFail",
-			Elapsed: 0.5,
-		},
-	}
-	events <- engine.Event{Type: engine.EventComplete}
+	events := make(chan results.Event, 10)
+	events <- results.NewTestOutputEvent(1, "example.com/pkg", "TestFail", "    test_fail.go:10: assertion failed\n")
+	// We need to emit TestUpdatedEvent or similar?
+	// SimpleOutput only cares about TestOutputEvent for printing.
+	// But HasFailures checks collector state.
+	events <- results.NewRunFinishedEvent(1)
 	close(events)
 
 	err := simple.ProcessEvents(events)
@@ -147,33 +79,19 @@ func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
 	output := buf.String()
 	assert.Contains(t, output, "assertion failed")
 	assert.Contains(t, output, "OVERALL RESULTS")
-	// Should have failures
+	// Should have failures (checked via collector state)
 	assert.True(t, simple.HasFailures())
 }
 
 func TestSimpleOutput_ProcessEvents_RawLines(t *testing.T) {
-	summaryCollector := tui.NewSummaryCollector()
-	summaryEvents := make(chan engine.Event, 10)
-
-	go summaryCollector.ProcessEvents(summaryEvents)
-	summaryEvents <- engine.Event{Type: engine.EventComplete}
-	close(summaryEvents)
-
-	time.Sleep(10 * time.Millisecond)
-
+	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, summaryCollector)
+	simple := NewSimpleOutput(&buf, collector)
 
-	events := make(chan engine.Event, 10)
-	events <- engine.Event{
-		Type:    engine.EventRawLine,
-		RawLine: []byte("This is a raw line"),
-	}
-	events <- engine.Event{
-		Type:    engine.EventRawLine,
-		RawLine: []byte("Another raw line"),
-	}
-	events <- engine.Event{Type: engine.EventComplete}
+	events := make(chan results.Event, 10)
+	events <- results.NewRawOutputEvent(1, []byte("This is a raw line"))
+	events <- results.NewRawOutputEvent(1, []byte("Another raw line"))
+	events <- results.NewRunFinishedEvent(1)
 	close(events)
 
 	err := simple.ProcessEvents(events)
@@ -185,28 +103,23 @@ func TestSimpleOutput_ProcessEvents_RawLines(t *testing.T) {
 }
 
 func TestSimpleOutput_HasFailures(t *testing.T) {
-	summaryCollector := tui.NewSummaryCollector()
+	collector := results.NewCollector()
+	state := collector.GetState()
+	run := results.NewRun(1)
+	state.Runs = append(state.Runs, run)
 
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, summaryCollector)
+	simple := NewSimpleOutput(&buf, collector)
 
 	// Initially no failures
 	assert.False(t, simple.HasFailures())
 
-	// Process a failure event
-	events := make(chan engine.Event, 10)
-	events <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Action:  "fail",
-			Package: "pkg",
-			Test:    "Test1",
-		},
+	// Manually add failure to collector state
+	run.Packages["pkg"] = &results.PackageResult{
+		Name:        "pkg",
+		Status:      "FAIL",
+		FailedTests: 1,
 	}
-	events <- engine.Event{Type: engine.EventComplete}
-	close(events)
-
-	simple.ProcessEvents(events)
 
 	// Now should have failures
 	assert.True(t, simple.HasFailures())

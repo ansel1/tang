@@ -5,15 +5,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ansel1/tang/engine"
+	"github.com/ansel1/tang/output/format"
 	"github.com/ansel1/tang/parser"
+	"github.com/ansel1/tang/results"
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// EngineEventMsg wraps engine events for bubbletea
-type EngineEventMsg engine.Event
+// ResultsEventMsg wraps results events for bubbletea
+type ResultsEventMsg results.Event
 
 // EOFMsg signals that stdin has been closed (kept for backward compatibility)
 type EOFMsg struct{}
@@ -126,37 +127,18 @@ func (ps *PackageState) GetElapsedTime() float64 {
 
 // Model represents the TUI state for the enhanced hierarchical test output display.
 //
-// The Model implements the Bubbletea Model interface and manages the full state
-// of a test run, including package states, test states, and timing information.
-// It renders output in a hierarchical format grouped by package and test, with
-// up to 6 output lines displayed per test.
+// The Model implements the Bubbletea Model interface. It consumes results.Event
+// from the results.Collector and reads state from the collector for rendering.
 //
 // Architecture:
-// - Packages contains all package states indexed by package name
-// - PackageOrder maintains chronological order of package starts for consistent display
-// - NonTestOutput stores build errors and compilation output to display at the top
-// - Summary counters track overall test results (lightweight for realtime display)
-// - SummaryCollector maintains detailed state for final summary display
-// - TerminalWidth is used for line truncation and separator rendering
-// - Timer ticks update elapsed times for running tests every second
-//
-// Rendering:
-// The View() method delegates to renderHierarchical() which:
-// 1. Renders non-test output (build errors) at the top
-// 2. Groups tests by package with package headers
-// 3. Indents tests under packages (2 spaces)
-// 4. Shows up to 6 output lines per test (4 spaces indent)
-// 5. Adds a separator line between content and summary
-// 6. Shows overall summary with pass/fail counts
-//
-// Display features:
-// - Elapsed times update every second for running tests
-// - Package and test names truncated if they exceed terminal width
-// - Right-aligned elapsed times and counts
-// - Hierarchical indentation shows test organization
-// - Summary shows total test counts with PASSED/FAILED prefix
+// - Collector reference provides access to test run state
+// - consumes results.Event to know when to re-render
+// - View() reads from collector.GetState() for current data
 type Model struct {
-	// Package state
+	// Collector reference (read-only from TUI perspective)
+	collector *results.Collector
+
+	// Package state (View Model)
 	Packages     map[string]*PackageState // Package name -> PackageState
 	PackageOrder []string                 // Chronological order of package starts
 
@@ -168,9 +150,6 @@ type Model struct {
 	Failed  int
 	Skipped int
 	Running int
-
-	// Summary collector (detailed state for final summary)
-	summaryCollector *SummaryCollector
 
 	// Terminal state
 	TerminalWidth  int
@@ -194,32 +173,31 @@ type Model struct {
 	StartTime        time.Time     // When the TUI started
 	TotalElapsedTime float64       // Final elapsed time (set when finished)
 	spinner          spinner.Model // Bubbles spinner component
+	currentRunID     int           // Which run we're currently displaying
 }
 
 // NewModel creates a new TUI model
-func NewModel(replayMode bool, replayRate float64, summaryCollector *SummaryCollector) *Model {
+func NewModel(replayMode bool, replayRate float64, collector *results.Collector) *Model {
 	s := spinner.New()
 	s.Spinner = spinner.Jump
 
-	s.Spinner = spinner.Jump
-	// s.Style is left empty so we can apply styles dynamically
-
 	return &Model{
-		Packages:         make(map[string]*PackageState),
-		PackageOrder:     make([]string, 0),
-		NonTestOutput:    make([]string, 0),
-		summaryCollector: summaryCollector,
-		TerminalWidth:    80,                                                  // Default width, will be updated by Bubbletea
-		TerminalHeight:   24,                                                  // Default height, will be updated by Bubbletea
-		passStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color("2")), // green
-		failStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
-		skipStyle:        lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
-		neutralStyle:     lipgloss.NewStyle(),
-		events:           make([]parser.TestEvent, 0),
-		spinner:          s,
-		ReplayMode:       replayMode,
-		ReplayRate:       replayRate,
-		StartTime:        time.Now(),
+		collector:      collector,
+		Packages:       make(map[string]*PackageState),
+		PackageOrder:   make([]string, 0),
+		NonTestOutput:  make([]string, 0),
+		TerminalWidth:  80,                                                  // Default width, will be updated by Bubbletea
+		TerminalHeight: 24,                                                  // Default height, will be updated by Bubbletea
+		passStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("2")), // green
+		failStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
+		skipStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
+		neutralStyle:   lipgloss.NewStyle(),
+		events:         make([]parser.TestEvent, 0),
+		spinner:        s,
+		ReplayMode:     replayMode,
+		ReplayRate:     replayRate,
+		StartTime:      time.Now(),
+		currentRunID:   1, // Start with run 1
 	}
 }
 
@@ -233,44 +211,24 @@ func (m *Model) Init() tea.Cmd {
 // Update handles messages
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case EngineEventMsg:
-		// Handle engine events
-		// Note: EventRawLine is handled in main.go using p.Println()
-		evt := engine.Event(msg)
-		switch evt.Type {
-		case engine.EventTest:
-			// Process test event
-			m.handleTestEvent(evt.TestEvent)
-
-		case engine.EventComplete:
-			// Stream finished
-			m.Finished = true
-			m.TotalElapsedTime = time.Since(m.StartTime).Seconds()
-			// Don't display summary here - it will be displayed after TUI exits
-			return m, tea.Quit
-
-		case engine.EventError:
-			// Error events are logged in main.go
-			_ = evt.Error
-		}
-
-	case parser.TestEvent:
-		// Keep backward compatibility for direct TestEvent messages
-		m.handleTestEvent(msg)
+	case ResultsEventMsg:
+		m.handleResultsEvent(results.Event(msg))
 
 	case tea.WindowSizeMsg:
-		// Update terminal width
 		// Update terminal width and height
 		m.TerminalWidth = msg.Width
 		m.TerminalHeight = msg.Height
 
 	case EOFMsg:
+		m.Finished = true
+		m.TotalElapsedTime = time.Since(m.StartTime).Seconds()
 		return m, tea.Quit
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
-			// Don't display summary here - it will be displayed after TUI exits
+			m.Finished = true
+			m.TotalElapsedTime = time.Since(m.StartTime).Seconds()
 			return m, tea.Quit
 		}
 
@@ -283,128 +241,132 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleTestEvent processes a test event and updates the model state.
-//
-// This function is called for each event from the test stream and updates
-// the model's Package and Test states accordingly. It handles three types of events:
-//
-// 1. Build-level events (empty Package field): Non-test output like build errors
-// 2. Package-level events (empty Test field): Package start/pass/fail/skip
-// 3. Test-level events: Individual test runs with output
-//
-// For test-level events, it extracts summary lines (starting with "===" or "---")
-// separately from output lines, storing output in a circular buffer (max 6 lines).
-//
-// Event handling:
-// - "run": Creates new test/package state if needed, increments running counters
-// - "output": Stores as summary line if it's a "===" or "---" line, otherwise in output buffer
-// - "pass"/"fail"/"skip": Updates status, elapsed time, and test/package counters
-// - "build-output", "build-fail", "build-pass": Stored as non-test output
-func (m *Model) handleTestEvent(event parser.TestEvent) {
-	m.events = append(m.events, event)
+// handleResultsEvent processes a results event and updates the model state.
+func (m *Model) handleResultsEvent(evt results.Event) {
+	switch evt.Type {
+	case results.EventNonTestOutput:
+		m.NonTestOutput = append(m.NonTestOutput, evt.Output)
 
-	// Handle build-output and other non-package events (events with empty Package field)
-	if event.Package == "" {
-		switch event.Action {
-		case "build-output", "build-fail", "build-pass":
-			// These are non-test output lines (build errors, etc.)
-			if event.Output != "" {
-				m.NonTestOutput = append(m.NonTestOutput, strings.TrimRight(event.Output, "\n"))
-			}
-		}
-		return
-	}
+	case results.EventRunStarted:
+		m.currentRunID = evt.RunID
 
-	// Get or create package state
-	pkgState, exists := m.Packages[event.Package]
-	if !exists {
-		pkgState = NewPackageState(event.Package)
-		m.Packages[event.Package] = pkgState
-		m.PackageOrder = append(m.PackageOrder, event.Package)
-	}
+	case results.EventRunFinished:
+		// Could handle run completion here if needed
 
-	// Handle package-level events (no Test field)
-	if event.Test == "" {
-		switch event.Action {
-		case "output":
-			// Store last output line for package
-			if event.Output != "" {
-				pkgState.LastOutputLine = strings.TrimRight(event.Output, "\n")
+	case results.EventPackageUpdated:
+		m.collector.WithRun(evt.RunID, func(run *results.Run) {
+			pkgResult, exists := run.Packages[evt.PackageName]
+			if !exists {
+				return
 			}
 
-		case "pass":
-			pkgState.Status = "passed"
-			pkgState.ElapsedTime = event.Elapsed
+			// Update or create local PackageState
+			pkgState, exists := m.Packages[evt.PackageName]
+			if !exists {
+				pkgState = NewPackageState(evt.PackageName)
+				m.Packages[evt.PackageName] = pkgState
+				m.PackageOrder = append(m.PackageOrder, evt.PackageName)
+			}
 
-		case "fail":
-			pkgState.Status = "failed"
-			pkgState.ElapsedTime = event.Elapsed
+			// Sync state
+			pkgState.Status = mapPackageStatus(pkgResult.Status)
+			pkgState.ElapsedTime = pkgResult.Elapsed.Seconds()
+			pkgState.LastOutputLine = pkgResult.Output
+			pkgState.Passed = pkgResult.PassedTests
+			pkgState.Failed = pkgResult.FailedTests
+			pkgState.Skipped = pkgResult.SkippedTests
 
-		case "skip":
-			pkgState.Status = "skipped"
-			pkgState.ElapsedTime = event.Elapsed
-		}
-		return
-	}
+			// Recalculate running count for package
+			running := 0
+			for _, t := range pkgState.Tests {
+				if t.Status == "running" {
+					running++
+				}
+			}
+			pkgState.Running = running
+		})
 
-	// Handle test-level events
-	testState, testExists := pkgState.Tests[event.Test]
-	if !testExists {
-		testState = NewTestState(event.Test, event.Package)
-		pkgState.Tests[event.Test] = testState
-		pkgState.TestOrder = append(pkgState.TestOrder, event.Test)
-		pkgState.Running++
-		m.Running++
-	}
+	case results.EventTestUpdated:
+		m.collector.WithRun(evt.RunID, func(run *results.Run) {
+			// Construct test key as used in results package
+			testKey := evt.PackageName + "/" + evt.TestName
+			testResult, exists := run.TestResults[testKey]
+			if !exists {
+				return
+			}
 
-	switch event.Action {
-	case "run":
-		// Test started (already handled above)
-		testState.Status = "running"
+			// Ensure package state exists
+			pkgState, exists := m.Packages[evt.PackageName]
+			if !exists {
+				pkgState = NewPackageState(evt.PackageName)
+				m.Packages[evt.PackageName] = pkgState
+				m.PackageOrder = append(m.PackageOrder, evt.PackageName)
+			}
 
-	case "pause":
-		testState.Status = "paused"
+			// Update or create local TestState
+			testState, exists := pkgState.Tests[evt.TestName]
+			if !exists {
+				testState = NewTestState(evt.TestName, evt.PackageName)
+				pkgState.Tests[evt.TestName] = testState
+				pkgState.TestOrder = append(pkgState.TestOrder, evt.TestName)
+				m.Running++ // New test starts as running
+			}
 
-	case "resume":
-		testState.Status = "running"
+			oldStatus := testState.Status
+			newStatus := mapTestStatus(testResult.Status)
+			testState.Status = newStatus
+			testState.ElapsedTime = testResult.Elapsed.Seconds()
+			testState.SummaryLine = testResult.SummaryLine
 
-	case "output":
-		if event.Output != "" {
-			output := strings.TrimRight(event.Output, "\n")
-
-			// Extract summary line (lines starting with "===" or "---")
-			if strings.HasPrefix(output, "===") || strings.HasPrefix(output, "---") {
-				testState.SummaryLine = output
+			// Update output lines (take last N lines)
+			n := len(testResult.Output)
+			if n > testState.MaxOutputLines {
+				testState.OutputLines = testResult.Output[n-testState.MaxOutputLines:]
 			} else {
-				// Regular output line
-				testState.AddOutputLine(output)
+				testState.OutputLines = testResult.Output
 			}
-		}
 
+			// Update global counters if status changed
+			if oldStatus == "running" && newStatus != "running" {
+				m.Running--
+				switch newStatus {
+				case "passed":
+					m.Passed++
+				case "failed":
+					m.Failed++
+				case "skipped":
+					m.Skipped++
+				}
+			}
+		})
+	}
+}
+
+func mapPackageStatus(status string) string {
+	switch status {
+	case "ok":
+		return "passed"
+	case "FAIL":
+		return "failed"
+	case "?":
+		return "skipped"
+	default:
+		return "running"
+	}
+}
+
+func mapTestStatus(status string) string {
+	switch status {
 	case "pass":
-		testState.Status = "passed"
-		testState.ElapsedTime = event.Elapsed
-		pkgState.Running--
-		pkgState.Passed++
-		m.Running--
-		m.Passed++
-
+		return "passed"
 	case "fail":
-		testState.Status = "failed"
-		testState.ElapsedTime = event.Elapsed
-		pkgState.Running--
-		pkgState.Failed++
-		m.Running--
-		m.Failed++
-		// m.spinner.Style = m.failStyle // Don't mutate global style
-
+		return "failed"
 	case "skip":
-		testState.Status = "skipped"
-		testState.ElapsedTime = event.Elapsed
-		pkgState.Running--
-		pkgState.Skipped++
-		m.Running--
-		m.Skipped++
+		return "skipped"
+	case "running":
+		return "running"
+	default:
+		return "running"
 	}
 }
 
@@ -884,16 +846,34 @@ func (m *Model) renderSummaryLine(b *strings.Builder, wElapsed int) {
 //
 // Requirements: 7.1, 7.2, 7.3, 7.4
 func (m *Model) DisplaySummary() {
-	if m.summaryCollector == nil {
+	if m.collector == nil {
 		return
 	}
 
-	// Compute summary with 10 second slow test threshold
-	// Pass replay mode and rate for interrupted package elapsed time adjustment
-	summary := ComputeSummaryWithReplay(m.summaryCollector, 10*time.Second, m.ReplayMode, m.ReplayRate)
+	// Compute summary within a callback to ensure thread-safe access
+	var summary *format.Summary
+
+	// Try to get the current run first
+	m.collector.WithRun(m.currentRunID, func(run *results.Run) {
+		summary = format.ComputeSummary(run, 10*time.Second)
+	})
+
+	// If no summary (run doesn't exist), try the last run
+	if summary == nil {
+		m.collector.WithState(func(state *results.State) {
+			if len(state.Runs) > 0 {
+				summary = format.ComputeSummary(state.Runs[len(state.Runs)-1], 10*time.Second)
+			}
+		})
+	}
+
+	// If still no summary, nothing to display
+	if summary == nil {
+		return
+	}
 
 	// Format summary using terminal width
-	formatter := NewSummaryFormatter(m.TerminalWidth)
+	formatter := format.NewSummaryFormatter(m.TerminalWidth)
 	summaryText := formatter.Format(summary)
 
 	// Print summary to stdout

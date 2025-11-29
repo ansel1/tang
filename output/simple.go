@@ -6,66 +6,68 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ansel1/tang/engine"
-	"github.com/ansel1/tang/parser"
-	"github.com/ansel1/tang/tui"
+	"github.com/ansel1/tang/output/format"
+	"github.com/ansel1/tang/results"
 )
 
 // SimpleOutput writes simple text output for -notty mode
-// It accumulates output and displays summary at completion using shared summary collector
+// It accumulates output and displays summary at completion using shared collector
 type SimpleOutput struct {
-	writer           io.Writer
-	output           []string
-	summaryCollector *tui.SummaryCollector
+	writer    io.Writer
+	output    []string
+	collector *results.Collector
 
 	// Lightweight counters for exit code determination
 	failed int
 }
 
 // NewSimpleOutput creates a simple output writer
-func NewSimpleOutput(w io.Writer, summaryCollector *tui.SummaryCollector) *SimpleOutput {
+func NewSimpleOutput(w io.Writer, collector *results.Collector) *SimpleOutput {
 	return &SimpleOutput{
-		writer:           w,
-		output:           make([]string, 0),
-		summaryCollector: summaryCollector,
+		writer:    w,
+		output:    make([]string, 0),
+		collector: collector,
 	}
 }
 
 // ProcessEvents consumes events from channel and writes to output
-func (s *SimpleOutput) ProcessEvents(events <-chan engine.Event) error {
+func (s *SimpleOutput) ProcessEvents(events <-chan results.Event) error {
 	for evt := range events {
 		switch evt.Type {
-		case engine.EventRawLine:
+		case results.EventRawOutput:
 			// Accumulate raw (non-JSON) lines for output
 			s.output = append(s.output, string(evt.RawLine))
 
-		case engine.EventTest:
+		case results.EventTestOutput:
+			// Accumulate test output
+			s.output = append(s.output, strings.TrimRight(evt.Output, "\n"))
+
+		case results.EventNonTestOutput:
+			// Accumulate non-test output
+			s.output = append(s.output, strings.TrimRight(evt.Output, "\n"))
+
+		case results.EventTestUpdated:
 			// Track failures for exit code
-			s.handleTestEvent(evt.TestEvent)
+			// We need to check status from the event or collector?
+			// The event doesn't carry status.
+			// But we can check collector.
+			// Or we can just rely on collector state at the end?
+			// `HasFailures` is called at the end.
+			// So we don't strictly need to track `failed` count here if we can query collector later.
+			// But `HasFailures` is a method on `SimpleOutput`.
+			// If we use collector, we can implement `HasFailures` by querying collector.
+			// So we can remove `failed` field.
 
-		case engine.EventComplete:
-			// Write all accumulated output and summary
-			return s.writeOutput()
-
-		case engine.EventError:
-			// Write error to stderr would be better, but we'll add to output
-			s.output = append(s.output, fmt.Sprintf("Error: %v", evt.Error))
+		case results.EventRunFinished:
+			// We could write output here if we wanted to stream per run?
+			// But requirement is to write at the end.
+			// Wait, `ProcessEvents` returns when channel closes.
+			// So we write at the end of function.
 		}
 	}
-	return nil
-}
 
-// handleTestEvent processes a test event and updates state
-func (s *SimpleOutput) handleTestEvent(evt parser.TestEvent) {
-	// Track failures for exit code determination
-	if evt.Action == "fail" && evt.Test != "" {
-		s.failed++
-	}
-
-	// Accumulate output lines
-	if evt.Output != "" {
-		s.output = append(s.output, strings.TrimRight(evt.Output, "\n"))
-	}
+	// Write all accumulated output and summary
+	return s.writeOutput()
 }
 
 // writeOutput writes all accumulated output and summary
@@ -77,18 +79,28 @@ func (s *SimpleOutput) writeOutput() error {
 		}
 	}
 
-	// Display summary using shared summary collector and formatter
-	if s.summaryCollector != nil {
-		// Compute summary with 10 second slow test threshold
-		summary := tui.ComputeSummary(s.summaryCollector, 10*time.Second)
+	// Display summary using shared collector and formatter
+	if s.collector != nil {
+		var summary *format.Summary
+		s.collector.WithState(func(state *results.State) {
+			if len(state.Runs) == 0 {
+				return
+			}
+			run := state.Runs[len(state.Runs)-1]
 
-		// Format summary using default terminal width (80 columns)
-		formatter := tui.NewSummaryFormatter(80)
-		summaryText := formatter.Format(summary)
+			// Compute summary with 10 second slow test threshold
+			summary = format.ComputeSummary(run, 10*time.Second)
+		})
 
-		// Print summary
-		fmt.Fprintln(s.writer)
-		fmt.Fprintln(s.writer, summaryText)
+		if summary != nil {
+			// Format summary using default terminal width (80 columns)
+			formatter := format.NewSummaryFormatter(80)
+			summaryText := formatter.Format(summary)
+
+			// Print summary
+			fmt.Fprintln(s.writer)
+			fmt.Fprintln(s.writer, summaryText)
+		}
 	}
 
 	return nil
@@ -96,5 +108,19 @@ func (s *SimpleOutput) writeOutput() error {
 
 // HasFailures returns true if any tests failed
 func (s *SimpleOutput) HasFailures() bool {
-	return s.failed > 0
+	if s.collector == nil {
+		return false
+	}
+	hasFailures := false
+	s.collector.WithState(func(state *results.State) {
+		for _, run := range state.Runs {
+			for _, pkg := range run.Packages {
+				if pkg.FailedTests > 0 || pkg.Status == "FAIL" {
+					hasFailures = true
+					return
+				}
+			}
+		}
+	})
+	return hasFailures
 }
