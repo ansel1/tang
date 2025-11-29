@@ -1097,7 +1097,7 @@ func (sf *SummaryFormatter) formatSlowTests(slowTests []*TestResult) string {
 //   - String of dashes for section separation
 func (sf *SummaryFormatter) horizontalLine() string {
 	line := ""
-	for i := 0; i < sf.width && i < 80; i++ {
+	for i := 0; i < sf.width; i++ {
 		line += "-"
 	}
 	return line
