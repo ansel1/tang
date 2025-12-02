@@ -87,6 +87,9 @@ func main() {
 
 	// Create results collector
 	collector := results.NewCollector()
+	if *replay {
+		collector.SetReplay(true, *rate)
+	}
 
 	// Start collector processing
 	go collector.ProcessEvents(engineEvents)
@@ -144,6 +147,8 @@ func main() {
 
 		// Display summary after TUI exits
 		if model, ok := finalModel.(*tui.Model); ok {
+			// Ensure run is finished (e.g. if interrupted)
+			collector.Finish()
 			model.DisplaySummary()
 
 			// Set exit code based on test failures

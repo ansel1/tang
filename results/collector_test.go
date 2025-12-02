@@ -216,3 +216,150 @@ func TestCollectorMultipleInterruptedPackages(t *testing.T) {
 		t.Errorf("Expected pkg3 status to be incomplete, got '%s'", pkg3.Status)
 	}
 }
+
+// TestCollectorFinishInterruptedRun tests that finishCurrentRun properly marks
+// interrupted packages and computes their elapsed time
+func TestCollectorFinishInterruptedRun(t *testing.T) {
+	collector := NewCollector()
+
+	startTime := time.Now().Add(-2 * time.Second) // 2 seconds ago
+	events := []parser.TestEvent{
+		// Package 1: Completes normally
+		{
+			Time:    startTime,
+			Action:  "run",
+			Package: "github.com/test/pkg1",
+			Test:    "TestA",
+		},
+		{
+			Time:    startTime.Add(100 * time.Millisecond),
+			Action:  "pass",
+			Package: "github.com/test/pkg1",
+			Test:    "TestA",
+			Elapsed: 0.1,
+		},
+		// Start pkg2 BEFORE pkg1 finishes to keep run alive
+		{
+			Time:    startTime.Add(150 * time.Millisecond),
+			Action:  "run",
+			Package: "github.com/test/pkg2",
+			Test:    "TestB",
+		},
+		{
+			Time:    startTime.Add(200 * time.Millisecond),
+			Action:  "pass",
+			Package: "github.com/test/pkg1",
+			Elapsed: 0.2,
+		},
+		// Package 2: Never completes
+		{
+			Time:    startTime.Add(400 * time.Millisecond),
+			Action:  "output",
+			Package: "github.com/test/pkg2",
+			Test:    "TestB",
+			Output:  "some test output\n",
+		},
+		// Package 3: Never completes and has an output line
+		{
+			Time:    startTime.Add(500 * time.Millisecond),
+			Action:  "run",
+			Package: "github.com/test/pkg3",
+			Test:    "TestC",
+		},
+		{
+			Time:    startTime.Add(600 * time.Millisecond),
+			Action:  "output",
+			Package: "github.com/test/pkg3",
+			Output:  "ERR | Some error message\n",
+		},
+	}
+
+	for _, evt := range events {
+		eventsToEmit := collector.handleTestEvent(evt)
+		for _, e := range eventsToEmit {
+			_ = e // Consume events
+		}
+	}
+
+	// Verify state before finishCurrentRun
+	collector.WithCurrentRun(func(run *Run) {
+		if run == nil {
+			t.Fatal("Expected a current run before finish")
+		}
+
+		pkg1 := run.Packages["github.com/test/pkg1"]
+		pkg2 := run.Packages["github.com/test/pkg2"]
+		pkg3 := run.Packages["github.com/test/pkg3"]
+
+		if pkg1.Status != "ok" {
+			t.Errorf("Expected pkg1 status 'ok' before finish, got '%s'", pkg1.Status)
+		}
+
+		if pkg2.Status != "" {
+			t.Errorf("Expected pkg2 status '' before finish, got '%s'", pkg2.Status)
+		}
+
+		if pkg3.Status != "" {
+			t.Errorf("Expected pkg3 status '' before finish, got '%s'", pkg3.Status)
+		}
+	})
+
+	// Now finish the run
+	collector.Finish()
+
+	// Verify interrupted packages were handled correctly
+	collector.WithState(func(state *State) {
+		if state.CurrentRun != nil {
+			t.Error("Expected CurrentRun to be nil after finish")
+		}
+
+		if len(state.Runs) != 1 {
+			t.Fatalf("Expected 1 run, got %d", len(state.Runs))
+		}
+
+		run := state.Runs[0]
+
+		// Check EndTime was set
+		if run.EndTime.IsZero() {
+			t.Error("Expected EndTime to be set")
+		}
+
+		pkg1 := run.Packages["github.com/test/pkg1"]
+		pkg2 := run.Packages["github.com/test/pkg2"]
+		pkg3 := run.Packages["github.com/test/pkg3"]
+
+		// pkg1 should remain "ok"
+		if pkg1.Status != "ok" {
+			t.Errorf("Expected pkg1 status 'ok', got '%s'", pkg1.Status)
+		}
+
+		// pkg2 should be marked as "interrupted"
+		if pkg2.Status != "interrupted" {
+			t.Errorf("Expected pkg2 status 'interrupted', got '%s'", pkg2.Status)
+		}
+
+		// pkg3 should be marked as "interrupted"
+		if pkg3.Status != "interrupted" {
+			t.Errorf("Expected pkg3 status 'interrupted', got '%s'", pkg3.Status)
+		}
+
+		// pkg2 and pkg3 should have computed elapsed times
+		if pkg2.Elapsed == 0 {
+			t.Error("Expected pkg2 to have non-zero elapsed time")
+		}
+		if pkg3.Elapsed == 0 {
+			t.Error("Expected pkg3 to have non-zero elapsed time")
+		}
+
+		// Elapsed times should be reasonable (at least the time since their start)
+		expectedMinElapsed := time.Since(startTime.Add(300 * time.Millisecond))
+		if pkg2.Elapsed < expectedMinElapsed-100*time.Millisecond {
+			t.Errorf("pkg2 elapsed time %v seems too small (expected at least %v)", pkg2.Elapsed, expectedMinElapsed)
+		}
+
+		expectedMinElapsed = time.Since(startTime.Add(500 * time.Millisecond))
+		if pkg3.Elapsed < expectedMinElapsed-100*time.Millisecond {
+			t.Errorf("pkg3 elapsed time %v seems too small (expected at least %v)", pkg3.Elapsed, expectedMinElapsed)
+		}
+	})
+}

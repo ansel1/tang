@@ -22,7 +22,8 @@ type Run struct {
 // PackageResult represents the final result of a package's test run.
 type PackageResult struct {
 	Name         string
-	Status       string // "ok", "FAIL", "?" (incomplete)
+	Status       string    // "ok", "FAIL", "?", "interrupted"
+	StartTime    time.Time // When the package testing started
 	Elapsed      time.Duration
 	PassedTests  int
 	FailedTests  int

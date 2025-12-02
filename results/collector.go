@@ -16,10 +16,14 @@ import (
 // - Run starts: Any test event when no current run exists
 // - Run finishes: Running package count drops to 0
 type Collector struct {
-	state       *State
-	mu          sync.RWMutex
-	subscribers []chan Event
-	subMu       sync.Mutex
+	state               *State
+	mu                  sync.RWMutex
+	subscribers         []chan Event
+	subMu               sync.Mutex
+	lastEventTime       time.Time
+	isReplay            bool
+	replayRate          float64
+	currentRunWallStart time.Time
 }
 
 // NewCollector creates a new result collector.
@@ -28,6 +32,14 @@ func NewCollector() *Collector {
 		state:       NewState(),
 		subscribers: make([]chan Event, 0),
 	}
+}
+
+// SetReplay configures whether the collector is running in replay mode and the rate.
+func (c *Collector) SetReplay(replay bool, rate float64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.isReplay = replay
+	c.replayRate = rate
 }
 
 // Subscribe returns a channel that will receive result events.
@@ -85,7 +97,7 @@ func (c *Collector) ProcessEvents(events <-chan engine.Event) {
 
 		case engine.EventComplete:
 			// Finish current run if any
-			c.finishCurrentRun()
+			c.Finish()
 			c.closeSubscribers()
 			return
 
@@ -103,6 +115,9 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) []Event {
 	defer c.mu.Unlock()
 
 	eventsToEmit := make([]Event, 0)
+
+	// Update last event time
+	c.lastEventTime = event.Time
 
 	// Start a new run if needed
 	if c.state.CurrentRun == nil {
@@ -130,6 +145,7 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) []Event {
 	if !exists {
 		pkgResult = &PackageResult{
 			Name:      event.Package,
+			StartTime: event.Time,
 			TestOrder: make([]string, 0),
 		}
 		run.Packages[event.Package] = pkgResult
@@ -270,6 +286,7 @@ func (c *Collector) startNewRun(startTime time.Time) Event {
 	run.StartTime = startTime
 	c.state.Runs = append(c.state.Runs, run)
 	c.state.CurrentRun = run
+	c.currentRunWallStart = time.Now()
 	return NewRunStartedEvent(runID)
 }
 
@@ -286,13 +303,55 @@ func (c *Collector) checkRunFinished(run *Run) *Event {
 	return nil
 }
 
-// finishCurrentRun finishes the current run if any (for EventComplete).
-func (c *Collector) finishCurrentRun() {
+// Finish finishes the current run if any.
+// This should be called when processing is complete or interrupted.
+func (c *Collector) Finish() {
 	c.mu.Lock()
 	var eventToEmit *Event
 	if c.state.CurrentRun != nil {
 		run := c.state.CurrentRun
-		run.EndTime = time.Now()
+
+		// Determine end time: use last event time if available AND in replay mode, otherwise now
+		endTime := time.Now()
+		if c.isReplay && !c.lastEventTime.IsZero() {
+			// Calculate simulated end time based on wall clock duration and replay rate
+			// This ensures that the summary matches the TUI's "perceived" time
+			wallDuration := time.Since(c.currentRunWallStart)
+
+			// Apply rate (rate is inverse speed, e.g. 0.5 means 2x speed)
+			// If rate is 0 (instant), we fall back to lastEventTime
+			if c.replayRate > 0 {
+				simulatedDuration := time.Duration(float64(wallDuration) / c.replayRate)
+				endTime = run.StartTime.Add(simulatedDuration)
+			} else {
+				endTime = c.lastEventTime
+			}
+		}
+		run.EndTime = endTime
+
+		// Mark any still-running packages as interrupted and compute their elapsed time
+		for _, pkg := range run.Packages {
+			if pkg.Status == "" {
+				pkg.Status = "interrupted"
+
+				if c.isReplay && c.replayRate > 0 {
+					// Calculate simulated elapsed time based on run duration and package start offset
+					// This ensures consistency with TUI even if ReplayReader doesn't sleep exactly as expected
+					wallRunDuration := time.Since(c.currentRunWallStart)
+					simulatedRunDuration := time.Duration(float64(wallRunDuration) / c.replayRate)
+					pkgOffset := pkg.StartTime.Sub(run.StartTime)
+
+					pkg.Elapsed = simulatedRunDuration - pkgOffset
+					if pkg.Elapsed < 0 {
+						pkg.Elapsed = 0
+					}
+				} else {
+					// Fallback for live runs
+					pkg.Elapsed = endTime.Sub(pkg.StartTime)
+				}
+			}
+		}
+
 		runID := run.ID
 		c.state.CurrentRun = nil
 		evt := NewRunFinishedEvent(runID)

@@ -103,9 +103,15 @@ type Summary struct {
 // Returns:
 //   - Summary with all computed statistics
 func ComputeSummary(run *results.Run, slowThreshold time.Duration) *Summary {
+	// Handle case where EndTime wasn't set (shouldn't happen, but be defensive)
+	endTime := run.EndTime
+	if endTime.IsZero() {
+		endTime = time.Now()
+	}
+
 	summary := &Summary{
 		PackageCount: len(run.PackageOrder),
-		TotalTime:    run.EndTime.Sub(run.StartTime),
+		TotalTime:    endTime.Sub(run.StartTime),
 	}
 
 	// Build packages slice in chronological order
@@ -270,8 +276,13 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 	maxElapsedLen := 0
 
 	for _, pkg := range packages {
-		output := pkg.Output
-		if output == "" {
+		output := ""
+		if pkg.Status == "interrupted" {
+			// Add padding to align with "ok\t" prefix of completed packages
+			output = "  \t" + pkg.Name + " [interrupted]"
+		} else if pkg.Output != "" {
+			output = pkg.Output
+		} else {
 			output = pkg.Name
 		}
 		output = expandTabs(output, 8)
@@ -311,10 +322,30 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 		} else if pkg.Status == "?" {
 			symbol = SymbolSkip
 			symbolStyle = sf.skipStyle
+		} else if pkg.Status == "interrupted" {
+			// For interrupted packages:
+			// - Use Fail icon if there were failures
+			// - Use Skip icon if no tests were run (no pass/fail/skip)
+			// - Use Pass icon otherwise (partial success)
+			if pkg.FailedTests > 0 {
+				symbol = SymbolFail
+				symbolStyle = sf.failStyle
+			} else if pkg.PassedTests == 0 && pkg.SkippedTests == 0 {
+				symbol = SymbolSkip
+				symbolStyle = sf.skipStyle
+			} else {
+				symbol = SymbolPass
+				symbolStyle = sf.passStyle
+			}
 		}
 
-		output := pkg.Output
-		if output == "" {
+		output := ""
+		if pkg.Status == "interrupted" {
+			// Add padding to align with "ok\t" prefix of completed packages
+			output = "  \t" + pkg.Name + " [interrupted]"
+		} else if pkg.Output != "" {
+			output = pkg.Output
+		} else {
 			output = pkg.Name
 		}
 		output = expandTabs(output, 8)
