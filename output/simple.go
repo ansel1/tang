@@ -115,7 +115,7 @@ func (s *SimpleOutput) HasFailures() bool {
 	s.collector.WithState(func(state *results.State) {
 		for _, run := range state.Runs {
 			for _, pkg := range run.Packages {
-				if pkg.FailedTests > 0 || pkg.Status == "FAIL" {
+				if pkg.Counts.Failed > 0 || pkg.Status == results.StatusFailed {
 					hasFailures = true
 					return
 				}

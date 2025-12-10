@@ -84,13 +84,13 @@ func TestCollectorInterruptedPackage(t *testing.T) {
 	// Let's check collector.go.
 	// It creates &PackageResult{...}. Status is empty.
 	// If I want to verify it's NOT "ok" or "FAIL", that's fine.
-	if pkg.Status == "ok" || pkg.Status == "FAIL" {
+	if pkg.Status == StatusPassed || pkg.Status == StatusFailed {
 		t.Errorf("Expected package status to be incomplete, got '%s'", pkg.Status)
 	}
 
 	// Should have 1 passed test (TestOne completed)
-	if pkg.PassedTests != 1 {
-		t.Errorf("Expected 1 passed test, got %d", pkg.PassedTests)
+	if pkg.Counts.Passed != 1 {
+		t.Errorf("Expected 1 passed test, got %d", pkg.Counts.Passed)
 	}
 
 	// Should have 2 test results total
@@ -103,7 +103,7 @@ func TestCollectorInterruptedPackage(t *testing.T) {
 	if testOne == nil {
 		t.Fatal("TestOne not found in test results")
 	}
-	if testOne.Status != "pass" {
+	if testOne.Status != StatusPassed {
 		t.Errorf("Expected TestOne status 'pass', got '%s'", testOne.Status)
 	}
 
@@ -111,7 +111,7 @@ func TestCollectorInterruptedPackage(t *testing.T) {
 	if testTwo == nil {
 		t.Fatal("TestTwo not found in test results")
 	}
-	if testTwo.Status != "running" {
+	if testTwo.Status != StatusRunning {
 		t.Errorf("Expected TestTwo status 'running', got '%s'", testTwo.Status)
 	}
 }
@@ -190,29 +190,29 @@ func TestCollectorMultipleInterruptedPackages(t *testing.T) {
 	if pkg1 == nil {
 		t.Fatal("Package 1 not found")
 	}
-	if pkg1.Status != "ok" {
-		t.Errorf("Expected pkg1 status 'ok', got '%s'", pkg1.Status)
+	if pkg1.Status != StatusPassed {
+		t.Errorf("Expected pkg1 status 'passed', got '%s'", pkg1.Status)
 	}
-	if pkg1.PassedTests != 1 {
-		t.Errorf("Expected pkg1 to have 1 passed test, got %d", pkg1.PassedTests)
+	if pkg1.Counts.Passed != 1 {
+		t.Errorf("Expected pkg1 to have 1 passed test, got %d", pkg1.Counts.Passed)
 	}
 
 	// Package 2 should be incomplete
 	if pkg2 == nil {
 		t.Fatal("Package 2 not found")
 	}
-	if pkg2.Status == "ok" || pkg2.Status == "FAIL" {
+	if pkg2.Status == StatusPassed || pkg2.Status == StatusFailed {
 		t.Errorf("Expected pkg2 status to be incomplete, got '%s'", pkg2.Status)
 	}
-	if pkg2.FailedTests != 1 {
-		t.Errorf("Expected pkg2 to have 1 failed test, got %d", pkg2.FailedTests)
+	if pkg2.Counts.Failed != 1 {
+		t.Errorf("Expected pkg2 to have 1 failed test, got %d", pkg2.Counts.Failed)
 	}
 
 	// Package 3 should be incomplete
 	if pkg3 == nil {
 		t.Fatal("Package 3 not found")
 	}
-	if pkg3.Status == "ok" || pkg3.Status == "FAIL" {
+	if pkg3.Status == StatusPassed || pkg3.Status == StatusFailed {
 		t.Errorf("Expected pkg3 status to be incomplete, got '%s'", pkg3.Status)
 	}
 }
@@ -291,16 +291,16 @@ func TestCollectorFinishInterruptedRun(t *testing.T) {
 		pkg2 := run.Packages["github.com/test/pkg2"]
 		pkg3 := run.Packages["github.com/test/pkg3"]
 
-		if pkg1.Status != "ok" {
+		if pkg1.Status != StatusPassed {
 			t.Errorf("Expected pkg1 status 'ok' before finish, got '%s'", pkg1.Status)
 		}
 
-		if pkg2.Status != "" {
-			t.Errorf("Expected pkg2 status '' before finish, got '%s'", pkg2.Status)
+		if pkg2.Status != StatusRunning {
+			t.Errorf("Expected pkg2 status 'running' before finish, got '%s'", pkg2.Status)
 		}
 
-		if pkg3.Status != "" {
-			t.Errorf("Expected pkg3 status '' before finish, got '%s'", pkg3.Status)
+		if pkg3.Status != StatusRunning {
+			t.Errorf("Expected pkg3 status 'running' before finish, got '%s'", pkg3.Status)
 		}
 	})
 
@@ -329,17 +329,17 @@ func TestCollectorFinishInterruptedRun(t *testing.T) {
 		pkg3 := run.Packages["github.com/test/pkg3"]
 
 		// pkg1 should remain "ok"
-		if pkg1.Status != "ok" {
+		if pkg1.Status != StatusPassed {
 			t.Errorf("Expected pkg1 status 'ok', got '%s'", pkg1.Status)
 		}
 
 		// pkg2 should be marked as "interrupted"
-		if pkg2.Status != "interrupted" {
+		if pkg2.Status != StatusInterrupted {
 			t.Errorf("Expected pkg2 status 'interrupted', got '%s'", pkg2.Status)
 		}
 
 		// pkg3 should be marked as "interrupted"
-		if pkg3.Status != "interrupted" {
+		if pkg3.Status != StatusInterrupted {
 			t.Errorf("Expected pkg3 status 'interrupted', got '%s'", pkg3.Status)
 		}
 

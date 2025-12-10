@@ -144,9 +144,11 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) []Event {
 	pkgResult, exists := run.Packages[event.Package]
 	if !exists {
 		pkgResult = &PackageResult{
-			Name:      event.Package,
-			StartTime: event.Time,
-			TestOrder: make([]string, 0),
+			Name:          event.Package,
+			StartTime:     event.Time,
+			WallStartTime: time.Now(),
+			TestOrder:     make([]string, 0),
+			Status:        StatusRunning,
 		}
 		run.Packages[event.Package] = pkgResult
 		run.PackageOrder = append(run.PackageOrder, event.Package)
@@ -185,7 +187,7 @@ func (c *Collector) handlePackageEvent(run *Run, pkg *PackageResult, event parse
 		}
 
 	case "pass":
-		pkg.Status = "ok"
+		pkg.Status = StatusPassed
 		pkg.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
 		run.RunningPkgs--
 		eventsToEmit = append(eventsToEmit, NewPackageUpdatedEvent(run.ID, pkg.Name))
@@ -194,7 +196,7 @@ func (c *Collector) handlePackageEvent(run *Run, pkg *PackageResult, event parse
 		}
 
 	case "fail":
-		pkg.Status = "FAIL"
+		pkg.Status = StatusFailed
 		pkg.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
 		run.RunningPkgs--
 		eventsToEmit = append(eventsToEmit, NewPackageUpdatedEvent(run.ID, pkg.Name))
@@ -203,7 +205,7 @@ func (c *Collector) handlePackageEvent(run *Run, pkg *PackageResult, event parse
 		}
 
 	case "skip":
-		pkg.Status = "?"
+		pkg.Status = StatusSkipped
 		pkg.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
 		run.RunningPkgs--
 		eventsToEmit = append(eventsToEmit, NewPackageUpdatedEvent(run.ID, pkg.Name))
@@ -224,18 +226,22 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 	testResult, exists := run.TestResults[testKey]
 	if !exists {
 		testResult = &TestResult{
-			Package: event.Package,
-			Name:    event.Test,
-			Status:  "running",
-			Output:  make([]string, 0),
+			Package:       event.Package,
+			Name:          event.Test,
+			Status:        StatusRunning,
+			Output:        make([]string, 0),
+			StartTime:     event.Time,
+			WallStartTime: time.Now(),
 		}
 		run.TestResults[testKey] = testResult
 		pkg.TestOrder = append(pkg.TestOrder, event.Test)
+		pkg.Counts.Running++
+		run.Counts.Running++
 	}
 
 	switch event.Action {
 	case "run":
-		testResult.Status = "running"
+		testResult.Status = StatusRunning
 		eventsToEmit = append(eventsToEmit, NewTestUpdatedEvent(run.ID, event.Package, event.Test))
 
 	case "output":
@@ -254,23 +260,32 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 		}
 
 	case "pass":
-		testResult.Status = "pass"
+		testResult.Status = StatusPassed
 		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
-		pkg.PassedTests++
+		pkg.Counts.Passed++
+		pkg.Counts.Running--
+		run.Counts.Passed++
+		run.Counts.Running--
 		eventsToEmit = append(eventsToEmit, NewTestUpdatedEvent(run.ID, event.Package, event.Test))
 		eventsToEmit = append(eventsToEmit, NewPackageUpdatedEvent(run.ID, event.Package))
 
 	case "fail":
-		testResult.Status = "fail"
+		testResult.Status = StatusFailed
 		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
-		pkg.FailedTests++
+		pkg.Counts.Failed++
+		pkg.Counts.Running--
+		run.Counts.Failed++
+		run.Counts.Running--
 		eventsToEmit = append(eventsToEmit, NewTestUpdatedEvent(run.ID, event.Package, event.Test))
 		eventsToEmit = append(eventsToEmit, NewPackageUpdatedEvent(run.ID, event.Package))
 
 	case "skip":
-		testResult.Status = "skip"
+		testResult.Status = StatusSkipped
 		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
-		pkg.SkippedTests++
+		pkg.Counts.Skipped++
+		pkg.Counts.Running--
+		run.Counts.Skipped++
+		run.Counts.Running--
 		eventsToEmit = append(eventsToEmit, NewTestUpdatedEvent(run.ID, event.Package, event.Test))
 		eventsToEmit = append(eventsToEmit, NewPackageUpdatedEvent(run.ID, event.Package))
 	}
@@ -283,7 +298,9 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 func (c *Collector) startNewRun(startTime time.Time) Event {
 	runID := len(c.state.Runs) + 1
 	run := NewRun(runID)
+	run.Status = StatusRunning
 	run.StartTime = startTime
+	run.WallStartTime = time.Now()
 	c.state.Runs = append(c.state.Runs, run)
 	c.state.CurrentRun = run
 	c.currentRunWallStart = time.Now()
@@ -331,8 +348,8 @@ func (c *Collector) Finish() {
 
 		// Mark any still-running packages as interrupted and compute their elapsed time
 		for _, pkg := range run.Packages {
-			if pkg.Status == "" {
-				pkg.Status = "interrupted"
+			if pkg.Status == StatusRunning {
+				pkg.Status = StatusInterrupted
 
 				if c.isReplay && c.replayRate > 0 {
 					// Calculate simulated elapsed time based on run duration and package start offset
@@ -438,5 +455,14 @@ func (c *Collector) WithCurrentRun(fn func(*Run)) {
 
 	if c.state.CurrentRun != nil {
 		fn(c.state.CurrentRun)
+	}
+}
+
+func (c *Collector) WithLatestRun(fn func(*Run)) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if len(c.state.Runs) > 0 {
+		fn(c.state.Runs[len(c.state.Runs)-1])
 	}
 }

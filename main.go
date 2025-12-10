@@ -152,10 +152,11 @@ func main() {
 			model.DisplaySummary()
 
 			// Set exit code based on test failures
-			if model.HasFailures() {
-				exitCode = 1
-			} else {
-				exitCode = 0
+			for _, run := range collector.GetState().Runs {
+				if run.Counts.Failed > 0 {
+					exitCode = 1
+					break
+				}
 			}
 		}
 	}

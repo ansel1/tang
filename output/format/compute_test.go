@@ -13,43 +13,43 @@ func TestComputeSummaryBasic(t *testing.T) {
 
 	// Package 1: 2 pass, 1 fail
 	pkg1 := &results.PackageResult{
-		Name:        "pkg1",
-		Status:      "FAIL",
-		Elapsed:     5 * time.Second,
-		PassedTests: 2,
-		FailedTests: 1,
-		TestOrder:   []string{"TestA", "TestB", "TestC"},
+		Name:      "pkg1",
+		Status:    results.StatusFailed,
+		Elapsed:   5 * time.Second,
+		TestOrder: []string{"TestA", "TestB", "TestC"},
 	}
+	pkg1.Counts.Passed = 2
+	pkg1.Counts.Failed = 1
 	run.Packages["pkg1"] = pkg1
 	run.PackageOrder = append(run.PackageOrder, "pkg1")
 
 	run.TestResults["pkg1/TestA"] = &results.TestResult{
-		Package: "pkg1", Name: "TestA", Status: "pass", Elapsed: 1.0 * time.Second,
+		Package: "pkg1", Name: "TestA", Status: results.StatusPassed, Elapsed: 1.0 * time.Second,
 	}
 	run.TestResults["pkg1/TestB"] = &results.TestResult{
-		Package: "pkg1", Name: "TestB", Status: "fail", Elapsed: 1.0 * time.Second,
+		Package: "pkg1", Name: "TestB", Status: results.StatusFailed, Elapsed: 1.0 * time.Second,
 	}
 	run.TestResults["pkg1/TestC"] = &results.TestResult{
-		Package: "pkg1", Name: "TestC", Status: "pass", Elapsed: 1.0 * time.Second,
+		Package: "pkg1", Name: "TestC", Status: results.StatusPassed, Elapsed: 1.0 * time.Second,
 	}
 
 	// Package 2: 1 pass, 1 skip
 	pkg2 := &results.PackageResult{
-		Name:         "pkg2",
-		Status:       "ok",
-		Elapsed:      3 * time.Second,
-		PassedTests:  1,
-		SkippedTests: 1,
-		TestOrder:    []string{"TestD", "TestE"},
+		Name:      "pkg2",
+		Status:    results.StatusPassed,
+		Elapsed:   3 * time.Second,
+		TestOrder: []string{"TestD", "TestE"},
 	}
+	pkg2.Counts.Passed = 1
+	pkg2.Counts.Skipped = 1
 	run.Packages["pkg2"] = pkg2
 	run.PackageOrder = append(run.PackageOrder, "pkg2")
 
 	run.TestResults["pkg2/TestD"] = &results.TestResult{
-		Package: "pkg2", Name: "TestD", Status: "pass", Elapsed: 1.0 * time.Second,
+		Package: "pkg2", Name: "TestD", Status: results.StatusPassed, Elapsed: 1.0 * time.Second,
 	}
 	run.TestResults["pkg2/TestE"] = &results.TestResult{
-		Package: "pkg2", Name: "TestE", Status: "skip", Elapsed: 1.0 * time.Second,
+		Package: "pkg2", Name: "TestE", Status: results.StatusSkipped, Elapsed: 1.0 * time.Second,
 	}
 
 	// Compute summary
@@ -114,7 +114,7 @@ func TestComputeSummarySlowTests(t *testing.T) {
 
 	pkg1 := &results.PackageResult{
 		Name:    "pkg1",
-		Status:  "ok",
+		Status:  results.StatusPassed,
 		Elapsed: 60 * time.Second,
 	}
 	run.Packages["pkg1"] = pkg1
@@ -132,7 +132,7 @@ func TestComputeSummarySlowTests(t *testing.T) {
 
 	for _, test := range tests {
 		run.TestResults["pkg1/"+test.name] = &results.TestResult{
-			Package: "pkg1", Name: test.name, Status: "pass", Elapsed: time.Duration(test.elapsed * float64(time.Second)),
+			Package: "pkg1", Name: test.name, Status: results.StatusPassed, Elapsed: time.Duration(test.elapsed * float64(time.Second)),
 		}
 		pkg1.TestOrder = append(pkg1.TestOrder, test.name)
 	}
@@ -186,18 +186,18 @@ func TestComputeSummaryAllPass(t *testing.T) {
 	run := results.NewRun(1)
 
 	pkg1 := &results.PackageResult{
-		Name:        "pkg1",
-		Status:      "ok",
-		Elapsed:     6 * time.Second,
-		PassedTests: 3,
-		TestOrder:   []string{"TestA", "TestB", "TestC"},
+		Name:      "pkg1",
+		Status:    results.StatusPassed,
+		Elapsed:   6 * time.Second,
+		TestOrder: []string{"TestA", "TestB", "TestC"},
 	}
+	pkg1.Counts.Passed = 3
 	run.Packages["pkg1"] = pkg1
 	run.PackageOrder = append(run.PackageOrder, "pkg1")
 
 	for _, name := range []string{"TestA", "TestB", "TestC"} {
 		run.TestResults["pkg1/"+name] = &results.TestResult{
-			Package: "pkg1", Name: name, Status: "pass", Elapsed: 1.0 * time.Second,
+			Package: "pkg1", Name: name, Status: results.StatusPassed, Elapsed: 1.0 * time.Second,
 		}
 	}
 

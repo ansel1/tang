@@ -174,9 +174,6 @@ func TestHierarchicalRendering(t *testing.T) {
 	// Wait a bit for processing
 	time.Sleep(50 * time.Millisecond)
 
-	// Mark as finished to get final summary instead of running status
-	m.Finished = true
-
 	output := m.String()
 
 	// Verify key aspects of the output

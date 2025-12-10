@@ -127,12 +127,12 @@ func ComputeSummary(run *results.Run, slowThreshold time.Duration) *Summary {
 	for _, testResult := range run.TestResults {
 		summary.TotalTests++
 		switch testResult.Status {
-		case "pass":
+		case results.StatusPassed:
 			summary.PassedTests++
-		case "fail":
+		case results.StatusFailed:
 			summary.FailedTests++
 			summary.Failures = append(summary.Failures, testResult)
-		case "skip":
+		case results.StatusSkipped:
 			summary.SkippedTests++
 			summary.Skipped = append(summary.Skipped, testResult)
 		}
@@ -166,8 +166,8 @@ func ComputeSummary(run *results.Run, slowThreshold time.Duration) *Summary {
 			}
 
 			// Find package with most tests
-			pkgTestCount := pkg.PassedTests + pkg.FailedTests + pkg.SkippedTests
-			mostTestCount := summary.MostTestsPackage.PassedTests + summary.MostTestsPackage.FailedTests + summary.MostTestsPackage.SkippedTests
+			pkgTestCount := pkg.Counts.Passed + pkg.Counts.Failed + pkg.Counts.Skipped
+			mostTestCount := summary.MostTestsPackage.Counts.Passed + summary.MostTestsPackage.Counts.Failed + summary.MostTestsPackage.Counts.Skipped
 			if pkgTestCount > mostTestCount {
 				summary.MostTestsPackage = pkg
 			}
@@ -276,8 +276,8 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 	maxElapsedLen := 0
 
 	for _, pkg := range packages {
-		output := ""
-		if pkg.Status == "interrupted" {
+		var output string
+		if pkg.Status == results.StatusInterrupted {
 			// Add padding to align with "ok\t" prefix of completed packages
 			output = "  \t" + pkg.Name + " [interrupted]"
 		} else if pkg.Output != "" {
@@ -291,17 +291,17 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 			maxOutputLen = len(output)
 		}
 
-		passedStr := fmt.Sprintf("%d", pkg.PassedTests)
+		passedStr := fmt.Sprintf("%d", pkg.Counts.Passed)
 		if len(passedStr) > maxPassedLen {
 			maxPassedLen = len(passedStr)
 		}
 
-		failedStr := fmt.Sprintf("%d", pkg.FailedTests)
+		failedStr := fmt.Sprintf("%d", pkg.Counts.Failed)
 		if len(failedStr) > maxFailedLen {
 			maxFailedLen = len(failedStr)
 		}
 
-		skippedStr := fmt.Sprintf("%d", pkg.SkippedTests)
+		skippedStr := fmt.Sprintf("%d", pkg.Counts.Skipped)
 		if len(skippedStr) > maxSkippedLen {
 			maxSkippedLen = len(skippedStr)
 		}
@@ -316,21 +316,21 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 	for _, pkg := range packages {
 		symbol := SymbolPass
 		symbolStyle := sf.passStyle
-		if pkg.Status == "FAIL" {
+		if pkg.Status == results.StatusFailed {
 			symbol = SymbolFail
 			symbolStyle = sf.failStyle
-		} else if pkg.Status == "?" {
+		} else if pkg.Status == results.StatusSkipped {
 			symbol = SymbolSkip
 			symbolStyle = sf.skipStyle
-		} else if pkg.Status == "interrupted" {
+		} else if pkg.Status == results.StatusInterrupted {
 			// For interrupted packages:
 			// - Use Fail icon if there were failures
 			// - Use Skip icon if no tests were run (no pass/fail/skip)
 			// - Use Pass icon otherwise (partial success)
-			if pkg.FailedTests > 0 {
+			if pkg.Counts.Failed > 0 {
 				symbol = SymbolFail
 				symbolStyle = sf.failStyle
-			} else if pkg.PassedTests == 0 && pkg.SkippedTests == 0 {
+			} else if pkg.Counts.Passed == 0 && pkg.Counts.Failed == 0 {
 				symbol = SymbolSkip
 				symbolStyle = sf.skipStyle
 			} else {
@@ -339,8 +339,8 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 			}
 		}
 
-		output := ""
-		if pkg.Status == "interrupted" {
+		var output string
+		if pkg.Status == results.StatusInterrupted {
 			// Add padding to align with "ok\t" prefix of completed packages
 			output = "  \t" + pkg.Name + " [interrupted]"
 		} else if pkg.Output != "" {
@@ -352,23 +352,23 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 
 		// Format counts with right-aligned numbers
 		counts := ""
-		if pkg.PassedTests > 0 || pkg.FailedTests > 0 || pkg.SkippedTests > 0 {
-			passedStr := fmt.Sprintf("%s %*d", SymbolPass, maxPassedLen, pkg.PassedTests)
-			if pkg.PassedTests > 0 {
+		if pkg.Counts.Passed > 0 || pkg.Counts.Failed > 0 || pkg.Counts.Skipped > 0 {
+			passedStr := fmt.Sprintf("%s %*d", SymbolPass, maxPassedLen, pkg.Counts.Passed)
+			if pkg.Counts.Passed > 0 {
 				passedStr = sf.passStyle.Render(passedStr)
 			} else {
 				passedStr = sf.neutralStyle.Render(passedStr)
 			}
 
-			failedStr := fmt.Sprintf("%s %*d", SymbolFail, maxFailedLen, pkg.FailedTests)
-			if pkg.FailedTests > 0 {
+			failedStr := fmt.Sprintf("%s %*d", SymbolFail, maxFailedLen, pkg.Counts.Failed)
+			if pkg.Counts.Failed > 0 {
 				failedStr = sf.failStyle.Render(failedStr)
 			} else {
 				failedStr = sf.neutralStyle.Render(failedStr)
 			}
 
-			skippedStr := fmt.Sprintf("%s %*d", SymbolSkip, maxSkippedLen, pkg.SkippedTests)
-			if pkg.SkippedTests > 0 {
+			skippedStr := fmt.Sprintf("%s %*d", SymbolSkip, maxSkippedLen, pkg.Counts.Skipped)
+			if pkg.Counts.Skipped > 0 {
 				skippedStr = sf.skipStyle.Render(skippedStr)
 			} else {
 				skippedStr = sf.neutralStyle.Render(skippedStr)

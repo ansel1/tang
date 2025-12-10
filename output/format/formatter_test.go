@@ -13,17 +13,15 @@ func TestSummaryFormatterBasic(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
 	// Create a simple summary
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusPassed,
+		Elapsed: 5 * time.Second,
+	}
+	pkg1.Counts.Passed = 10
+
 	summary := &Summary{
-		Packages: []*results.PackageResult{
-			{
-				Name:         "github.com/user/project/pkg1",
-				Status:       "ok",
-				Elapsed:      5 * time.Second,
-				PassedTests:  10,
-				FailedTests:  0,
-				SkippedTests: 0,
-			},
-		},
+		Packages:     []*results.PackageResult{pkg1},
 		TotalTests:   10,
 		PassedTests:  10,
 		FailedTests:  0,
@@ -53,17 +51,16 @@ func TestSummaryFormatterWithFailures(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
 	// Create summary with failures
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusFailed,
+		Elapsed: 5 * time.Second,
+	}
+	pkg1.Counts.Passed = 8
+	pkg1.Counts.Failed = 2
+
 	summary := &Summary{
-		Packages: []*results.PackageResult{
-			{
-				Name:         "github.com/user/project/pkg1",
-				Status:       "FAIL",
-				Elapsed:      5 * time.Second,
-				PassedTests:  8,
-				FailedTests:  2,
-				SkippedTests: 0,
-			},
-		},
+		Packages:     []*results.PackageResult{pkg1},
 		TotalTests:   10,
 		PassedTests:  8,
 		FailedTests:  2,
@@ -74,7 +71,7 @@ func TestSummaryFormatterWithFailures(t *testing.T) {
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestFailing",
-				Status:  "fail",
+				Status:  results.StatusFailed,
 				Elapsed: 1 * time.Second,
 				Output:  []string{"Error: expected true, got false", "at line 42"},
 			},
@@ -100,17 +97,16 @@ func TestSummaryFormatterWithSkipped(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
 	// Create summary with skipped tests
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusPassed,
+		Elapsed: 5 * time.Second,
+	}
+	pkg1.Counts.Passed = 8
+	pkg1.Counts.Skipped = 2
+
 	summary := &Summary{
-		Packages: []*results.PackageResult{
-			{
-				Name:         "github.com/user/project/pkg1",
-				Status:       "ok",
-				Elapsed:      5 * time.Second,
-				PassedTests:  8,
-				FailedTests:  0,
-				SkippedTests: 2,
-			},
-		},
+		Packages:     []*results.PackageResult{pkg1},
 		TotalTests:   10,
 		PassedTests:  8,
 		FailedTests:  0,
@@ -121,7 +117,7 @@ func TestSummaryFormatterWithSkipped(t *testing.T) {
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestSkipped",
-				Status:  "skip",
+				Status:  results.StatusSkipped,
 				Elapsed: 0,
 				Output:  []string{"Skipping: not implemented yet"},
 			},
@@ -147,17 +143,15 @@ func TestSummaryFormatterWithSlowTests(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
 	// Create summary with slow tests
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusPassed,
+		Elapsed: 65 * time.Second,
+	}
+	pkg1.Counts.Passed = 2
+
 	summary := &Summary{
-		Packages: []*results.PackageResult{
-			{
-				Name:         "github.com/user/project/pkg1",
-				Status:       "ok",
-				Elapsed:      65 * time.Second,
-				PassedTests:  2,
-				FailedTests:  0,
-				SkippedTests: 0,
-			},
-		},
+		Packages:     []*results.PackageResult{pkg1},
 		TotalTests:   2,
 		PassedTests:  2,
 		FailedTests:  0,
@@ -168,7 +162,7 @@ func TestSummaryFormatterWithSlowTests(t *testing.T) {
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestSlow",
-				Status:  "pass",
+				Status:  results.StatusPassed,
 				Elapsed: 65 * time.Second,
 			},
 		},
@@ -194,17 +188,15 @@ func TestSummaryFormatterNoFailuresOrSkips(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
 	// Create summary with no failures or skips
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusPassed,
+		Elapsed: 5 * time.Second,
+	}
+	pkg1.Counts.Passed = 10
+
 	summary := &Summary{
-		Packages: []*results.PackageResult{
-			{
-				Name:         "github.com/user/project/pkg1",
-				Status:       "ok",
-				Elapsed:      5 * time.Second,
-				PassedTests:  10,
-				FailedTests:  0,
-				SkippedTests: 0,
-			},
-		},
+		Packages:     []*results.PackageResult{pkg1},
 		TotalTests:   10,
 		PassedTests:  10,
 		FailedTests:  0,
@@ -234,17 +226,15 @@ func TestSummaryFormatterOutputTruncation(t *testing.T) {
 		longOutput[i] = "Line " + string(rune('A'+i))
 	}
 
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusFailed,
+		Elapsed: 5 * time.Second,
+	}
+	pkg1.Counts.Failed = 1
+
 	summary := &Summary{
-		Packages: []*results.PackageResult{
-			{
-				Name:         "github.com/user/project/pkg1",
-				Status:       "FAIL",
-				Elapsed:      5 * time.Second,
-				PassedTests:  0,
-				FailedTests:  1,
-				SkippedTests: 0,
-			},
-		},
+		Packages:     []*results.PackageResult{pkg1},
 		TotalTests:   1,
 		PassedTests:  0,
 		FailedTests:  1,
@@ -255,7 +245,7 @@ func TestSummaryFormatterOutputTruncation(t *testing.T) {
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestWithLongOutput",
-				Status:  "fail",
+				Status:  results.StatusFailed,
 				Elapsed: 1 * time.Second,
 				Output:  longOutput,
 			},
@@ -297,17 +287,15 @@ func TestSummaryFormatterSkipTruncation(t *testing.T) {
 		"Line 5",
 	}
 
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusPassed,
+		Elapsed: 5 * time.Second,
+	}
+	pkg1.Counts.Skipped = 1
+
 	summary := &Summary{
-		Packages: []*results.PackageResult{
-			{
-				Name:         "github.com/user/project/pkg1",
-				Status:       "ok",
-				Elapsed:      5 * time.Second,
-				PassedTests:  0,
-				FailedTests:  0,
-				SkippedTests: 1,
-			},
-		},
+		Packages:     []*results.PackageResult{pkg1},
 		TotalTests:   1,
 		PassedTests:  0,
 		FailedTests:  0,
@@ -318,7 +306,7 @@ func TestSummaryFormatterSkipTruncation(t *testing.T) {
 			{
 				Package: "github.com/user/project/pkg1",
 				Name:    "TestWithLongSkipReason",
-				Status:  "skip",
+				Status:  results.StatusSkipped,
 				Elapsed: 0,
 				Output:  longOutput,
 			},
@@ -370,25 +358,22 @@ func TestSummaryFormatterPercentages(t *testing.T) {
 func TestSummaryFormatterSymbols(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
+	pkg1 := &results.PackageResult{
+		Name:    "pkg1",
+		Status:  results.StatusPassed,
+		Elapsed: 1 * time.Second,
+	}
+	pkg1.Counts.Passed = 1
+
+	pkg2 := &results.PackageResult{
+		Name:    "pkg2",
+		Status:  results.StatusFailed,
+		Elapsed: 1 * time.Second,
+	}
+	pkg2.Counts.Failed = 1
+
 	summary := &Summary{
-		Packages: []*results.PackageResult{
-			{
-				Name:         "pkg1",
-				Status:       "ok",
-				Elapsed:      1 * time.Second,
-				PassedTests:  1,
-				FailedTests:  0,
-				SkippedTests: 0,
-			},
-			{
-				Name:         "pkg2",
-				Status:       "FAIL",
-				Elapsed:      1 * time.Second,
-				PassedTests:  0,
-				FailedTests:  1,
-				SkippedTests: 0,
-			},
-		},
+		Packages:     []*results.PackageResult{pkg1, pkg2},
 		TotalTests:   2,
 		PassedTests:  1,
 		FailedTests:  1,

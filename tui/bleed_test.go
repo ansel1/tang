@@ -3,6 +3,7 @@ package tui
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ansel1/tang/results"
 )
@@ -14,19 +15,35 @@ func TestBleedProtection(t *testing.T) {
 	m.TerminalHeight = 20
 
 	// Create a package and test
-	pkg := NewPackageState("pkg1")
-	m.Packages["pkg1"] = pkg
-	m.PackageOrder = append(m.PackageOrder, "pkg1")
+	// Create a run and package
+	run := results.NewRun(1)
+	run.Status = results.StatusRunning
+	collector.WithState(func(s *results.State) {
+		s.Runs = append(s.Runs, run)
+		s.CurrentRun = run
+	})
 
-	test := NewTestState("TestBleed", "pkg1")
-	test.Status = "running"
-	test.SummaryLine = "=== RUN   TestBleed"
-	// Add a line with an open color code (Red)
-	test.AddOutputLine("\033[31mThis is red text")
-	pkg.Tests["TestBleed"] = test
-	pkg.TestOrder = append(pkg.TestOrder, "TestBleed")
-	pkg.Running++
-	m.Running++
+	pkg := &results.PackageResult{
+		Name:      "pkg1",
+		TestOrder: []string{"TestBleed"},
+		Status:    results.StatusRunning,
+		StartTime: time.Now(),
+	}
+	pkg.Counts.Running = 1
+	run.Packages["pkg1"] = pkg
+	run.PackageOrder = append(run.PackageOrder, "pkg1")
+	run.RunningPkgs = 1
+
+	test := &results.TestResult{
+		Package:     "pkg1",
+		Name:        "TestBleed",
+		Status:      results.StatusRunning,
+		SummaryLine: "=== RUN   TestBleed",
+		Output:      []string{"\033[31mThis is red text"},
+		StartTime:   time.Now(),
+	}
+	run.TestResults["pkg1/TestBleed"] = test
+	run.Counts.Running++
 
 	// Render
 	output := m.View()

@@ -19,12 +19,13 @@ func TestSimpleOutput_ProcessEvents_BasicTest(t *testing.T) {
 	state.CurrentRun = run
 
 	// Populate run with some data so summary is generated
-	run.Packages["example.com/pkg"] = &results.PackageResult{
-		Name:        "example.com/pkg",
-		Status:      "ok",
-		Elapsed:     100 * time.Millisecond,
-		PassedTests: 1,
+	pkg := &results.PackageResult{
+		Name:    "example.com/pkg",
+		Status:  results.StatusPassed,
+		Elapsed: 100 * time.Millisecond,
 	}
+	pkg.Counts.Passed = 1
+	run.Packages["example.com/pkg"] = pkg
 	run.PackageOrder = append(run.PackageOrder, "example.com/pkg")
 
 	var buf bytes.Buffer
@@ -54,12 +55,13 @@ func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
 	state.CurrentRun = run
 
 	// Populate run with failure
-	run.Packages["example.com/pkg"] = &results.PackageResult{
-		Name:        "example.com/pkg",
-		Status:      "FAIL",
-		Elapsed:     100 * time.Millisecond,
-		FailedTests: 1,
+	pkg := &results.PackageResult{
+		Name:    "example.com/pkg",
+		Status:  results.StatusFailed,
+		Elapsed: 100 * time.Millisecond,
 	}
+	pkg.Counts.Failed = 1
+	run.Packages["example.com/pkg"] = pkg
 	run.PackageOrder = append(run.PackageOrder, "example.com/pkg")
 
 	var buf bytes.Buffer
@@ -115,11 +117,12 @@ func TestSimpleOutput_HasFailures(t *testing.T) {
 	assert.False(t, simple.HasFailures())
 
 	// Manually add failure to collector state
-	run.Packages["pkg"] = &results.PackageResult{
-		Name:        "pkg",
-		Status:      "FAIL",
-		FailedTests: 1,
+	pkg := &results.PackageResult{
+		Name:   "pkg",
+		Status: results.StatusFailed,
 	}
+	pkg.Counts.Failed = 1
+	run.Packages["pkg"] = pkg
 
 	// Now should have failures
 	assert.True(t, simple.HasFailures())
