@@ -265,8 +265,8 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 	}
 
 	var result string
-	result += "PACKAGES\n"
-	result += sf.horizontalLine() + "\n"
+	result += renderSectionHeader("PACKAGES")
+	// result += sf.horizontalLine() + "\n"
 
 	// Calculate column widths for alignment
 	maxOutputLen := 0
@@ -403,8 +403,8 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 // formatOverallResults formats the overall statistics section.
 func (sf *SummaryFormatter) formatOverallResults(summary *Summary) string {
 	var result string
-	result += "OVERALL RESULTS\n"
-	result += sf.horizontalLine() + "\n"
+	result += renderSectionHeader("OVERALL RESULTS")
+	// result += sf.horizontalLine() + "\n"
 
 	// Calculate percentages
 	passPercent := 0.0
@@ -444,8 +444,8 @@ func (sf *SummaryFormatter) formatFailures(failures []*results.TestResult) strin
 	}
 
 	var result string
-	result += "FAILURES\n"
-	result += sf.horizontalLine() + "\n"
+	result += renderSectionHeader("FAILURES")
+	// result += sf.horizontalLine() + "\n"
 
 	// Group failures by package
 	packageMap := make(map[string][]*results.TestResult)
@@ -490,8 +490,8 @@ func (sf *SummaryFormatter) formatSkipped(skipped []*results.TestResult) string 
 	}
 
 	var result string
-	result += "SKIPPED\n"
-	result += sf.horizontalLine() + "\n"
+	result += renderSectionHeader("SKIPPED")
+	// result += sf.horizontalLine() + "\n"
 
 	// Group skipped tests by package
 	packageMap := make(map[string][]*results.TestResult)
@@ -536,8 +536,8 @@ func (sf *SummaryFormatter) formatSlowTests(slowTests []*results.TestResult) str
 	}
 
 	var result string
-	result += "SLOW TESTS (>10s)\n"
-	result += sf.horizontalLine() + "\n"
+	result += renderSectionHeader("SLOW TESTS (>10s)")
+	// result += sf.horizontalLine() + "\n"
 
 	// Calculate column widths for alignment
 	maxNameLen := 0
@@ -566,4 +566,8 @@ func (sf *SummaryFormatter) horizontalLine() string {
 		line += "-"
 	}
 	return line
+}
+
+func renderSectionHeader(header string) string {
+	return header + "\n" + strings.Repeat("-", len(header)) + "\n"
 }
