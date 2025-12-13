@@ -11,7 +11,9 @@ import (
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
+	"github.com/charmbracelet/lipgloss"
 	teatest "github.com/charmbracelet/x/exp/teatest"
+	"github.com/muesli/termenv"
 	"github.com/stretchr/testify/require"
 )
 
@@ -469,5 +471,80 @@ func TestRunScriptsWithTeatest(t *testing.T) {
 			}
 
 		})
+	}
+}
+
+// TestBoldRunningEntities verifies that running entities are bolded
+func TestBoldRunningEntities(t *testing.T) {
+	// Force lipgloss to emit ansi escape codes
+	lipgloss.SetColorProfile(termenv.ANSI)
+
+	collector := results.NewCollector()
+	m := NewModel(false, 1.0, collector)
+	m.TerminalWidth = 80
+
+	// Setup event processing
+	engineEvents := make(chan engine.Event, 20)
+	go collector.ProcessEvents(engineEvents)
+	resultsEvents := collector.Subscribe()
+
+	// Feed events in background
+	go func() {
+		for evt := range resultsEvents {
+			m.Update(ResultsEventMsg(evt))
+		}
+	}()
+
+	// Simulate a running test
+	now := time.Now()
+	events := []parser.TestEvent{
+		{
+			Time:    now,
+			Action:  "start",
+			Package: "github.com/test/running-pkg",
+		},
+		{
+			Time:    now.Add(10 * time.Millisecond),
+			Action:  "run",
+			Package: "github.com/test/running-pkg",
+			Test:    "TestRunning",
+		},
+		{
+			Time:    now.Add(20 * time.Millisecond),
+			Action:  "output",
+			Package: "github.com/test/running-pkg",
+			Test:    "TestRunning",
+			Output:  "=== RUN   TestRunning\n",
+		},
+	}
+
+	for _, evt := range events {
+		engineEvents <- engine.Event{Type: engine.EventTest, TestEvent: evt}
+	}
+	close(engineEvents)
+
+	// Wait for processing
+	time.Sleep(50 * time.Millisecond)
+
+	output := m.String()
+
+	// Define ANSI bold code
+	const bold = "\x1b[1m"
+
+	// Check for bolded elements
+	// 1. Package name should be bolded
+	if !strings.Contains(output, bold+"github.com/test/running-pkg") {
+		t.Errorf("Expected running package name to be bolded.\nGot:\n%s", output)
+	}
+
+	// 2. Test name should be bolded
+	if !strings.Contains(output, bold+"  === RUN   TestRunning") {
+		t.Errorf("Expected running test summary to be bolded.\nGot:\n%s", output)
+	}
+
+	// 3. Summary line should be bolded (RUNNING status)
+	// The summary format is "RUNNING: X passed, ..."
+	if !strings.Contains(output, bold+"RUNNING:") {
+		t.Errorf("Expected summary line to be bolded.\nGot:\n%s", output)
 	}
 }

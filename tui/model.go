@@ -46,6 +46,7 @@ type Model struct {
 	failStyle    lipgloss.Style
 	skipStyle    lipgloss.Style
 	neutralStyle lipgloss.Style
+	boldStyle    lipgloss.Style
 
 	// Replay state
 	ReplayRate float64
@@ -66,6 +67,7 @@ func NewModel(replayMode bool, replayRate float64, collector *results.Collector)
 		failStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
 		skipStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
 		neutralStyle:   lipgloss.NewStyle(),
+		boldStyle:      lipgloss.NewStyle().Bold(true),
 		spinner:        s,
 		ReplayRate:     replayRate,
 	}
@@ -448,6 +450,9 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 	prefix := "  "
 	if pkg.Status == results.StatusRunning {
 		prefix = m.getSpinnerPrefix(pkg.Counts.Failed > 0)
+		// Bold the entire line for running packages
+		leftPart = m.boldStyle.Render(leftPart)
+		rightPart = m.boldStyle.Render(rightPart)
 	}
 
 	m.renderAlignedLine(b, leftPart, rightPart, prefix)
@@ -465,6 +470,9 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 	prefix := "  "
 	if test.Running() {
 		prefix = m.getSpinnerPrefix(false)
+		// Bold the name and elapsed time for running tests
+		summary = m.boldStyle.Render(summary)
+		elapsedVal = m.boldStyle.Render(elapsedVal)
 	} else if test.Status == results.StatusPaused {
 		prefix = "= "
 	}
@@ -572,6 +580,9 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run) {
 	prefix := "  "
 	if run.Status == results.StatusRunning {
 		prefix = m.getSpinnerPrefix(run.Counts.Failed > 0)
+		// Bold the summary line for running status
+		leftPart = m.boldStyle.Render(leftPart)
+		elapsedStr = m.boldStyle.Render(elapsedStr)
 	}
 
 	m.renderAlignedLine(b, leftPart, elapsedStr, prefix)
