@@ -258,183 +258,181 @@ func (sf *SummaryFormatter) Format(summary *Summary) string {
 	return result
 }
 
+// formatSection formats a summary section with a header and footer.
+func (sf *SummaryFormatter) formatSection(title string, bodyFunc func(*strings.Builder)) string {
+	var sb strings.Builder
+	sb.WriteString(renderSectionHeader(title))
+	bodyFunc(&sb)
+	return sb.String()
+}
+
 // formatPackageSection formats the package results section.
 func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResult) string {
 	if len(packages) == 0 {
 		return ""
 	}
 
-	var result string
-	result += renderSectionHeader("PACKAGES")
-	// result += sf.horizontalLine() + "\n"
+	return sf.formatSection("PACKAGES", func(sb *strings.Builder) {
+		// Calculate column widths for alignment
+		maxOutputLen := 0
+		maxPassedLen := 0
+		maxFailedLen := 0
+		maxSkippedLen := 0
+		maxElapsedLen := 0
 
-	// Calculate column widths for alignment
-	maxOutputLen := 0
-	maxPassedLen := 0
-	maxFailedLen := 0
-	maxSkippedLen := 0
-	maxElapsedLen := 0
+		for _, pkg := range packages {
+			var output string
+			if pkg.Status == results.StatusInterrupted {
+				// Add padding to align with "ok\t" prefix of completed packages
+				output = "  \t" + pkg.Name + " [interrupted]"
+			} else if pkg.Output != "" {
+				output = pkg.Output
+			} else {
+				output = pkg.Name
+			}
+			output = expandTabs(output, 8)
 
-	for _, pkg := range packages {
-		var output string
-		if pkg.Status == results.StatusInterrupted {
-			// Add padding to align with "ok\t" prefix of completed packages
-			output = "  \t" + pkg.Name + " [interrupted]"
-		} else if pkg.Output != "" {
-			output = pkg.Output
-		} else {
-			output = pkg.Name
+			if len(output) > maxOutputLen {
+				maxOutputLen = len(output)
+			}
+
+			passedStr := fmt.Sprintf("%d", pkg.Counts.Passed)
+			if len(passedStr) > maxPassedLen {
+				maxPassedLen = len(passedStr)
+			}
+
+			failedStr := fmt.Sprintf("%d", pkg.Counts.Failed)
+			if len(failedStr) > maxFailedLen {
+				maxFailedLen = len(failedStr)
+			}
+
+			skippedStr := fmt.Sprintf("%d", pkg.Counts.Skipped)
+			if len(skippedStr) > maxSkippedLen {
+				maxSkippedLen = len(skippedStr)
+			}
+
+			elapsedStr := formatDuration(pkg.Elapsed)
+			if len(elapsedStr) > maxElapsedLen {
+				maxElapsedLen = len(elapsedStr)
+			}
 		}
-		output = expandTabs(output, 8)
 
-		if len(output) > maxOutputLen {
-			maxOutputLen = len(output)
-		}
-
-		passedStr := fmt.Sprintf("%d", pkg.Counts.Passed)
-		if len(passedStr) > maxPassedLen {
-			maxPassedLen = len(passedStr)
-		}
-
-		failedStr := fmt.Sprintf("%d", pkg.Counts.Failed)
-		if len(failedStr) > maxFailedLen {
-			maxFailedLen = len(failedStr)
-		}
-
-		skippedStr := fmt.Sprintf("%d", pkg.Counts.Skipped)
-		if len(skippedStr) > maxSkippedLen {
-			maxSkippedLen = len(skippedStr)
-		}
-
-		elapsedStr := formatDuration(pkg.Elapsed)
-		if len(elapsedStr) > maxElapsedLen {
-			maxElapsedLen = len(elapsedStr)
-		}
-	}
-
-	// Format each package
-	for _, pkg := range packages {
-		symbol := SymbolPass
-		symbolStyle := sf.passStyle
-		if pkg.Status == results.StatusFailed {
-			symbol = SymbolFail
-			symbolStyle = sf.failStyle
-		} else if pkg.Status == results.StatusSkipped {
-			symbol = SymbolSkip
-			symbolStyle = sf.skipStyle
-		} else if pkg.Status == results.StatusInterrupted {
-			// For interrupted packages:
-			// - Use Fail icon if there were failures
-			// - Use Skip icon if no tests were run (no pass/fail/skip)
-			// - Use Pass icon otherwise (partial success)
-			if pkg.Counts.Failed > 0 {
+		// Format each package
+		for _, pkg := range packages {
+			symbol := SymbolPass
+			symbolStyle := sf.passStyle
+			if pkg.Status == results.StatusFailed {
 				symbol = SymbolFail
 				symbolStyle = sf.failStyle
-			} else if pkg.Counts.Passed == 0 && pkg.Counts.Failed == 0 {
+			} else if pkg.Status == results.StatusSkipped {
 				symbol = SymbolSkip
 				symbolStyle = sf.skipStyle
-			} else {
-				symbol = SymbolPass
-				symbolStyle = sf.passStyle
-			}
-		}
-
-		var output string
-		if pkg.Status == results.StatusInterrupted {
-			// Add padding to align with "ok\t" prefix of completed packages
-			output = "  \t" + pkg.Name + " [interrupted]"
-		} else if pkg.Output != "" {
-			output = pkg.Output
-		} else {
-			output = pkg.Name
-		}
-		output = expandTabs(output, 8)
-
-		// Format counts with right-aligned numbers
-		counts := ""
-		if pkg.Counts.Passed > 0 || pkg.Counts.Failed > 0 || pkg.Counts.Skipped > 0 {
-			passedStr := fmt.Sprintf("%s %*d", SymbolPass, maxPassedLen, pkg.Counts.Passed)
-			if pkg.Counts.Passed > 0 {
-				passedStr = sf.passStyle.Render(passedStr)
-			} else {
-				passedStr = sf.neutralStyle.Render(passedStr)
+			} else if pkg.Status == results.StatusInterrupted {
+				// For interrupted packages:
+				// - Use Fail icon if there were failures
+				// - Use Skip icon if no tests were run (no pass/fail/skip)
+				// - Use Pass icon otherwise (partial success)
+				if pkg.Counts.Failed > 0 {
+					symbol = SymbolFail
+					symbolStyle = sf.failStyle
+				} else if pkg.Counts.Passed == 0 && pkg.Counts.Failed == 0 {
+					symbol = SymbolSkip
+					symbolStyle = sf.skipStyle
+				} else {
+					symbol = SymbolPass
+					symbolStyle = sf.passStyle
+				}
 			}
 
-			failedStr := fmt.Sprintf("%s %*d", SymbolFail, maxFailedLen, pkg.Counts.Failed)
-			if pkg.Counts.Failed > 0 {
-				failedStr = sf.failStyle.Render(failedStr)
+			var output string
+			if pkg.Status == results.StatusInterrupted {
+				// Add padding to align with "ok\t" prefix of completed packages
+				output = "  \t" + pkg.Name + " [interrupted]"
+			} else if pkg.Output != "" {
+				output = pkg.Output
 			} else {
-				failedStr = sf.neutralStyle.Render(failedStr)
+				output = pkg.Name
+			}
+			output = expandTabs(output, 8)
+
+			// Format counts with right-aligned numbers
+			counts := ""
+			if pkg.Counts.Passed > 0 || pkg.Counts.Failed > 0 || pkg.Counts.Skipped > 0 {
+				passedStr := fmt.Sprintf("%s %*d", SymbolPass, maxPassedLen, pkg.Counts.Passed)
+				if pkg.Counts.Passed > 0 {
+					passedStr = sf.passStyle.Render(passedStr)
+				} else {
+					passedStr = sf.neutralStyle.Render(passedStr)
+				}
+
+				failedStr := fmt.Sprintf("%s %*d", SymbolFail, maxFailedLen, pkg.Counts.Failed)
+				if pkg.Counts.Failed > 0 {
+					failedStr = sf.failStyle.Render(failedStr)
+				} else {
+					failedStr = sf.neutralStyle.Render(failedStr)
+				}
+
+				skippedStr := fmt.Sprintf("%s %*d", SymbolSkip, maxSkippedLen, pkg.Counts.Skipped)
+				if pkg.Counts.Skipped > 0 {
+					skippedStr = sf.skipStyle.Render(skippedStr)
+				} else {
+					skippedStr = sf.neutralStyle.Render(skippedStr)
+				}
+
+				counts = fmt.Sprintf("%s  %s  %s", passedStr, failedStr, skippedStr)
 			}
 
-			skippedStr := fmt.Sprintf("%s %*d", SymbolSkip, maxSkippedLen, pkg.Counts.Skipped)
-			if pkg.Counts.Skipped > 0 {
-				skippedStr = sf.skipStyle.Render(skippedStr)
+			// Format line with alignment
+			if counts != "" {
+				fmt.Fprintf(sb, "%s %-*s  %s  %*s\n",
+					symbolStyle.Render(symbol),
+					maxOutputLen, output,
+					counts,
+					maxElapsedLen, formatDuration(pkg.Elapsed))
 			} else {
-				skippedStr = sf.neutralStyle.Render(skippedStr)
+				countsWidth := 3 + 7 + maxPassedLen + maxFailedLen + maxSkippedLen
+				emptyCounts := fmt.Sprintf("%*s", countsWidth, "")
+
+				fmt.Fprintf(sb, "%s %-*s  %s  %*s\n",
+					symbolStyle.Render(symbol),
+					maxOutputLen, output,
+					emptyCounts,
+					maxElapsedLen, formatDuration(pkg.Elapsed))
 			}
-
-			counts = fmt.Sprintf("%s  %s  %s", passedStr, failedStr, skippedStr)
 		}
-
-		// Format line with alignment
-		if counts != "" {
-			result += fmt.Sprintf("%s %-*s  %s  %*s\n",
-				symbolStyle.Render(symbol),
-				maxOutputLen, output,
-				counts,
-				maxElapsedLen, formatDuration(pkg.Elapsed))
-		} else {
-			countsWidth := 3 + 7 + maxPassedLen + maxFailedLen + maxSkippedLen
-			emptyCounts := fmt.Sprintf("%*s", countsWidth, "")
-
-			result += fmt.Sprintf("%s %-*s  %s  %*s\n",
-				symbolStyle.Render(symbol),
-				maxOutputLen, output,
-				emptyCounts,
-				maxElapsedLen, formatDuration(pkg.Elapsed))
-		}
-	}
-
-	result += sf.horizontalLine()
-	return result
+	})
 }
 
 // formatOverallResults formats the overall statistics section.
 func (sf *SummaryFormatter) formatOverallResults(summary *Summary) string {
-	var result string
-	result += renderSectionHeader("OVERALL RESULTS")
-	// result += sf.horizontalLine() + "\n"
+	return sf.formatSection("OVERALL RESULTS", func(sb *strings.Builder) {
+		// Calculate percentages
+		passPercent := 0.0
+		failPercent := 0.0
+		skipPercent := 0.0
+		if summary.TotalTests > 0 {
+			passPercent = float64(summary.PassedTests) / float64(summary.TotalTests) * 100
+			failPercent = float64(summary.FailedTests) / float64(summary.TotalTests) * 100
+			skipPercent = float64(summary.SkippedTests) / float64(summary.TotalTests) * 100
+		}
 
-	// Calculate percentages
-	passPercent := 0.0
-	failPercent := 0.0
-	skipPercent := 0.0
-	if summary.TotalTests > 0 {
-		passPercent = float64(summary.PassedTests) / float64(summary.TotalTests) * 100
-		failPercent = float64(summary.FailedTests) / float64(summary.TotalTests) * 100
-		skipPercent = float64(summary.SkippedTests) / float64(summary.TotalTests) * 100
-	}
+		// Format icons with colors if TTY
+		passIcon := SymbolPass
+		failIcon := SymbolFail
+		skipIcon := SymbolSkip
+		if sf.useColors {
+			passIcon = sf.passStyle.Render(SymbolPass)
+			failIcon = sf.failStyle.Render(SymbolFail)
+			skipIcon = sf.skipStyle.Render(SymbolSkip)
+		}
 
-	// Format icons with colors if TTY
-	passIcon := SymbolPass
-	failIcon := SymbolFail
-	skipIcon := SymbolSkip
-	if sf.useColors {
-		passIcon = sf.passStyle.Render(SymbolPass)
-		failIcon = sf.failStyle.Render(SymbolFail)
-		skipIcon = sf.skipStyle.Render(SymbolSkip)
-	}
-
-	result += fmt.Sprintf("Total tests:    %d\n", summary.TotalTests)
-	result += fmt.Sprintf("Passed:         %d %s (%.1f%%)\n", summary.PassedTests, passIcon, passPercent)
-	result += fmt.Sprintf("Failed:         %d %s (%.1f%%)\n", summary.FailedTests, failIcon, failPercent)
-	result += fmt.Sprintf("Skipped:        %d %s (%.1f%%)\n", summary.SkippedTests, skipIcon, skipPercent)
-	result += fmt.Sprintf("Total time:     %s\n", formatDuration(summary.TotalTime))
-	result += fmt.Sprintf("Packages:       %d\n", summary.PackageCount)
-
-	result += sf.horizontalLine()
-	return result
+		fmt.Fprintf(sb, "Total tests:    %d\n", summary.TotalTests)
+		fmt.Fprintf(sb, "Passed:         %d %s (%.1f%%)\n", summary.PassedTests, passIcon, passPercent)
+		fmt.Fprintf(sb, "Failed:         %d %s (%.1f%%)\n", summary.FailedTests, failIcon, failPercent)
+		fmt.Fprintf(sb, "Skipped:        %d %s (%.1f%%)\n", summary.SkippedTests, skipIcon, skipPercent)
+		fmt.Fprintf(sb, "Total time:     %s\n", formatDuration(summary.TotalTime))
+		fmt.Fprintf(sb, "Packages:       %d\n", summary.PackageCount)
+	})
 }
 
 // formatFailures formats the failures section.
@@ -443,44 +441,39 @@ func (sf *SummaryFormatter) formatFailures(failures []*results.TestResult) strin
 		return ""
 	}
 
-	var result string
-	result += renderSectionHeader("FAILURES")
-	// result += sf.horizontalLine() + "\n"
-
-	// Group failures by package
-	packageMap := make(map[string][]*results.TestResult)
-	packageOrder := make([]string, 0)
-	for _, failure := range failures {
-		if _, exists := packageMap[failure.Package]; !exists {
-			packageOrder = append(packageOrder, failure.Package)
-		}
-		packageMap[failure.Package] = append(packageMap[failure.Package], failure)
-	}
-
-	// Format each package's failures
-	for i, pkg := range packageOrder {
-		if i > 0 {
-			result += "\n"
-		}
-		result += pkg + "\n"
-
-		for _, failure := range packageMap[pkg] {
-			result += IndentLevel1 + failure.Name + "\n"
-
-			// Truncate output to 10 lines
-			outputLines := failure.Output
-			if len(outputLines) > 10 {
-				outputLines = outputLines[:10]
+	return sf.formatSection("FAILURES", func(sb *strings.Builder) {
+		// Group failures by package
+		packageMap := make(map[string][]*results.TestResult)
+		packageOrder := make([]string, 0)
+		for _, failure := range failures {
+			if _, exists := packageMap[failure.Package]; !exists {
+				packageOrder = append(packageOrder, failure.Package)
 			}
+			packageMap[failure.Package] = append(packageMap[failure.Package], failure)
+		}
 
-			for _, line := range outputLines {
-				result += IndentLevel2 + ensureReset(line) + "\n"
+		// Format each package's failures
+		for i, pkg := range packageOrder {
+			if i > 0 {
+				sb.WriteString("\n")
+			}
+			sb.WriteString(pkg + "\n")
+
+			for _, failure := range packageMap[pkg] {
+				sb.WriteString(IndentLevel1 + failure.Name + "\n")
+
+				// Truncate output to 10 lines
+				outputLines := failure.Output
+				if len(outputLines) > 10 {
+					outputLines = outputLines[:10]
+				}
+
+				for _, line := range outputLines {
+					sb.WriteString(IndentLevel2 + ensureReset(line) + "\n")
+				}
 			}
 		}
-	}
-
-	result += sf.horizontalLine()
-	return result
+	})
 }
 
 // formatSkipped formats the skipped tests section.
@@ -489,44 +482,39 @@ func (sf *SummaryFormatter) formatSkipped(skipped []*results.TestResult) string 
 		return ""
 	}
 
-	var result string
-	result += renderSectionHeader("SKIPPED")
-	// result += sf.horizontalLine() + "\n"
-
-	// Group skipped tests by package
-	packageMap := make(map[string][]*results.TestResult)
-	packageOrder := make([]string, 0)
-	for _, skip := range skipped {
-		if _, exists := packageMap[skip.Package]; !exists {
-			packageOrder = append(packageOrder, skip.Package)
-		}
-		packageMap[skip.Package] = append(packageMap[skip.Package], skip)
-	}
-
-	// Format each package's skipped tests
-	for i, pkg := range packageOrder {
-		if i > 0 {
-			result += "\n"
-		}
-		result += pkg + "\n"
-
-		for _, skip := range packageMap[pkg] {
-			result += IndentLevel1 + skip.Name + "\n"
-
-			// Truncate output to 3 lines
-			outputLines := skip.Output
-			if len(outputLines) > 3 {
-				outputLines = outputLines[:3]
+	return sf.formatSection("SKIPPED", func(sb *strings.Builder) {
+		// Group skipped tests by package
+		packageMap := make(map[string][]*results.TestResult)
+		packageOrder := make([]string, 0)
+		for _, skip := range skipped {
+			if _, exists := packageMap[skip.Package]; !exists {
+				packageOrder = append(packageOrder, skip.Package)
 			}
+			packageMap[skip.Package] = append(packageMap[skip.Package], skip)
+		}
 
-			for _, line := range outputLines {
-				result += IndentLevel2 + ensureReset(line) + "\n"
+		// Format each package's skipped tests
+		for i, pkg := range packageOrder {
+			if i > 0 {
+				sb.WriteString("\n")
+			}
+			sb.WriteString(pkg + "\n")
+
+			for _, skip := range packageMap[pkg] {
+				sb.WriteString(IndentLevel1 + skip.Name + "\n")
+
+				// Truncate output to 3 lines
+				outputLines := skip.Output
+				if len(outputLines) > 3 {
+					outputLines = outputLines[:3]
+				}
+
+				for _, line := range outputLines {
+					sb.WriteString(IndentLevel2 + ensureReset(line) + "\n")
+				}
 			}
 		}
-	}
-
-	result += sf.horizontalLine()
-	return result
+	})
 }
 
 // formatSlowTests formats the slow tests section.
@@ -535,28 +523,23 @@ func (sf *SummaryFormatter) formatSlowTests(slowTests []*results.TestResult) str
 		return ""
 	}
 
-	var result string
-	result += renderSectionHeader("SLOW TESTS (>10s)")
-	// result += sf.horizontalLine() + "\n"
-
-	// Calculate column widths for alignment
-	maxNameLen := 0
-	for _, test := range slowTests {
-		if len(test.Name) > maxNameLen {
-			maxNameLen = len(test.Name)
+	return sf.formatSection("SLOW TESTS (>10s)", func(sb *strings.Builder) {
+		// Calculate column widths for alignment
+		maxNameLen := 0
+		for _, test := range slowTests {
+			if len(test.Name) > maxNameLen {
+				maxNameLen = len(test.Name)
+			}
 		}
-	}
 
-	// Format each slow test
-	for _, test := range slowTests {
-		result += fmt.Sprintf("%-*s  %s\n",
-			maxNameLen, test.Name,
-			formatDuration(test.Elapsed))
-		result += fmt.Sprintf("  %s\n", test.Package)
-	}
-
-	result += sf.horizontalLine()
-	return result
+		// Format each slow test
+		for _, test := range slowTests {
+			fmt.Fprintf(sb, "%-*s  %s\n",
+				maxNameLen, test.Name,
+				formatDuration(test.Elapsed))
+			fmt.Fprintf(sb, "  %s\n", test.Package)
+		}
+	})
 }
 
 // horizontalLine returns a horizontal separator line.
