@@ -39,16 +39,16 @@ func (s Status) String() string {
 // A run starts when any test event is received and there is no current run in progress.
 // A run finishes when the number of running packages drops to 0.
 type Run struct {
-	ID            int                       // Sequential run ID (1, 2, 3...)
-	Packages      map[string]*PackageResult // Package name -> PackageResult
-	PackageOrder  []string                  // Chronological order of package starts
-	TestResults   map[string]*TestResult    // "package/testname" -> TestResult
-	StartTime     time.Time                 // When the run started
-	WallStartTime time.Time                 // When the run started (wall clock)
-	EndTime       time.Time                 // When the run ended
-	RunningPkgs   int                       // Number of currently running packages
-	NonTestOutput []string                  // Build errors, compilation output
-	Counts        struct {
+	ID             int                       // Sequential run ID (1, 2, 3...)
+	Packages       map[string]*PackageResult // Package name -> PackageResult
+	PackageOrder   []string                  // Chronological order of package starts
+	TestResults    map[string]*TestResult    // "package/testname" -> TestResult
+	FirstEventTime time.Time                 // When the run started
+	WallStartTime  time.Time                 // When the run started (wall clock)
+	LastEventTime  time.Time                 // When the run ended
+	RunningPkgs    int                       // Number of currently running packages
+	NonTestOutput  []string                  // Build errors, compilation output
+	Counts         struct {
 		Passed  int // Number of passed tests
 		Failed  int // Number of failed tests
 		Skipped int // Number of skipped tests
@@ -104,7 +104,7 @@ func NewRun(id int) *Run {
 		Packages:      make(map[string]*PackageResult),
 		PackageOrder:  make([]string, 0),
 		TestResults:   make(map[string]*TestResult),
-		StartTime:     time.Now(),
+		WallStartTime: time.Now(),
 		NonTestOutput: make([]string, 0),
 	}
 }

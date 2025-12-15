@@ -54,7 +54,7 @@ func TestAlignment(t *testing.T) {
 		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
 	}
 
-	output := m.View()
+	output := viewLatest(m)
 	lines := strings.Split(output, "\n")
 
 	// Find the package summary line

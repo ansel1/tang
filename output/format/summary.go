@@ -103,15 +103,9 @@ type Summary struct {
 // Returns:
 //   - Summary with all computed statistics
 func ComputeSummary(run *results.Run, slowThreshold time.Duration) *Summary {
-	// Handle case where EndTime wasn't set (shouldn't happen, but be defensive)
-	endTime := run.EndTime
-	if endTime.IsZero() {
-		endTime = time.Now()
-	}
-
 	summary := &Summary{
 		PackageCount: len(run.PackageOrder),
-		TotalTime:    endTime.Sub(run.StartTime),
+		TotalTime:    run.LastEventTime.Sub(run.FirstEventTime),
 	}
 
 	// Build packages slice in chronological order

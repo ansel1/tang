@@ -51,7 +51,7 @@ func TestPackageSummaryLastOutput(t *testing.T) {
 		m.Update(EngineEventMsg(evt))
 	}
 
-	output := m.View()
+	output := viewLatest(m)
 
 	// The output should contain the last output line (with tabs expanded)
 	// The original line is "ok  \tgithub.com/test/pkg1\t0.10s"

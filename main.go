@@ -119,7 +119,7 @@ func main() {
 		// Forward engine events to bubbletea
 		go func() {
 			var batch []engine.Event
-			const maxBatchSize = 50
+			const maxBatchSize = 1
 
 			// Consume events until channel closes
 			for {
@@ -127,11 +127,6 @@ func main() {
 				evt, ok := <-engineEvents
 				if !ok {
 					break
-				}
-
-				if evt.Type == engine.EventRawLine {
-					p.Println(string(evt.RawLine))
-					continue
 				}
 
 				// Start a new batch
@@ -153,16 +148,6 @@ func main() {
 							}
 							p.Send(tui.EOFMsg{})
 							return
-						}
-
-						if nextEvt.Type == engine.EventRawLine {
-							// Flush current batch
-							if len(batch) > 0 {
-								p.Send(tui.EngineEventBatchMsg(batch))
-								batch = nil
-							}
-							p.Println(string(nextEvt.RawLine))
-							break DrainLoop
 						}
 
 						batch = append(batch, nextEvt)
@@ -189,13 +174,8 @@ func main() {
 			os.Exit(1)
 		}
 
-		// Display summary after TUI exits
-		if model, ok := finalModel.(*tui.Model); ok {
-			// Ensure run is finished (e.g. if interrupted)
-			collector.Finish()
-			model.DisplaySummary()
-
-			// Set exit code based on test failures
+		// Set exit code based on test failures
+		if _, ok := finalModel.(*tui.Model); ok {
 			for _, run := range collector.State().Runs {
 				if run.Counts.Failed > 0 {
 					exitCode = 1

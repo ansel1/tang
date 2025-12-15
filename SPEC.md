@@ -92,10 +92,10 @@ TODO
 - [x] -replay: when used with -f, replay events with pauses to simulate original test run
 - [x] -rate: when used with -replay, set rate to replay.  Defaults to 1 (original speed), 0.5 = double speed, 0 = no pause
 - [x] pass any lines which are not `go test -json` output directly to the terminal
-- [ ] if the output stream contains multiple, seperate test runs (like the output of a make target that calls `go test` twice)
+- [x] if the output stream contains multiple, seperate test runs (like the output of a make target that calls `go test` twice)
       then detect the start and end of each run.  At the end of a run, print the summary to the terminal.  Stream any additional 
       non-test ouput to the terminal.  When the next test run start is detected, restart the TUI for the duration of the next run.  Etc.
-- [ ] Keep printing output after tests complete until pipe is empty
+- [x] Keep printing output after tests complete until pipe is empty
 - [ ] detect and report panics
 - [ ] -slow-threshold: set slow test threshold
 - [x] -notty: don't use the tui, just stream results to terminal, then print the summary
@@ -113,15 +113,7 @@ TODO
 - [x] if just passing file, and not replaying, don't use tui, just print summary
 - [x] if ctrl-c is pressed, the package that was still in progress is not displayed in the summary
 - [x] in the packages summary, the elapsed times are if different formats.  Just use the full format
-![alt text](image.png)
-- [ ] in the overall results summary, move the icons to the left of the count
-![alt text](image-1.png)
-- [ ] in the failures section, the === RUN line is showing up the output.  Don't need it.
-![alt text](image-2.png)
-- [ ] same with skipped tests.  Don't need the === RUN line or the --- SKIP line
-![alt text](image-3.png)
 - [x] in the slow test section, the line is wrapping
-![alt text](image-4.png)
   anyway, maybe that section should be layed out like the other sections: grouped by package
 - [x] maybe ditch the package stats?  not very useful.
 
@@ -138,5 +130,4 @@ TODO
 - [ ] The "NonTestOutput" in the model is probably not needed.  Non test output can just flow directly to tea.Println()
 - [ ] Model.events can be removed
 - [ ] Model.ReplayMode looks unneeded
-- [ ] in replay mode, it looks like printing a lot of output is *much* slower than the pace at which the logs are read from the input stream.  A test might appear to take 5 minutes to complete, but actually took .04 seconds.  Let's experiment with draining the event channel in batches between display frames.  Not sure if that's going to make the UI too jumpy...
-- [ ] when scrolling through log output with ansi colors, the escape sequences only affect the current line.  They are reset after each line.  Would be cool if the buffer were like a window into a larger buffer, so escape codes set above the top of the window would still be in effect in the visible part of the window, and the reset codes would only be after the entire buffer.  Maybe there's a bubble component for this?  Trouble is, we only store a rolling buffer of lines, so we can't keep the state of the terminal above the top of the window.  
+- [x] in replay mode, it looks like printing a lot of output is *much* slower than the pace at which the logs are read from the input stream.  A test might appear to take 5 minutes to complete, but actually took .04 seconds.  Let's experiment with draining the event channel in batches between display frames.  Not sure if that's going to make the UI too jumpy...

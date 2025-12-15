@@ -83,16 +83,17 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case EngineEventMsg:
-		// Push event to collector (synchronous)
-		m.collector.Push(engine.Event(msg))
-		return m, nil
+		cmd := m.handleEvent(engine.Event(msg))
+		return m, cmd
 
 	case EngineEventBatchMsg:
-		// Push batch of events to collector
+		var cmds []tea.Cmd
 		for _, evt := range msg {
-			m.collector.Push(evt)
+			if cmd := m.handleEvent(evt); cmd != nil {
+				cmds = append(cmds, cmd)
+			}
 		}
-		return m, nil
+		return m, tea.Sequence(cmds...)
 
 	case tea.WindowSizeMsg:
 		// Update terminal width and height
@@ -105,6 +106,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
+			if m.collector.State().CurrentRun != nil {
+				// Mark as interrupted
+				m.collector.Finish()
+				// Print final report
+				// Since Finish() was just called, the run is now in the list of runs
+				// and is no longer CurrentRun (CurrentRun is nil)
+				state := m.collector.State()
+				if len(state.Runs) > 0 {
+					finishedRun := state.Runs[len(state.Runs)-1]
+					return m, tea.Sequence(m.printFinalReport(finishedRun), tea.Quit)
+				}
+			}
 			return m, tea.Quit
 		}
 
@@ -117,9 +130,63 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// handleEvent processes a single engine event and returns a command if output is needed
+func (m *Model) handleEvent(evt engine.Event) tea.Cmd {
+	if evt.Type == engine.EventRawLine {
+		// Print raw line directly
+		return tea.Println(string(evt.RawLine))
+	}
+
+	// 1. Snapshot state before update
+	wasRunning := m.collector.State().CurrentRun != nil
+
+	// 2. Update collector
+	m.collector.Push(evt)
+
+	// 3. Check state after update
+	state := m.collector.State()
+	currentRun := state.CurrentRun
+	isRunning := currentRun != nil
+
+	// Case 1: Run just finished
+	if wasRunning && !isRunning {
+		// Run finished, print final view and summary
+		// We need the run that just finished. It should be the last one in the list.
+		if len(state.Runs) > 0 {
+			finishedRun := state.Runs[len(state.Runs)-1]
+			return m.printFinalReport(finishedRun)
+		}
+	}
+
+	// Case 3: Run just started or is ongoing
+	// No immediate output command needed, View() handles rendering
+	return nil
+}
+
+// printFinalReport handles the printing of the final run state and summary
+func (m *Model) printFinalReport(run *results.Run) tea.Cmd {
+	// Render the final state of the run
+	finalView := expandTabs(m.renderRun(run), 8)
+
+	// Generate summary
+	summary := format.ComputeSummary(run, 10*time.Second)
+	summaryText := ""
+	if summary != nil {
+		formatter := format.NewSummaryFormatter(m.TerminalWidth)
+		summaryText = "\n" + formatter.Format(summary)
+	}
+
+	return tea.Println(finalView + summaryText)
+}
+
 // View renders the TUI
 func (m *Model) View() string {
-	return strings.TrimRight(expandTabs(m.renderHierarchical(), 8), "\n")
+	state := m.collector.State()
+	if state.CurrentRun == nil {
+		return ""
+	}
+	// Pass the specific run to render
+	return strings.TrimRight(expandTabs(m.renderRun(state.CurrentRun), 8), "\n")
 }
 
 // expandTabs replaces tab characters in a string with spaces.
@@ -163,10 +230,10 @@ func (m *Model) testElapsed(test *results.TestResult) time.Duration {
 }
 
 func (m *Model) runElapsed(run *results.Run) time.Duration {
-	if run.EndTime.IsZero() {
+	if run.Status == results.StatusRunning {
 		return m.scaledElapsedDuration(time.Since(run.WallStartTime))
 	}
-	return run.EndTime.Sub(run.StartTime)
+	return run.LastEventTime.Sub(run.FirstEventTime)
 }
 
 func (m *Model) scaledElapsedDuration(duration time.Duration) time.Duration {
@@ -202,22 +269,14 @@ func truncateLine(line string, width int) string {
 	return line[:width]
 }
 
-// renderHierarchical renders output in hierarchical format
-func (m *Model) renderHierarchical() string {
+// renderRun renders the TUI for a specific run
+func (m *Model) renderRun(run *results.Run) string {
 	var b strings.Builder
 
-	// Access collector state directly
-	state := m.collector.State()
-	if len(state.Runs) == 0 {
-		return ""
-	}
-
-	// Use latest run
-	run := state.Runs[len(state.Runs)-1]
-
 	// Render non-test output first (build errors, etc.)
+
 	for _, line := range run.NonTestOutput {
-		b.WriteString("  ") // Add padding
+		// b.WriteString("  ") // Add padding
 		b.WriteString(line)
 		b.WriteString("\n")
 	}
@@ -271,7 +330,7 @@ func (m *Model) renderHierarchical() string {
 	// Collect all potential test lines from running packages
 	for _, pkgName := range run.PackageOrder {
 		pkg := run.Packages[pkgName]
-		if pkg.Status == results.StatusRunning {
+		if pkg.Status == results.StatusRunning || pkg.Status == results.StatusInterrupted {
 			for _, testName := range pkg.TestOrder {
 				testKey := pkgName + "/" + testName
 				test := run.TestResults[testKey]
@@ -385,7 +444,7 @@ func (m *Model) renderPackage(b *strings.Builder, run *results.Run, pkg *results
 	m.renderPackageHeader(b, pkg, wPassed, wFailed, wSkipped, wElapsed)
 
 	// Render tests if allocated
-	if pkg.Status == results.StatusRunning {
+	if pkg.Status == results.StatusRunning || pkg.Status == results.StatusInterrupted {
 		for _, testName := range pkg.TestOrder {
 			count, ok := testLines[testName]
 			if ok && count > 0 {
@@ -546,7 +605,6 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run) {
 	total := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped + run.Counts.Running
 
 	elapsedVal := formatElapsedTime(m.runElapsed(run))
-	elapsedStr := fmt.Sprintf("%s", elapsedVal)
 
 	var statusPrefix string
 	switch run.Status {
@@ -570,10 +628,10 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run) {
 		prefix = m.getSpinnerPrefix(run.Counts.Failed > 0)
 		// Bold the summary line for running status
 		leftPart = m.boldStyle.Render(leftPart)
-		elapsedStr = m.boldStyle.Render(elapsedStr)
+		elapsedVal = m.boldStyle.Render(elapsedVal)
 	}
 
-	m.renderAlignedLine(b, leftPart, elapsedStr, prefix)
+	m.renderAlignedLine(b, leftPart, elapsedVal, prefix)
 }
 
 // DisplaySummary retrieves the summary from the collector and displays it.

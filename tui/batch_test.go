@@ -61,7 +61,7 @@ func TestEventBatching(t *testing.T) {
 	m.Update(EngineEventBatchMsg(events))
 
 	// Verify state
-	output := m.View()
+	output := viewLatest(m)
 
 	// Output should contain the package and the test result
 	if !strings.Contains(output, "github.com/test/batch") {

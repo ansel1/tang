@@ -154,7 +154,7 @@ func TestHierarchicalRendering(t *testing.T) {
 		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
 	}
 
-	output := m.String()
+	output := viewLatest(m)
 
 	// Verify key aspects of the output
 	tests := []struct {

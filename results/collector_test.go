@@ -306,7 +306,7 @@ func TestCollectorFinishInterruptedRun(t *testing.T) {
 		run := state.Runs[0]
 
 		// Check EndTime was set
-		if run.EndTime.IsZero() {
+		if run.LastEventTime.IsZero() {
 			t.Error("Expected EndTime to be set")
 		}
 

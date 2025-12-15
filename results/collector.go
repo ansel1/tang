@@ -16,11 +16,10 @@ import (
 // - Run starts: Any test event when no current run exists
 // - Run finishes: Running package count drops to 0
 type Collector struct {
-	state               *State
-	lastEventTime       time.Time
-	isReplay            bool
-	replayRate          float64
-	currentRunWallStart time.Time
+	state         *State
+	lastEventTime time.Time
+	isReplay      bool
+	replayRate    float64
 }
 
 // NewCollector creates a new result collector.
@@ -66,10 +65,17 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) {
 
 	// Start a new run if needed
 	if c.state.CurrentRun == nil {
-		c.startNewRun(event.Time)
+		c.startNewRun()
 	}
 
 	run := c.state.CurrentRun
+
+	if !event.Time.IsZero() {
+		if run.FirstEventTime.IsZero() {
+			run.FirstEventTime = event.Time
+		}
+		run.LastEventTime = event.Time
+	}
 
 	// Handle build-output and other non-package events
 	if event.Package == "" {
@@ -205,22 +211,18 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 }
 
 // startNewRun creates a new run.
-func (c *Collector) startNewRun(startTime time.Time) {
+func (c *Collector) startNewRun() {
 	runID := len(c.state.Runs) + 1
 	run := NewRun(runID)
 	run.Status = StatusRunning
-	run.StartTime = startTime
-	run.WallStartTime = time.Now()
 	c.state.Runs = append(c.state.Runs, run)
 	c.state.CurrentRun = run
-	c.currentRunWallStart = time.Now()
 }
 
 // checkRunFinished checks if the current run has finished.
 func (c *Collector) checkRunFinished(run *Run) {
 	if run.RunningPkgs == 0 {
-		run.EndTime = time.Now()
-		c.state.CurrentRun = nil
+		c.Finish()
 	}
 }
 
@@ -230,45 +232,49 @@ func (c *Collector) Finish() {
 	if c.state.CurrentRun != nil {
 		run := c.state.CurrentRun
 
-		// Determine end time: use last event time if available AND in replay mode, otherwise now
-		endTime := time.Now()
-		if c.isReplay && !c.lastEventTime.IsZero() {
-			// Calculate simulated end time based on wall clock duration and replay rate
-			// This ensures that the summary matches the TUI's "perceived" time
-			wallDuration := time.Since(c.currentRunWallStart)
+		// Determine end time: use last event time if available, otherwise now
+		endTime := c.lastEventTime
+		if c.lastEventTime.IsZero() {
+			endTime = time.Now()
+			if c.isReplay {
+				// Calculate simulated end time based on wall clock duration and replay rate
+				// This ensures that the summary matches the TUI's "perceived" time
+				wallDuration := time.Since(run.WallStartTime)
 
-			// Apply rate (rate is inverse speed, e.g. 0.5 means 2x speed)
-			// If rate is 0 (instant), we fall back to lastEventTime
-			if c.replayRate > 0 {
-				simulatedDuration := time.Duration(float64(wallDuration) / c.replayRate)
-				endTime = run.StartTime.Add(simulatedDuration)
-			} else {
-				endTime = c.lastEventTime
+				// Apply rate (rate is inverse speed, e.g. 0.5 means 2x speed)
+				// If rate is 0 (instant), we fall back to lastEventTime
+				if c.replayRate > 0 {
+					wallDuration = time.Duration(float64(wallDuration) / c.replayRate)
+				}
+				endTime = run.FirstEventTime.Add(wallDuration)
 			}
 		}
-		run.EndTime = endTime
+		run.LastEventTime = endTime
+
+		var interrupted bool
 
 		// Mark any still-running packages as interrupted and compute their elapsed time
 		for _, pkg := range run.Packages {
 			if pkg.Status == StatusRunning {
+				interrupted = true
 				pkg.Status = StatusInterrupted
 
+				// Calculate elapsed time based on run duration and package start offset
+				// This ensures consistency with TUI even if ReplayReader doesn't sleep exactly as expected
+				wallRunDuration := time.Since(pkg.WallStartTime)
 				if c.isReplay && c.replayRate > 0 {
-					// Calculate simulated elapsed time based on run duration and package start offset
-					// This ensures consistency with TUI even if ReplayReader doesn't sleep exactly as expected
-					wallRunDuration := time.Since(c.currentRunWallStart)
-					simulatedRunDuration := time.Duration(float64(wallRunDuration) / c.replayRate)
-					pkgOffset := pkg.StartTime.Sub(run.StartTime)
-
-					pkg.Elapsed = simulatedRunDuration - pkgOffset
-					if pkg.Elapsed < 0 {
-						pkg.Elapsed = 0
-					}
-				} else {
-					// Fallback for live runs
-					pkg.Elapsed = endTime.Sub(pkg.StartTime)
+					wallRunDuration = time.Duration(float64(wallRunDuration) / c.replayRate)
 				}
+				pkg.Elapsed = wallRunDuration
 			}
+		}
+
+		if interrupted {
+			run.Status = StatusInterrupted
+		} else if run.Counts.Failed > 0 {
+			run.Status = StatusFailed
+		} else {
+			run.Status = StatusPassed
 		}
 
 		c.state.CurrentRun = nil
