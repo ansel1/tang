@@ -16,21 +16,6 @@ func TestAlignment(t *testing.T) {
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
 
-	// Setup event processing
-	engineEvents := make(chan engine.Event, 20)
-	go collector.ProcessEvents(engineEvents)
-	resultsEvents := collector.Subscribe()
-
-	// Feed events in background
-	go func() {
-		for evt := range resultsEvents {
-			m.Update(ResultsEventMsg(evt))
-		}
-	}()
-
-	// Create a package event with tabs in the output
-	// "ok\tgithub.com/test/pkg1\t0.10s"
-	// The tabs will expand, making the line longer than lipgloss.Width() thinks if not expanded.
 	now := time.Now()
 	events := []parser.TestEvent{
 		{
@@ -66,14 +51,10 @@ func TestAlignment(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		engineEvents <- engine.Event{Type: engine.EventTest, TestEvent: evt}
+		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
 	}
-	close(engineEvents)
 
-	// Wait for processing
-	time.Sleep(50 * time.Millisecond)
-
-	output := m.String()
+	output := m.View()
 	lines := strings.Split(output, "\n")
 
 	// Find the package summary line

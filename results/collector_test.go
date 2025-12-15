@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
 )
 
@@ -51,15 +52,10 @@ func TestCollectorInterruptedPackage(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		collector.handleTestEvent(evt)
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: evt})
 	}
 
-	// Sleep briefly to ensure some wall clock time has passed (if needed for elapsed calc)
-	// Note: results.Collector currently uses event.Elapsed for finished items.
-	// For interrupted items, it doesn't calculate elapsed time yet in GetState.
-	// But we can check status.
-
-	state := collector.GetState()
+	state := collector.State()
 	if len(state.Runs) != 1 {
 		t.Fatalf("Expected 1 run, got %d", len(state.Runs))
 	}
@@ -75,15 +71,6 @@ func TestCollectorInterruptedPackage(t *testing.T) {
 		t.Errorf("Expected package name 'github.com/test/pkg1', got '%s'", pkg.Name)
 	}
 
-	// Package should have default status (empty or running) since it never completed
-	// results.Collector sets status on pass/fail/skip.
-	// Initial status is empty string? No, NewPackageResult doesn't set status.
-	// Wait, NewPackageResult isn't used in handleTestEvent, it creates struct literal.
-	// Status defaults to "".
-	// We might want to set it to "running" initially?
-	// Let's check collector.go.
-	// It creates &PackageResult{...}. Status is empty.
-	// If I want to verify it's NOT "ok" or "FAIL", that's fine.
 	if pkg.Status == StatusPassed || pkg.Status == StatusFailed {
 		t.Errorf("Expected package status to be incomplete, got '%s'", pkg.Status)
 	}
@@ -168,10 +155,10 @@ func TestCollectorMultipleInterruptedPackages(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		collector.handleTestEvent(evt)
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: evt})
 	}
 
-	state := collector.GetState()
+	state := collector.State()
 	if len(state.Runs) != 1 {
 		t.Fatalf("Expected 1 run, got %d", len(state.Runs))
 	}
@@ -275,14 +262,12 @@ func TestCollectorFinishInterruptedRun(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		eventsToEmit := collector.handleTestEvent(evt)
-		for _, e := range eventsToEmit {
-			_ = e // Consume events
-		}
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: evt})
 	}
 
 	// Verify state before finishCurrentRun
-	collector.WithCurrentRun(func(run *Run) {
+	{
+		run := collector.State().CurrentRun
 		if run == nil {
 			t.Fatal("Expected a current run before finish")
 		}
@@ -302,13 +287,14 @@ func TestCollectorFinishInterruptedRun(t *testing.T) {
 		if pkg3.Status != StatusRunning {
 			t.Errorf("Expected pkg3 status 'running' before finish, got '%s'", pkg3.Status)
 		}
-	})
+	}
 
 	// Now finish the run
 	collector.Finish()
 
 	// Verify interrupted packages were handled correctly
-	collector.WithState(func(state *State) {
+	{
+		state := collector.State()
 		if state.CurrentRun != nil {
 			t.Error("Expected CurrentRun to be nil after finish")
 		}
@@ -361,5 +347,5 @@ func TestCollectorFinishInterruptedRun(t *testing.T) {
 		if pkg3.Elapsed < expectedMinElapsed-100*time.Millisecond {
 			t.Errorf("pkg3 elapsed time %v seems too small (expected at least %v)", pkg3.Elapsed, expectedMinElapsed)
 		}
-	})
+	}
 }

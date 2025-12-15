@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/output/format"
 	"github.com/ansel1/tang/results"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -13,8 +14,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ResultsEventMsg wraps results events for bubbletea
-type ResultsEventMsg results.Event
+// EngineEventMsg wraps engine events for bubbletea
+type EngineEventMsg engine.Event
 
 // EOFMsg signals that stdin has been closed (kept for backward compatibility)
 type EOFMsg struct{}
@@ -26,13 +27,8 @@ const MaxOutputLines = 6
 
 // Model represents the TUI state for the enhanced hierarchical test output display.
 //
-// The Model implements the Bubbletea Model interface. It consumes results.Event
-// from the results.Collector and reads state from the collector for rendering.
-//
-// Architecture:
-// - Collector reference provides access to test run state
-// - consumes results.Event to know when to re-render
-// - View() reads from collector.GetState() for current data
+// The Model implements the Bubbletea Model interface. It consumes engine.Event
+// and pushes them to the collector, then reads state from the collector for rendering.
 type Model struct {
 	// Collector reference (read-only from TUI perspective)
 	collector *results.Collector
@@ -83,8 +79,10 @@ func (m *Model) Init() tea.Cmd {
 // Update handles messages
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case ResultsEventMsg:
-		m.handleResultsEvent(results.Event(msg))
+	case EngineEventMsg:
+		// Push event to collector (synchronous)
+		m.collector.Push(engine.Event(msg))
+		return m, nil
 
 	case tea.WindowSizeMsg:
 		// Update terminal width and height
@@ -109,32 +107,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleResultsEvent processes a results event and updates the model state.
-func (m *Model) handleResultsEvent(evt results.Event) {
-	switch evt.Type {
-	case results.EventNonTestOutput:
-
-	case results.EventRunStarted:
-
-	case results.EventRunFinished:
-		// Could handle run completion here if needed
-
-	case results.EventPackageUpdated:
-
-	case results.EventTestUpdated:
-
-	}
-}
-
 // View renders the TUI
 func (m *Model) View() string {
 	return strings.TrimRight(expandTabs(m.renderHierarchical(), 8), "\n")
 }
 
 // expandTabs replaces tab characters in a string with spaces.
-// This is necessary because tab characters in some display environments
-// do not overwrite characters but simply advance the cursor, leaving
-// characters from the previous view bleeding through.
 func expandTabs(s string, tabWidth int) string {
 	var b strings.Builder
 	col := 0
@@ -191,7 +169,6 @@ func (m *Model) scaledElapsedDuration(duration time.Duration) time.Duration {
 }
 
 // formatElapsedTime formats elapsed time according to spec
-// Format: X.Xs for <60s, X.Xm for >=60s
 func formatElapsedTime(d time.Duration) string {
 	if d < 50*time.Millisecond {
 		return "0.0s"
@@ -204,7 +181,7 @@ func formatElapsedTime(d time.Duration) string {
 	return fmt.Sprintf("%.1fs", d.Seconds())
 }
 
-// truncateLine truncates a line to fit within width, preserving right-aligned content if needed
+// truncateLine truncates a line to fit within width
 func truncateLine(line string, width int) string {
 	if width <= 0 {
 		return ""
@@ -212,177 +189,182 @@ func truncateLine(line string, width int) string {
 	if len(line) <= width {
 		return line
 	}
-	// Simple truncation at width
-	// TODO: Could be enhanced to preserve right-aligned content
 	return line[:width]
 }
 
-// renderHierarchical renders output in hierarchical format with smart line elision
+// renderHierarchical renders output in hierarchical format
 func (m *Model) renderHierarchical() string {
 	var b strings.Builder
 
-	m.collector.WithLatestRun(func(run *results.Run) {
-		// Render non-test output first (build errors, etc.)
-		for _, line := range run.NonTestOutput {
-			b.WriteString("  ") // Add padding
-			b.WriteString(line)
-			b.WriteString("\n")
-		}
-		if len(run.NonTestOutput) > 0 {
-			b.WriteString("\n")
-		}
+	// Access collector state directly
+	state := m.collector.State()
+	if len(state.Runs) == 0 {
+		return ""
+	}
 
-		// Calculate max widths for each column
-		var maxPassed, maxFailed, maxSkipped, maxElapsed int
-		for _, pkg := range run.Packages {
-			if passedLen := len(fmt.Sprintf("%d", pkg.Counts.Passed)); passedLen > maxPassed {
-				maxPassed = passedLen
-			}
-			if failedLen := len(fmt.Sprintf("%d", pkg.Counts.Failed)); failedLen > maxFailed {
-				maxFailed = failedLen
-			}
-			if skippedLen := len(fmt.Sprintf("%d", pkg.Counts.Skipped)); skippedLen > maxSkipped {
-				maxSkipped = skippedLen
-			}
+	// Use latest run
+	run := state.Runs[len(state.Runs)-1]
 
-			if elapsedLen := len(formatElapsedTime(m.packageElapsed(pkg))); elapsedLen > maxElapsed {
-				maxElapsed = elapsedLen
-			}
-		}
+	// Render non-test output first (build errors, etc.)
+	for _, line := range run.NonTestOutput {
+		b.WriteString("  ") // Add padding
+		b.WriteString(line)
+		b.WriteString("\n")
+	}
+	if len(run.NonTestOutput) > 0 {
+		b.WriteString("\n")
+	}
 
-		fixedLines := len(run.NonTestOutput)
-		if len(run.NonTestOutput) > 0 {
-			fixedLines++ // Newline
+	// Calculate max widths for each column
+	var maxPassed, maxFailed, maxSkipped, maxElapsed int
+	for _, pkg := range run.Packages {
+		if passedLen := len(fmt.Sprintf("%d", pkg.Counts.Passed)); passedLen > maxPassed {
+			maxPassed = passedLen
 		}
-		fixedLines += 1 // Summary line
-		if len(run.PackageOrder) > 0 {
-			fixedLines += 1 // Separator line
+		if failedLen := len(fmt.Sprintf("%d", pkg.Counts.Failed)); failedLen > maxFailed {
+			maxFailed = failedLen
 		}
-		fixedLines += len(run.PackageOrder) // One header per package
-
-		availableLines := m.TerminalHeight - fixedLines
-		if availableLines < 0 {
-			availableLines = 0
+		if skippedLen := len(fmt.Sprintf("%d", pkg.Counts.Skipped)); skippedLen > maxSkipped {
+			maxSkipped = skippedLen
 		}
 
-		type renderItem struct {
-			pkgName   string
-			testName  string
-			lineCount int
-			priority  int
-			startTime time.Time
+		if elapsedLen := len(formatElapsedTime(m.packageElapsed(pkg))); elapsedLen > maxElapsed {
+			maxElapsed = elapsedLen
 		}
+	}
 
-		var items []renderItem
+	fixedLines := len(run.NonTestOutput)
+	if len(run.NonTestOutput) > 0 {
+		fixedLines++ // Newline
+	}
+	fixedLines += 1 // Summary line
+	if len(run.PackageOrder) > 0 {
+		fixedLines += 1 // Separator line
+	}
+	fixedLines += len(run.PackageOrder) // One header per package
 
-		// Collect all potential test lines from running packages
-		for _, pkgName := range run.PackageOrder {
-			pkg := run.Packages[pkgName]
-			if pkg.Status == results.StatusRunning {
-				for _, testName := range pkg.TestOrder {
-					testKey := pkgName + "/" + testName
-					test := run.TestResults[testKey]
+	availableLines := m.TerminalHeight - fixedLines
+	if availableLines < 0 {
+		availableLines = 0
+	}
 
-					// line for summary
-					lineCount := 1
+	type renderItem struct {
+		pkgName   string
+		testName  string
+		lineCount int
+		priority  int
+		startTime time.Time
+	}
 
-					// Only show output for running tests
-					if test.Running() {
-						// Update output lines (take last N lines)
-						n := len(test.Output)
-						if n < MaxOutputLines {
-							lineCount += n
-						} else {
-							lineCount += MaxOutputLines
-						}
+	var items []renderItem
+
+	// Collect all potential test lines from running packages
+	for _, pkgName := range run.PackageOrder {
+		pkg := run.Packages[pkgName]
+		if pkg.Status == results.StatusRunning {
+			for _, testName := range pkg.TestOrder {
+				testKey := pkgName + "/" + testName
+				test := run.TestResults[testKey]
+
+				// line for summary
+				lineCount := 1
+
+				// Only show output for running tests
+				if test.Running() {
+					// Update output lines (take last N lines)
+					n := len(test.Output)
+					if n < MaxOutputLines {
+						lineCount += n
+					} else {
+						lineCount += MaxOutputLines
 					}
-
-					// Priority:
-					// 1. Running (Highest)
-					// 2. Failed
-					// 3. Passed/Skipped (Lowest)
-					priority := 3
-					if test.Running() {
-						priority = 1
-					} else if test.Status == results.StatusFailed {
-						priority = 2
-					}
-
-					items = append(items, renderItem{
-						pkgName:   pkgName,
-						testName:  testName,
-						lineCount: lineCount,
-						priority:  priority,
-						startTime: test.StartTime,
-					})
 				}
-			}
-		}
 
-		// Allocate lines based on priority
-		linesToShow := make(map[string]map[string]int)
-		for _, pkgName := range run.PackageOrder {
-			linesToShow[pkgName] = make(map[string]int)
-		}
-
-		// Sort items by priority (1 > 2 > 3)
-		// We use a simple bucket approach since we have few priorities
-		var p1, p2, p3 []renderItem
-		for _, item := range items {
-			if item.priority == 1 {
-				p1 = append(p1, item)
-			} else if item.priority == 2 {
-				p2 = append(p2, item)
-			} else {
-				p3 = append(p3, item)
-			}
-		}
-
-		// Sort buckets by StartTime descending (most recent first)
-		sortFunc := func(a, b renderItem) int {
-			if a.startTime.After(b.startTime) {
-				return -1
-			}
-			if a.startTime.Before(b.startTime) {
-				return 1
-			}
-			return 0
-		}
-		slices.SortFunc(p1, sortFunc)
-		slices.SortFunc(p2, sortFunc)
-		slices.SortFunc(p3, sortFunc)
-
-		allocate := func(group []renderItem) {
-			for _, item := range group {
-				if availableLines >= item.lineCount {
-					linesToShow[item.pkgName][item.testName] = item.lineCount
-					availableLines -= item.lineCount
-				} else if availableLines > 0 {
-					linesToShow[item.pkgName][item.testName] = availableLines
-					availableLines = 0
+				// Priority:
+				// 1. Running (Highest)
+				// 2. Failed
+				// 3. Passed/Skipped (Lowest)
+				priority := 3
+				if test.Running() {
+					priority = 1
+				} else if test.Status == results.StatusFailed {
+					priority = 2
 				}
+
+				items = append(items, renderItem{
+					pkgName:   pkgName,
+					testName:  testName,
+					lineCount: lineCount,
+					priority:  priority,
+					startTime: test.StartTime,
+				})
 			}
 		}
+	}
 
-		allocate(p1)
-		allocate(p2)
-		allocate(p3)
+	// Allocate lines based on priority
+	linesToShow := make(map[string]map[string]int)
+	for _, pkgName := range run.PackageOrder {
+		linesToShow[pkgName] = make(map[string]int)
+	}
 
-		// Render packages
-		for _, pkgName := range run.PackageOrder {
-			pkgState := run.Packages[pkgName]
-			m.renderPackage(&b, run, pkgState, maxPassed, maxFailed, maxSkipped, maxElapsed, linesToShow[pkgName])
+	// Sort items by priority (1 > 2 > 3)
+	// We use a simple bucket approach since we have few priorities
+	var p1, p2, p3 []renderItem
+	for _, item := range items {
+		if item.priority == 1 {
+			p1 = append(p1, item)
+		} else if item.priority == 2 {
+			p2 = append(p2, item)
+		} else {
+			p3 = append(p3, item)
 		}
+	}
 
-		// Add separator line
-		if len(run.PackageOrder) > 0 {
-			b.WriteString(strings.Repeat("-", m.TerminalWidth))
-			b.WriteString("\n")
+	// Sort buckets by StartTime descending (most recent first)
+	sortFunc := func(a, b renderItem) int {
+		if a.startTime.After(b.startTime) {
+			return -1
 		}
+		if a.startTime.Before(b.startTime) {
+			return 1
+		}
+		return 0
+	}
+	slices.SortFunc(p1, sortFunc)
+	slices.SortFunc(p2, sortFunc)
+	slices.SortFunc(p3, sortFunc)
 
-		// Summary line
-		m.renderSummaryLine(&b, run)
-	})
+	allocate := func(group []renderItem) {
+		for _, item := range group {
+			if availableLines >= item.lineCount {
+				linesToShow[item.pkgName][item.testName] = item.lineCount
+				availableLines -= item.lineCount
+			} else if availableLines > 0 {
+				linesToShow[item.pkgName][item.testName] = availableLines
+				availableLines = 0
+			}
+		}
+	}
+
+	allocate(p1)
+	allocate(p2)
+	allocate(p3)
+
+	// Render packages
+	for _, pkgName := range run.PackageOrder {
+		pkgState := run.Packages[pkgName]
+		m.renderPackage(&b, run, pkgState, maxPassed, maxFailed, maxSkipped, maxElapsed, linesToShow[pkgName])
+	}
+
+	// Add separator line
+	if len(run.PackageOrder) > 0 {
+		b.WriteString(strings.Repeat("-", m.TerminalWidth))
+		b.WriteString("\n")
+	}
+
+	// Summary line
+	m.renderSummaryLine(&b, run)
 
 	return b.String()
 }
@@ -516,10 +498,6 @@ func (m *Model) getSpinnerPrefix(failed bool) string {
 
 // renderAlignedLine renders a line with left-aligned and right-aligned content
 func (m *Model) renderAlignedLine(b *strings.Builder, left, right, prefix string) {
-	// Construct the full line with prefix
-	// Note: left usually doesn't have padding yet, except for test summary which had "  " in formatTestSummary.
-	// I removed the "  " from formatTestSummary in the previous step (chunk 5).
-
 	fullLeft := prefix + left
 
 	if right == "" {
@@ -589,45 +567,27 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run) {
 }
 
 // DisplaySummary retrieves the summary from the collector and displays it.
-//
-// This method is called after the TUI exits, either when tests complete
-// (EventComplete) or when the user interrupts the program (SIGINT/SIGTERM
-// via ctrl+c, q, or esc).
-//
-// It computes the summary from the collector, formats it, and prints it to stdout.
-// The summary includes:
-// - Package results with pass/fail/skip counts
-// - Overall statistics with percentages
-// - Failures (if any) with output
-// - Skipped tests (if any) with reasons
-// - Slow tests (if any) sorted by duration
-// - Package performance statistics
-//
-// Requirements: 7.1, 7.2, 7.3, 7.4
 func (m *Model) DisplaySummary() {
 	if m.collector == nil {
 		return
 	}
 
-	// Compute summary within a callback to ensure thread-safe access
+	// Compute summary directly from state (single-threaded access assumed after runtime)
 	var summary *format.Summary
 
-	// Try to get the current run first
-	m.collector.WithLatestRun(func(run *results.Run) {
+	state := m.collector.State()
+	if len(state.Runs) > 0 {
+		run := state.Runs[len(state.Runs)-1]
 		summary = format.ComputeSummary(run, 10*time.Second)
-	})
+	}
 
-	// If still no summary, nothing to display
 	if summary == nil {
 		return
 	}
 
-	// Format summary using terminal width
 	formatter := format.NewSummaryFormatter(m.TerminalWidth)
 	summaryText := formatter.Format(summary)
 
-	// Print summary to stdout
-	// Note: In TUI mode, this will appear after the TUI exits
 	fmt.Println()
 	fmt.Println(summaryText)
 }

@@ -2,7 +2,6 @@ package tui
 
 import (
 	"bufio"
-	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -12,9 +11,7 @@ import (
 	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
 	"github.com/charmbracelet/lipgloss"
-	teatest "github.com/charmbracelet/x/exp/teatest"
 	"github.com/muesli/termenv"
-	"github.com/stretchr/testify/require"
 )
 
 // ScriptBlock represents a test block with input, expected output, and match type
@@ -25,9 +22,6 @@ type ScriptBlock struct {
 }
 
 // parseScriptFile reads a file and parses it into a []ScriptBlock slice.
-// The file format consists of blocks separated by "###" lines.
-// Each block contains two strings separated by either "===" or ">>>" line.
-// "===" indicates exact match, ">>>" indicates contains match.
 func parseScriptFile(filename string) ([]ScriptBlock, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -100,18 +94,6 @@ func TestHierarchicalRendering(t *testing.T) {
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
 
-	// Setup event processing
-	engineEvents := make(chan engine.Event, 20)
-	go collector.ProcessEvents(engineEvents)
-	resultsEvents := collector.Subscribe()
-
-	// Feed events in background
-	go func() {
-		for evt := range resultsEvents {
-			m.Update(ResultsEventMsg(evt))
-		}
-	}()
-
 	// Simulate test events for a complete test run
 	now := time.Now()
 	events := []parser.TestEvent{
@@ -169,26 +151,17 @@ func TestHierarchicalRendering(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		engineEvents <- engine.Event{Type: engine.EventTest, TestEvent: evt}
+		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
 	}
-	close(engineEvents)
-
-	// Wait a bit for processing
-	time.Sleep(50 * time.Millisecond)
 
 	output := m.String()
 
 	// Verify key aspects of the output
-	// Note: With the new collapsed view, completed packages only show their summary line
-	// Individual tests and their output are NOT displayed for completed packages
 	tests := []struct {
 		name     string
 		contains string
 	}{
 		{"Package name", "github.com/test/pkg1"},
-		// {"Test name", "TestFoo"},
-		// {"Test output", "foo_test.go:10"},
-		// {"Status indicator", "✓"}, // Status indicator removed in favor of tabular layout
 		{"Pass count", "✓ 1"},
 		{"Separator line", "--------"},
 	}
@@ -213,18 +186,6 @@ func TestRunningPackagesShowTests(t *testing.T) {
 	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
-
-	// Setup event processing
-	engineEvents := make(chan engine.Event, 20)
-	go collector.ProcessEvents(engineEvents)
-	resultsEvents := collector.Subscribe()
-
-	// Feed events in background
-	go func() {
-		for evt := range resultsEvents {
-			m.Update(ResultsEventMsg(evt))
-		}
-	}()
 
 	// Simulate a running test (not yet completed)
 	now := time.Now()
@@ -258,12 +219,8 @@ func TestRunningPackagesShowTests(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		engineEvents <- engine.Event{Type: engine.EventTest, TestEvent: evt}
+		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
 	}
-	close(engineEvents)
-
-	// Wait for processing
-	time.Sleep(50 * time.Millisecond)
 
 	output := m.String()
 
@@ -332,146 +289,14 @@ func TestParseScriptFile(t *testing.T) {
 
 func TestRunScripts(t *testing.T) {
 	t.Skip("Skipping old flat-format tests - replaced with new hierarchical format per spec")
-	// The old test scripts were designed for the flat output format.
-	// The new enhanced TUI uses hierarchical output format grouped by package.
-	// See TestHierarchicalRendering for validation of the new format.
 }
 
-// TestRunScript1WithTeatest demonstrates using the teatest package
-// to test the TUI model similar to TestRunScripts/script1
 func TestRunScript1WithTeatest(t *testing.T) {
 	t.Skip("not working: the output from the tea program seems to have wierd whitespace issues.")
-	// Create a new model
-	collector := results.NewCollector()
-	m := NewModel(false, 1.0, collector)
-
-	// Create a teatest model that wraps our model
-	tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(80, 24))
-
-	// Parse the first block from script1
-	blocks, err := parseScriptFile("testdata/script1")
-	require.NoError(t, err)
-	require.NotEmpty(t, blocks)
-
-	// Get the first block
-	block := blocks[0]
-
-	// Parse and send each test event from the input
-	lines := strings.Split(block.Input, "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		testEvent := parser.TestEvent{}
-		err := json.Unmarshal([]byte(line), &testEvent)
-		require.NoError(t, err)
-
-		// Send the event to the model using teatest's Send method
-		tm.Send(testEvent)
-	}
-
-	// Wait for the output to contain the expected string
-	// Note: We check each line individually because the output includes ANSI codes
-	teatest.WaitFor(
-		t,
-		tm.Output(),
-		func(bts []byte) bool {
-			output := string(bts)
-			return strings.Contains(output, block.Expected)
-
-			// Check if output contains all expected lines
-			// expectedLines := strings.Split(strings.TrimSpace(block.Expected), "\n")
-			// for _, line := range expectedLines {
-			// 	if !strings.Contains(output, line) {
-			// 		return false
-			// 	}
-			// }
-			// return true
-		},
-		teatest.WithDuration(1*time.Second),
-		teatest.WithCheckInterval(50*time.Millisecond),
-	)
-
-	// Quit the program
-	err = tm.Quit()
-	require.NoError(t, err)
 }
 
-// TestRunScriptsWithTeatest re-implements TestRunScripts using the teatest package
-// It tests all script files in testdata directory using a real Bubbletea program
 func TestRunScriptsWithTeatest(t *testing.T) {
 	t.Skip("not working")
-	// Read all files in testdata directory
-	entries, err := os.ReadDir("testdata")
-	require.NoError(t, err)
-
-	for _, entry := range entries {
-		if entry.IsDir() {
-			continue
-		}
-
-		filename := entry.Name()
-		t.Run(filename, func(t *testing.T) {
-			blocks, err := parseScriptFile("testdata/" + filename)
-			if err != nil {
-				t.Fatalf("Failed to parse script file: %v", err)
-			}
-
-			collector := results.NewCollector()
-			m := NewModel(false, 1.0, collector)
-			// Create a teatest model that wraps our model
-			tm := teatest.NewTestModel(t, m, teatest.WithInitialTermSize(80, 24))
-			t.Cleanup(func() {
-				// Quit the program
-
-				if err := tm.Quit(); err != nil {
-					t.Fatal(err)
-				}
-			})
-			for _, block := range blocks {
-				input := block.Input
-				expected := block.Expected
-				matchType := block.MatchType
-
-				// Parse and send each test event from the input
-				lines := strings.Split(input, "\n")
-				for _, line := range lines {
-					line = strings.TrimSpace(line)
-					if line == "" {
-						continue
-					}
-					testEvent := parser.TestEvent{}
-					err := json.Unmarshal([]byte(line), &testEvent)
-					require.NoError(t, err)
-
-					// Send the event to the model using teatest's Send method
-					tm.Send(testEvent)
-				}
-
-				// Wait for and verify the output based on match type
-				teatest.WaitFor(
-					t,
-					tm.Output(),
-					func(bts []byte) bool {
-						output := string(bts)
-						switch matchType {
-						case "contains":
-							return strings.Contains(output, expected)
-						case "equals":
-							return strings.TrimSpace(output) == expected
-						default:
-							t.Fatalf("Unknown match type: %s", matchType)
-							return false
-						}
-					},
-					teatest.WithDuration(1*time.Second),
-					teatest.WithCheckInterval(50*time.Millisecond),
-				)
-			}
-
-		})
-	}
 }
 
 // TestBoldRunningEntities verifies that running entities are bolded
@@ -482,18 +307,6 @@ func TestBoldRunningEntities(t *testing.T) {
 	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
-
-	// Setup event processing
-	engineEvents := make(chan engine.Event, 20)
-	go collector.ProcessEvents(engineEvents)
-	resultsEvents := collector.Subscribe()
-
-	// Feed events in background
-	go func() {
-		for evt := range resultsEvents {
-			m.Update(ResultsEventMsg(evt))
-		}
-	}()
 
 	// Simulate a running test
 	now := time.Now()
@@ -519,12 +332,8 @@ func TestBoldRunningEntities(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		engineEvents <- engine.Event{Type: engine.EventTest, TestEvent: evt}
+		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
 	}
-	close(engineEvents)
-
-	// Wait for processing
-	time.Sleep(50 * time.Millisecond)
 
 	output := m.String()
 

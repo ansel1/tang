@@ -18,10 +18,10 @@ func TestBleedProtection(t *testing.T) {
 	// Create a run and package
 	run := results.NewRun(1)
 	run.Status = results.StatusRunning
-	collector.WithState(func(s *results.State) {
-		s.Runs = append(s.Runs, run)
-		s.CurrentRun = run
-	})
+
+	state := collector.State()
+	state.Runs = append(state.Runs, run)
+	state.CurrentRun = run
 
 	pkg := &results.PackageResult{
 		Name:      "pkg1",
@@ -49,13 +49,6 @@ func TestBleedProtection(t *testing.T) {
 	output := m.View()
 
 	// Check if the output line is followed by a reset sequence
-	// The View() function renders lines. We expect the line containing "This is red text"
-	// to be immediately followed by a reset sequence before the newline or next content.
-	// However, since we are appending it in renderTest, let's check for the presence of the reset sequence.
-
-	// In the current (buggy) implementation, the line is just "    \033[31mThis is red text\n"
-	// In the fixed implementation, it should be "    \033[31mThis is red text\033[0m\n" (or similar)
-
 	lines := strings.Split(output, "\n")
 	var foundLine string
 	for _, line := range lines {

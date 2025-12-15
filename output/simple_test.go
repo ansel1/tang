@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ansel1/tang/engine"
+	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +15,7 @@ import (
 func TestSimpleOutput_ProcessEvents_BasicTest(t *testing.T) {
 	// Create collector and manually populate state for summary
 	collector := results.NewCollector()
-	state := collector.GetState()
+	state := collector.State()
 	run := results.NewRun(1)
 	state.Runs = append(state.Runs, run)
 	state.CurrentRun = run
@@ -32,9 +34,19 @@ func TestSimpleOutput_ProcessEvents_BasicTest(t *testing.T) {
 	simple := NewSimpleOutput(&buf, collector)
 
 	// Create events for simple output
-	events := make(chan results.Event, 10)
-	events <- results.NewTestOutputEvent(1, "example.com/pkg", "TestFoo", "=== RUN   TestFoo\n")
-	events <- results.NewRunFinishedEvent(1)
+	events := make(chan engine.Event, 10)
+	// We need engine events now
+	// To simulate "TestOutputEvent", we send an engine.Event with Type=EventTest and Action=output
+	events <- engine.Event{
+		Type: engine.EventTest,
+		TestEvent: parser.TestEvent{
+			Action:  "output",
+			Package: "example.com/pkg",
+			Test:    "TestFoo",
+			Output:  "=== RUN   TestFoo\n",
+		},
+	}
+	events <- engine.Event{Type: engine.EventComplete}
 	close(events)
 
 	err := simple.ProcessEvents(events)
@@ -49,7 +61,7 @@ func TestSimpleOutput_ProcessEvents_BasicTest(t *testing.T) {
 
 func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
 	collector := results.NewCollector()
-	state := collector.GetState()
+	state := collector.State()
 	run := results.NewRun(1)
 	state.Runs = append(state.Runs, run)
 	state.CurrentRun = run
@@ -67,12 +79,17 @@ func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector)
 
-	events := make(chan results.Event, 10)
-	events <- results.NewTestOutputEvent(1, "example.com/pkg", "TestFail", "    test_fail.go:10: assertion failed\n")
-	// We need to emit TestUpdatedEvent or similar?
-	// SimpleOutput only cares about TestOutputEvent for printing.
-	// But HasFailures checks collector state.
-	events <- results.NewRunFinishedEvent(1)
+	events := make(chan engine.Event, 10)
+	events <- engine.Event{
+		Type: engine.EventTest,
+		TestEvent: parser.TestEvent{
+			Action:  "output",
+			Package: "example.com/pkg",
+			Test:    "TestFail",
+			Output:  "    test_fail.go:10: assertion failed\n",
+		},
+	}
+	events <- engine.Event{Type: engine.EventComplete}
 	close(events)
 
 	err := simple.ProcessEvents(events)
@@ -90,10 +107,10 @@ func TestSimpleOutput_ProcessEvents_RawLines(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector)
 
-	events := make(chan results.Event, 10)
-	events <- results.NewRawOutputEvent(1, []byte("This is a raw line"))
-	events <- results.NewRawOutputEvent(1, []byte("Another raw line"))
-	events <- results.NewRunFinishedEvent(1)
+	events := make(chan engine.Event, 10)
+	events <- engine.Event{Type: engine.EventRawLine, RawLine: []byte("This is a raw line")}
+	events <- engine.Event{Type: engine.EventRawLine, RawLine: []byte("Another raw line")}
+	events <- engine.Event{Type: engine.EventComplete}
 	close(events)
 
 	err := simple.ProcessEvents(events)
@@ -106,7 +123,7 @@ func TestSimpleOutput_ProcessEvents_RawLines(t *testing.T) {
 
 func TestSimpleOutput_HasFailures(t *testing.T) {
 	collector := results.NewCollector()
-	state := collector.GetState()
+	state := collector.State()
 	run := results.NewRun(1)
 	state.Runs = append(state.Runs, run)
 
@@ -123,6 +140,7 @@ func TestSimpleOutput_HasFailures(t *testing.T) {
 	}
 	pkg.Counts.Failed = 1
 	run.Packages["pkg"] = pkg
+	run.Counts.Failed = 1
 
 	// Now should have failures
 	assert.True(t, simple.HasFailures())

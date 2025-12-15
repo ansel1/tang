@@ -17,10 +17,10 @@ func TestSmartRendering(t *testing.T) {
 	// Create a run
 	run := results.NewRun(1)
 	run.Status = results.StatusRunning
-	collector.WithState(func(s *results.State) {
-		s.Runs = append(s.Runs, run)
-		s.CurrentRun = run
-	})
+
+	state := collector.State()
+	state.Runs = append(state.Runs, run)
+	state.CurrentRun = run
 
 	// Packet 1: Running, mixed tests
 	pkg1 := &results.PackageResult{
@@ -150,7 +150,6 @@ func TestSmartRendering(t *testing.T) {
 	}
 
 	// Test Recency: Add another running test, started later
-	// Test Recency: Add another running test, started later
 	t5 := &results.TestResult{
 		Package:       "pkg1",
 		Name:          "TestRunningNew",
@@ -184,8 +183,6 @@ func TestSmartRendering(t *testing.T) {
 		t.Error("Expected TestRunning output to be elided (only summary fits)")
 	}
 
-	// Test Recency with Failed tests
-	// Add another failed test, newer than t2
 	// Test Recency with Failed tests
 	// Add another failed test, newer than t2
 	t6 := &results.TestResult{

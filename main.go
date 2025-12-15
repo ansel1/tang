@@ -91,12 +91,6 @@ func main() {
 		collector.SetReplay(true, *rate)
 	}
 
-	// Start collector processing
-	go collector.ProcessEvents(engineEvents)
-
-	// Subscribe to results
-	resultsEvents := collector.Subscribe()
-
 	var exitCode int
 
 	// Skip TUI if:
@@ -107,7 +101,7 @@ func main() {
 	if skipTUI {
 		// Simple output mode (no TUI)
 		simple := output.NewSimpleOutput(os.Stdout, collector)
-		if err := simple.ProcessEvents(resultsEvents); err != nil {
+		if err := simple.ProcessEvents(engineEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			os.Exit(1)
 		}
@@ -122,16 +116,16 @@ func main() {
 		m := tui.NewModel(*replay, *rate, collector)
 		p := tea.NewProgram(m)
 
-		// Forward results events to bubbletea
+		// Forward engine events to bubbletea
 		go func() {
-			for evt := range resultsEvents {
+			for evt := range engineEvents {
 				// Handle raw output lines directly using Println()
 				// This prints them above the TUI without mixing with test output
-				if evt.Type == results.EventRawOutput {
+				if evt.Type == engine.EventRawLine {
 					p.Println(string(evt.RawLine))
 				} else {
 					// Send all other events to the model
-					p.Send(tui.ResultsEventMsg(evt))
+					p.Send(tui.EngineEventMsg(evt))
 				}
 			}
 			// Signal completion
@@ -152,7 +146,7 @@ func main() {
 			model.DisplaySummary()
 
 			// Set exit code based on test failures
-			for _, run := range collector.GetState().Runs {
+			for _, run := range collector.State().Runs {
 				if run.Counts.Failed > 0 {
 					exitCode = 1
 					break

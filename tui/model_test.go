@@ -15,56 +15,40 @@ func TestPackageSummaryLastOutput(t *testing.T) {
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
 
-	// Setup collector processing
-	engineEvents := make(chan engine.Event, 10)
-	go collector.ProcessEvents(engineEvents)
-	resultsEvents := collector.Subscribe()
-
-	// Feed engine events
 	now := time.Now()
 
-	// 1. Start package
-	engineEvents <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Time:    now,
-			Action:  "start", // or run
-			Package: "github.com/test/pkg1",
+	events := []engine.Event{
+		{
+			Type: engine.EventTest,
+			TestEvent: parser.TestEvent{
+				Time:    now,
+				Action:  "start",
+				Package: "github.com/test/pkg1",
+			},
 		},
+		{
+			Type: engine.EventTest,
+			TestEvent: parser.TestEvent{
+				Time:    now.Add(100 * time.Millisecond),
+				Action:  "output",
+				Package: "github.com/test/pkg1",
+				Output:  "ok  \tgithub.com/test/pkg1\t0.10s\n",
+			},
+		},
+		{
+			Type: engine.EventTest,
+			TestEvent: parser.TestEvent{
+				Time:    now.Add(200 * time.Millisecond),
+				Action:  "pass",
+				Package: "github.com/test/pkg1",
+				Elapsed: 0.10,
+			},
+		},
+		{Type: engine.EventComplete},
 	}
 
-	// 2. Output
-	engineEvents <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Time:    now.Add(100 * time.Millisecond),
-			Action:  "output",
-			Package: "github.com/test/pkg1",
-			Output:  "ok  \tgithub.com/test/pkg1\t0.10s\n",
-		},
-	}
-
-	// 3. Pass
-	engineEvents <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Time:    now.Add(200 * time.Millisecond),
-			Action:  "pass",
-			Package: "github.com/test/pkg1",
-			Elapsed: 0.10,
-		},
-	}
-
-	// Close engine stream
-	close(engineEvents)
-
-	// Process results events in TUI
-	// We need to wait for events to propagate
-	for evt := range resultsEvents {
-		m.Update(ResultsEventMsg(evt))
-		if evt.Type == results.EventRunFinished {
-			break
-		}
+	for _, evt := range events {
+		m.Update(EngineEventMsg(evt))
 	}
 
 	output := m.View()
