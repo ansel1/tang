@@ -17,6 +17,9 @@ import (
 // EngineEventMsg wraps engine events for bubbletea
 type EngineEventMsg engine.Event
 
+// EngineEventBatchMsg wraps a batch of engine events
+type EngineEventBatchMsg []engine.Event
+
 // EOFMsg signals that stdin has been closed (kept for backward compatibility)
 type EOFMsg struct{}
 
@@ -82,6 +85,13 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case EngineEventMsg:
 		// Push event to collector (synchronous)
 		m.collector.Push(engine.Event(msg))
+		return m, nil
+
+	case EngineEventBatchMsg:
+		// Push batch of events to collector
+		for _, evt := range msg {
+			m.collector.Push(evt)
+		}
 		return m, nil
 
 	case tea.WindowSizeMsg:

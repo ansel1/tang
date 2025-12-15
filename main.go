@@ -118,16 +118,66 @@ func main() {
 
 		// Forward engine events to bubbletea
 		go func() {
-			for evt := range engineEvents {
-				// Handle raw output lines directly using Println()
-				// This prints them above the TUI without mixing with test output
+			var batch []engine.Event
+			const maxBatchSize = 50
+
+			// Consume events until channel closes
+			for {
+				// Block waiting for the first event
+				evt, ok := <-engineEvents
+				if !ok {
+					break
+				}
+
 				if evt.Type == engine.EventRawLine {
 					p.Println(string(evt.RawLine))
-				} else {
-					// Send all other events to the model
-					p.Send(tui.EngineEventMsg(evt))
+					continue
+				}
+
+				// Start a new batch
+				// Note: We intentionally allocate a new slice backing array here
+				// so that we can safely pass it to the TUI (which runs in another goroutine)
+				// without race conditions.
+				batch = make([]engine.Event, 0, maxBatchSize)
+				batch = append(batch, evt)
+
+				// Drain additional available events up to maxBatchSize
+			DrainLoop:
+				for len(batch) < maxBatchSize {
+					select {
+					case nextEvt, ok := <-engineEvents:
+						if !ok {
+							// Channel closed
+							if len(batch) > 0 {
+								p.Send(tui.EngineEventBatchMsg(batch))
+							}
+							p.Send(tui.EOFMsg{})
+							return
+						}
+
+						if nextEvt.Type == engine.EventRawLine {
+							// Flush current batch
+							if len(batch) > 0 {
+								p.Send(tui.EngineEventBatchMsg(batch))
+								batch = nil
+							}
+							p.Println(string(nextEvt.RawLine))
+							break DrainLoop
+						}
+
+						batch = append(batch, nextEvt)
+					default:
+						// No more events immediately available
+						break DrainLoop
+					}
+				}
+
+				if len(batch) > 0 {
+					p.Send(tui.EngineEventBatchMsg(batch))
+					batch = nil
 				}
 			}
+
 			// Signal completion
 			p.Send(tui.EOFMsg{})
 		}()
