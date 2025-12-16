@@ -88,7 +88,7 @@ type TestResult struct {
 }
 
 func (t *TestResult) Running() bool {
-	return t.Status == StatusRunning
+	return t.Status == StatusRunning || t.Status == StatusPaused
 }
 
 // State holds all runs and provides access to the current run.

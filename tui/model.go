@@ -50,13 +50,17 @@ type Model struct {
 	// Replay state
 	ReplayRate float64
 
-	spinner spinner.Model // Bubbles spinner component
+	spinner       spinner.Model // Bubbles spinner component
+	frozenSpinner spinner.Model // Bubbles frozen spinner component
 }
 
 // NewModel creates a new TUI model
 func NewModel(replayMode bool, replayRate float64, collector *results.Collector) *Model {
 	s := spinner.New()
 	s.Spinner = spinner.Jump
+
+	sf := spinner.New()
+	sf.Spinner = spinner.Jump
 
 	return &Model{
 		collector:      collector,
@@ -68,6 +72,7 @@ func NewModel(replayMode bool, replayRate float64, collector *results.Collector)
 		neutralStyle:   lipgloss.NewStyle(),
 		boldStyle:      lipgloss.NewStyle().Bold(true),
 		spinner:        s,
+		frozenSpinner:  sf,
 		ReplayRate:     replayRate,
 	}
 }
@@ -498,13 +503,12 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 		leftPart = expandTabs(pkg.Output, 8)
 	}
 
-	prefix := "  "
 	if pkg.Status == results.StatusRunning {
-		prefix = m.getSpinnerPrefix(pkg.Counts.Failed > 0)
 		// Bold the entire line for running packages
 		leftPart = m.boldStyle.Render(leftPart)
 		rightPart = m.boldStyle.Render(rightPart)
 	}
+	prefix := m.getStatusPrefix(pkg.Status, pkg.Counts.Failed > 0)
 
 	m.renderAlignedLine(b, leftPart, rightPart, prefix)
 }
@@ -519,13 +523,12 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 	elapsedVal = formatElapsedTime(currentElapsed)
 
 	prefix := "  "
+
 	if test.Running() {
-		prefix = m.getSpinnerPrefix(false)
 		// Bold the name and elapsed time for running tests
 		summary = m.boldStyle.Render(summary)
 		elapsedVal = m.boldStyle.Render(elapsedVal)
-	} else if test.Status == results.StatusPaused {
-		prefix = "= "
+		prefix = m.getStatusPrefix(test.Status, false)
 	}
 
 	m.renderAlignedLine(b, summary, elapsedVal, prefix)
@@ -556,13 +559,34 @@ func (m *Model) formatTestSummary(test *results.TestResult) string {
 	return fmt.Sprintf("  === RUN   %s", test.Name)
 }
 
-// getSpinnerPrefix returns the spinner string with appropriate color
-func (m *Model) getSpinnerPrefix(failed bool) string {
-	spinnerView := m.spinner.View()
-	if failed {
-		return m.failStyle.Render(spinnerView) + " "
+// getStatusPrefix returns the icon string with appropriate color/style for the status
+func (m *Model) getStatusPrefix(status results.Status, hasFailures bool) string {
+
+	switch status {
+	case results.StatusRunning, results.StatusInterrupted:
+		spinnerView := m.spinner.View()
+		// For interrupted, we just show the last spinner frame (frozen)
+		// logic is same as running for now from visual perspective in loop
+		if hasFailures {
+			return m.failStyle.Render(spinnerView) + " "
+		}
+		return m.passStyle.Render(spinnerView) + " "
+	case results.StatusPassed:
+		return m.passStyle.Render("✓") + " "
+	case results.StatusFailed:
+		return m.failStyle.Render("✗") + " "
+	case results.StatusSkipped:
+		return m.skipStyle.Render("∅") + " "
+	case results.StatusPaused:
+		// For interrupted, we just show the last spinner frame (frozen)
+		// logic is same as running for now from visual perspective in loop
+		if hasFailures {
+			return m.failStyle.Render(m.frozenSpinner.View()) + " "
+		}
+		return m.passStyle.Render(m.frozenSpinner.View()) + " "
+	default:
+		return "  "
 	}
-	return m.passStyle.Render(spinnerView) + " " // Use passStyle (green) for neutral
 }
 
 // renderAlignedLine renders a line with left-aligned and right-aligned content
@@ -623,9 +647,8 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run) {
 	leftPart := fmt.Sprintf("%s: %d passed, %d failed, %d skipped, %d running, %d total",
 		statusPrefix, run.Counts.Passed, run.Counts.Failed, run.Counts.Skipped, run.Counts.Running, total)
 
-	prefix := "  "
+	prefix := m.getStatusPrefix(run.Status, run.Counts.Failed > 0)
 	if run.Status == results.StatusRunning {
-		prefix = m.getSpinnerPrefix(run.Counts.Failed > 0)
 		// Bold the summary line for running status
 		leftPart = m.boldStyle.Render(leftPart)
 		elapsedVal = m.boldStyle.Render(elapsedVal)

@@ -207,6 +207,12 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 		pkg.Counts.Running--
 		run.Counts.Skipped++
 		run.Counts.Running--
+
+	case "pause":
+		testResult.Status = StatusPaused
+
+	case "cont":
+		testResult.Status = StatusRunning
 	}
 }
 

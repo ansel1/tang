@@ -119,7 +119,7 @@ func main() {
 		// Forward engine events to bubbletea
 		go func() {
 			var batch []engine.Event
-			const maxBatchSize = 1
+			const maxBatchSize = 50
 
 			// Consume events until channel closes
 			for {
