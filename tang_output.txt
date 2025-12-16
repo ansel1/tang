@@ -1,0 +1,19 @@
+=== RUN   TestWriteXML
+--- PASS: TestWriteXML (0.00s)
+PASS
+ok  	github.com/ansel1/tang/output/junit	0.198s
+
+PACKAGES
+--------
+✓ ok      github.com/ansel1/tang/output/junit     0.198s  ✓ 1  ✗ 0  ∅ 0  00:00:00.201
+
+OVERALL RESULTS
+---------------
+Total tests:    1
+Passed:         1 ✓ (100.0%)
+Failed:         0 ✗ (0.0%)
+Skipped:        0 ∅ (0.0%)
+Total time:     00:00:00.201
+Packages:       1
+
+

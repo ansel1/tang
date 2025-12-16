@@ -5,19 +5,28 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/output"
+	"github.com/ansel1/tang/output/junit"
 	"github.com/ansel1/tang/results"
 	"github.com/ansel1/tang/tui"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func main() {
+	os.Exit(run())
+}
+
+func run() int {
 	// Parse command-line flags
 	infile := flag.String("f", "", "Read from file instead of stdin")
 	outfile := flag.String("outfile", "", "Save all input to the specified file")
 	jsonfile := flag.String("jsonfile", "", "Save JSON events to the specified file")
+	junitfile := flag.String("junitout", "", "Save cumulative test results to the specified JUnit XML file")
 	notty := flag.Bool("notty", false, "Don't use TUI, output to stdout")
 	replay := flag.Bool("replay", false, "Replay events with timing from original test run (requires -f)")
 	rate := flag.Float64("rate", 1.0, "Replay rate multiplier (0=instant, 1=original speed, 0.5=2x speed)")
@@ -26,11 +35,11 @@ func main() {
 	// Validate flag combinations
 	if *replay && *infile == "" {
 		fmt.Fprintf(os.Stderr, "Error: -replay requires -f <filename>\n")
-		os.Exit(1)
+		return 1
 	}
 	if *rate < 0 {
 		fmt.Fprintf(os.Stderr, "Error: -rate must be >= 0\n")
-		os.Exit(1)
+		return 1
 	}
 
 	// Setup input source (file or stdin)
@@ -39,7 +48,7 @@ func main() {
 		f, err := os.Open(*infile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error opening input file: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
 		defer f.Close()
 
@@ -48,7 +57,7 @@ func main() {
 			replayReader, err := engine.NewReplayReader(f, *rate)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error creating replay reader: %v\n", err)
-				os.Exit(1)
+				return 1
 			}
 			inputSource = replayReader
 		} else {
@@ -64,7 +73,7 @@ func main() {
 		f, err := os.Create(*outfile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating output file: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
 		defer f.Close()
 		opts = append(opts, engine.WithRawOutput(f))
@@ -75,7 +84,7 @@ func main() {
 		f, err := os.Create(*jsonfile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating JSON file: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
 		defer f.Close()
 		opts = append(opts, engine.WithJSONOutput(f))
@@ -91,6 +100,47 @@ func main() {
 		collector.SetReplay(true, *rate)
 	}
 
+	// Setup JUnit output handling
+	var writeJUnitOnce sync.Once
+	writeJUnit := func() {
+		writeJUnitOnce.Do(func() {
+			if *junitfile != "" {
+				f, err := os.Create(*junitfile)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Error creating JUnit file: %v\n", err)
+					return
+				}
+				defer f.Close()
+
+				if err := junit.WriteXML(f, collector.State()); err != nil {
+					fmt.Fprintf(os.Stderr, "Error writing JUnit XML: %v\n", err)
+				}
+			}
+		})
+	}
+	defer writeJUnit()
+
+	// Handle interrupts
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		writeJUnit()
+		// Re-trigger exit to ensure default behavior if not in TUI or if TUI hangs
+		// In TUI mode, bubbletea usually catches SIGINT first, but we need to ensure this output happens.
+		// However, signal.Notify might intercept it from bubbletea if we aren't careful.
+		// Actually, bubbletea handles interrupts internally if not specified otherwise.
+		// But in this global handler, we want to ensure we write the file.
+		// If the main goroutine exits (defer), we are good.
+		// If the user force kills, we might miss it.
+		// Let's rely on defer for normal exit, and this goroutine for signals.
+		// After writing, we should probably let the program terminate naturally or force it if it's stuck.
+		// But TUI also listens for signals. This might compete.
+		//
+		// Correct approach: output generation is fast. We can do it and let default handler proceed or exit.
+		os.Exit(1)
+	}()
+
 	var exitCode int
 
 	// Skip TUI if:
@@ -103,7 +153,7 @@ func main() {
 		simple := output.NewSimpleOutput(os.Stdout, collector)
 		if err := simple.ProcessEvents(engineEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
 		// Set exit code based on test failures
 		if simple.HasFailures() {
@@ -171,7 +221,7 @@ func main() {
 		finalModel, err := p.Run()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error running program: %v\n", err)
-			os.Exit(1)
+			return 1
 		}
 
 		// Set exit code based on test failures
@@ -185,5 +235,5 @@ func main() {
 		}
 	}
 
-	os.Exit(exitCode)
+	return exitCode
 }

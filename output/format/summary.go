@@ -86,6 +86,8 @@ type Summary struct {
 	Failures         []*results.TestResult
 	Skipped          []*results.TestResult
 	SlowTests        []*results.TestResult
+	BuildFailures    []*results.PackageResult // Packages that failed to build
+	Run              *results.Run             // Reference to the run for accessing build errors
 	FastestPackage   *results.PackageResult
 	SlowestPackage   *results.PackageResult
 	MostTestsPackage *results.PackageResult
@@ -106,6 +108,7 @@ func ComputeSummary(run *results.Run, slowThreshold time.Duration) *Summary {
 	summary := &Summary{
 		PackageCount: len(run.PackageOrder),
 		TotalTime:    run.LastEventTime.Sub(run.FirstEventTime),
+		Run:          run,
 	}
 
 	// Build packages slice in chronological order
@@ -140,6 +143,13 @@ func ComputeSummary(run *results.Run, slowThreshold time.Duration) *Summary {
 	// Sort slow tests by elapsed time (descending)
 	if len(summary.SlowTests) > 0 {
 		sortSlowTests(summary.SlowTests)
+	}
+
+	// Collect packages with build failures
+	for _, pkg := range packages {
+		if pkg.FailedBuild != "" {
+			summary.BuildFailures = append(summary.BuildFailures, pkg)
+		}
 	}
 
 	// Calculate package statistics
@@ -223,29 +233,35 @@ func NewSummaryFormatter(width int) *SummaryFormatter {
 func (sf *SummaryFormatter) Format(summary *Summary) string {
 	var result string
 
-	// 1. Failures (if any)
+	// 1. Build errors (if any)
+	if len(summary.BuildFailures) > 0 {
+		result += sf.formatBuildErrors(summary)
+		result += "\n"
+	}
+
+	// 2. Failures (if any)
 	if len(summary.Failures) > 0 {
 		result += sf.formatFailures(summary.Failures)
 		result += "\n"
 	}
 
-	// 2. Skipped tests (if any)
+	// 3. Skipped tests (if any)
 	if len(summary.Skipped) > 0 {
 		result += sf.formatSkipped(summary.Skipped)
 		result += "\n"
 	}
 
-	// 3. Slow tests (if any)
+	// 4. Slow tests (if any)
 	if len(summary.SlowTests) > 0 {
 		result += sf.formatSlowTests(summary.SlowTests)
 		result += "\n"
 	}
 
-	// 4. Package section
+	// 5. Package section
 	result += sf.formatPackageSection(summary.Packages)
 	result += "\n"
 
-	// 5. Overall results
+	// 6. Overall results
 	result += sf.formatOverallResults(summary)
 	result += "\n"
 
@@ -426,6 +442,38 @@ func (sf *SummaryFormatter) formatOverallResults(summary *Summary) string {
 		fmt.Fprintf(sb, "Skipped:        %d %s (%.1f%%)\n", summary.SkippedTests, skipIcon, skipPercent)
 		fmt.Fprintf(sb, "Total time:     %s\n", formatDuration(summary.TotalTime))
 		fmt.Fprintf(sb, "Packages:       %d\n", summary.PackageCount)
+	})
+}
+
+// formatBuildErrors formats the build errors section.
+func (sf *SummaryFormatter) formatBuildErrors(summary *Summary) string {
+	if len(summary.BuildFailures) == 0 {
+		return ""
+	}
+
+	return sf.formatSection("ERRORS", func(sb *strings.Builder) {
+		for i, pkg := range summary.BuildFailures {
+			if i > 0 {
+				sb.WriteString("\n")
+			}
+			sb.WriteString(pkg.Name + " [build failed]\n")
+
+			// Get build error output for this package
+			if summary.Run != nil && pkg.FailedBuild != "" {
+				buildErrors := summary.Run.GetBuildErrors(pkg.FailedBuild)
+				for _, be := range buildErrors {
+					if be.Action == "build-output" && be.Output != "" {
+						// Split output into lines and indent each one
+						lines := strings.Split(strings.TrimRight(be.Output, "\n"), "\n")
+						for _, line := range lines {
+							if line != "" {
+								sb.WriteString(IndentLevel1 + ensureReset(line) + "\n")
+							}
+						}
+					}
+				}
+			}
+		}
 	})
 }
 

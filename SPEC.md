@@ -123,11 +123,25 @@ TODO
 - [ ] add option to locate specific test in file (maybe with regex?) and dump it
 
 **junit**
-- [ ] -junitfile <filename>: write junit xml to the specified file
+- [x] -junitfile <filename>: write junit xml to the specified file
 
 **optimizations**
 - [ ] The replay reader parses each line.  The same line gets parsed again later.  So we're double parsing.  Would be more efficient to implement the replay logic later in the data pipeline.  Also, the replay reader reads all the lines into memory.
-- [ ] The "NonTestOutput" in the model is probably not needed.  Non test output can just flow directly to tea.Println()
-- [ ] Model.events can be removed
-- [ ] Model.ReplayMode looks unneeded
 - [x] in replay mode, it looks like printing a lot of output is *much* slower than the pace at which the logs are read from the input stream.  A test might appear to take 5 minutes to complete, but actually took .04 seconds.  Let's experiment with draining the event channel in batches between display frames.  Not sure if that's going to make the UI too jumpy...
+- [ ] If there's a line in the output which is json, but not a test/build event, I'm not sure what we'll do
+- [ ] Don't bother with the gutter icon for paused tests
+- [ ] need to rethink the notty mode
+- [ ] ctrl-c doesn't work if the tui hasn't started yet
+- [ ] `cat simple.out | tang` doesn't show anything.  
+- [ ] handle "action":"bench" events 
+  // The Action field is one of a fixed set of action descriptions:
+//
+//	start  - the test binary is about to be executed
+//	run    - the test has started running
+//	pause  - the test has been paused
+//	cont   - the test has continued running
+//	pass   - the test passed
+//	bench  - the benchmark printed log output but did not fail
+//	fail   - the test or benchmark failed
+//	output - the test printed output
+//	skip   - the test was skipped or the package contained no tests

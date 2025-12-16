@@ -13,16 +13,18 @@ type EventType string
 const (
 	EventRawLine  EventType = "raw"      // Non-JSON line from input
 	EventTest     EventType = "test"     // Parsed test event from go test -json
+	EventBuild    EventType = "build"    // Parsed build event from go test -json
 	EventError    EventType = "error"    // Error occurred during processing
 	EventComplete EventType = "complete" // Input stream finished
 )
 
 // Event represents a single event emitted by the engine
 type Event struct {
-	Type      EventType
-	RawLine   []byte           // Populated for EventRawLine
-	TestEvent parser.TestEvent // Populated for EventTest
-	Error     error            // Populated for EventError
+	Type       EventType
+	RawLine    []byte            // Populated for EventRawLine
+	TestEvent  parser.TestEvent  // Populated for EventTest
+	BuildEvent parser.BuildEvent // Populated for EventBuild
+	Error      error             // Populated for EventError
 }
 
 // Engine processes raw input and broadcasts events
@@ -77,10 +79,10 @@ func (e *Engine) Stream(input io.Reader) <-chan Event {
 				e.rawWriter.Write([]byte("\n"))
 			}
 
-			// Try to parse as test event
-			testEvent, err := parser.ParseEvent(line)
+			// Try to parse as JSON event (build or test)
+			parsedEvent, err := parser.ParseEvent(line)
 			if err != nil {
-				// Not a test event - emit raw line
+				// Not a JSON event - emit raw line
 				// Make a copy of the line since scanner reuses the buffer
 				lineCopy := make([]byte, len(line))
 				copy(lineCopy, line)
@@ -97,11 +99,19 @@ func (e *Engine) Stream(input io.Reader) <-chan Event {
 				e.jsonWriter.Write([]byte("\n"))
 			}
 
-			// Emit parsed test event
-			events <- Event{
-				Type:      EventTest,
-				TestEvent: testEvent,
+			// Determine event type and emit
+			if parsedEvent.IsBuildEvent() {
+				events <- Event{
+					Type:       EventBuild,
+					BuildEvent: parsedEvent.ToBuildEvent(),
+				}
+			} else if parsedEvent.IsTestEvent() {
+				events <- Event{
+					Type:      EventTest,
+					TestEvent: parsedEvent.ToTestEvent(),
+				}
 			}
+			// else: ignore unknown event types
 		}
 
 		// Check for scanner errors

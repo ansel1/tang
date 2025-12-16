@@ -2,6 +2,8 @@ package results
 
 import (
 	"time"
+
+	"github.com/ansel1/tang/parser"
 )
 
 // Status represents the state of a test, package, or run.  Some status are only
@@ -48,6 +50,7 @@ type Run struct {
 	LastEventTime  time.Time                 // When the run ended
 	RunningPkgs    int                       // Number of currently running packages
 	NonTestOutput  []string                  // Build errors, compilation output
+	BuildEvents    []parser.BuildEvent       // Structured build events
 	Counts         struct {
 		Passed  int // Number of passed tests
 		Failed  int // Number of failed tests
@@ -56,6 +59,17 @@ type Run struct {
 	}
 	Status  Status
 	Running bool
+}
+
+// GetBuildErrors returns all build events for the given import path
+func (r *Run) GetBuildErrors(importPath string) []parser.BuildEvent {
+	var errors []parser.BuildEvent
+	for _, be := range r.BuildEvents {
+		if be.ImportPath == importPath {
+			errors = append(errors, be)
+		}
+	}
+	return errors
 }
 
 // PackageResult represents the final result of a package's test run.
@@ -71,8 +85,9 @@ type PackageResult struct {
 		Skipped int // Number of skipped tests
 		Running int // Number of running tests
 	}
-	Output    string   // Final output line (e.g., coverage information)
-	TestOrder []string // Chronological order of test starts
+	Output      string   // Final output line (e.g., coverage information)
+	TestOrder   []string // Chronological order of test starts
+	FailedBuild string   // ImportPath of failed build (if any)
 }
 
 // TestResult represents the result of a single test.

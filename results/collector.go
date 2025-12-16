@@ -16,10 +16,11 @@ import (
 // - Run starts: Any test event when no current run exists
 // - Run finishes: Running package count drops to 0
 type Collector struct {
-	state         *State
-	lastEventTime time.Time
-	isReplay      bool
-	replayRate    float64
+	state              *State
+	lastEventTime      time.Time
+	isReplay           bool
+	replayRate         float64
+	pendingBuildEvents []parser.BuildEvent // Accumulate before run starts
 }
 
 // NewCollector creates a new result collector.
@@ -48,6 +49,9 @@ func (c *Collector) Push(evt engine.Event) {
 	case engine.EventTest:
 		c.handleTestEvent(evt.TestEvent)
 
+	case engine.EventBuild:
+		c.handleBuildEvent(evt.BuildEvent)
+
 	case engine.EventComplete:
 		// Finish current run if any
 		c.Finish()
@@ -56,6 +60,16 @@ func (c *Collector) Push(evt engine.Event) {
 		// Log error but continue processing
 		_ = evt.Error
 	}
+}
+
+// handleBuildEvent processes a build event.
+func (c *Collector) handleBuildEvent(event parser.BuildEvent) {
+	if c.state.CurrentRun == nil {
+		// Build events can come before test events - accumulate them
+		c.pendingBuildEvents = append(c.pendingBuildEvents, event)
+		return
+	}
+	c.state.CurrentRun.BuildEvents = append(c.state.CurrentRun.BuildEvents, event)
 }
 
 // handleTestEvent processes a test event and updates the state.
@@ -137,6 +151,9 @@ func (c *Collector) handlePackageEvent(run *Run, pkg *PackageResult, event parse
 	case "fail":
 		pkg.Status = StatusFailed
 		pkg.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
+		if event.FailedBuild != "" {
+			pkg.FailedBuild = event.FailedBuild
+		}
 		run.RunningPkgs--
 		c.checkRunFinished(run)
 
@@ -221,6 +238,13 @@ func (c *Collector) startNewRun() {
 	runID := len(c.state.Runs) + 1
 	run := NewRun(runID)
 	run.Status = StatusRunning
+
+	// Add any build events that arrived before the run started
+	if len(c.pendingBuildEvents) > 0 {
+		run.BuildEvents = append(run.BuildEvents, c.pendingBuildEvents...)
+		c.pendingBuildEvents = nil // Clear pending events
+	}
+
 	c.state.Runs = append(c.state.Runs, run)
 	c.state.CurrentRun = run
 }
