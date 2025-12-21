@@ -52,6 +52,11 @@ type Model struct {
 
 	spinner       spinner.Model // Bubbles spinner component
 	frozenSpinner spinner.Model // Bubbles frozen spinner component
+
+	interrupted bool
+
+	NonTestOutput     []string
+	UnprocessedEvents []engine.Event
 }
 
 // NewModel creates a new TUI model
@@ -88,6 +93,7 @@ func (m *Model) Init() tea.Cmd {
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case EngineEventMsg:
+
 		cmd := m.handleEvent(engine.Event(msg))
 		return m, cmd
 
@@ -106,23 +112,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.TerminalHeight = msg.Height
 
 	case EOFMsg:
+		m.collector.Finish()
 		return m, tea.Quit
 
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
-			if m.collector.State().CurrentRun != nil {
-				// Mark as interrupted
-				m.collector.Finish()
-				// Print final report
-				// Since Finish() was just called, the run is now in the list of runs
-				// and is no longer CurrentRun (CurrentRun is nil)
-				state := m.collector.State()
-				if len(state.Runs) > 0 {
-					finishedRun := state.Runs[len(state.Runs)-1]
-					return m, tea.Sequence(m.printFinalReport(finishedRun), tea.Quit)
-				}
-			}
+			m.interrupted = true
+			m.collector.Finish()
 			return m, tea.Quit
 		}
 
@@ -135,37 +132,20 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleEvent processes a single engine event and returns a command if output is needed
-func (m *Model) handleEvent(evt engine.Event) tea.Cmd {
-	if evt.Type == engine.EventRawLine {
-		// Print raw line directly
-		return tea.Println(string(evt.RawLine))
-	}
+func (m *Model) handleEvents(evt ...engine.Event) tea.Cmd {
+	for i, e := range evt {
+		switch e.Type {
+		case engine.EventRawLine:
+			m.UnprocessedEvents = append(m.UnprocessedEvents, e)
+		default:
+			m.collector.Push(e)
+		}
 
-	// 1. Snapshot state before update
-	wasRunning := m.collector.State().CurrentRun != nil
-
-	// 2. Update collector
-	m.collector.Push(evt)
-
-	// 3. Check state after update
-	state := m.collector.State()
-	currentRun := state.CurrentRun
-	isRunning := currentRun != nil
-
-	// Case 1: Run just finished
-	if wasRunning && !isRunning {
-		// Run finished, print final view and summary
-		// We need the run that just finished. It should be the last one in the list.
-		if len(state.Runs) > 0 {
-			finishedRun := state.Runs[len(state.Runs)-1]
-			return m.printFinalReport(finishedRun)
+		if m.collector.State().CurrentRun == nil {
+			m.UnprocessedEvents = m.UnprocessedEvents[i+1:]
+			return
 		}
 	}
-
-	// Case 3: Run just started or is ongoing
-	// No immediate output command needed, View() handles rendering
-	return nil
 }
 
 // printFinalReport handles the printing of the final run state and summary
