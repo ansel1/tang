@@ -2,6 +2,7 @@ package results
 
 import (
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ansel1/tang/engine"
@@ -11,11 +12,12 @@ import (
 // Collector processes engine events and updates the state model.
 //
 // The Collector is a passive component that tracks the state of test runs.
-// It is NOT thread-safe. Synchronization is the responsibility of the caller.
+// It IS thread-safe.
 // It detects run boundaries using the heuristic:
 // - Run starts: Any test event when no current run exists
 // - Run finishes: Running package count drops to 0
 type Collector struct {
+	mu                 sync.Mutex
 	state              *State
 	lastEventTime      time.Time
 	isReplay           bool
@@ -32,19 +34,35 @@ func NewCollector() *Collector {
 
 // SetReplay configures whether the collector is running in replay mode and the rate.
 func (c *Collector) SetReplay(replay bool, rate float64) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.isReplay = replay
 	c.replayRate = rate
 }
 
 // State returns the current state.
 // Note: The returned pointer provides direct access to the internal state.
-// It is NOT thread-safe.
+// It is NOT thread-safe, so the caller should hold the lock if accessing it directly
+// while updates might be happening.
 func (c *Collector) State() *State {
 	return c.state
 }
 
+// Lock locks the collector's mutex.
+func (c *Collector) Lock() {
+	c.mu.Lock()
+}
+
+// Unlock unlocks the collector's mutex.
+func (c *Collector) Unlock() {
+	c.mu.Unlock()
+}
+
 // Push updates the collector state with a new event.
 func (c *Collector) Push(evt engine.Event) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	switch evt.Type {
 	case engine.EventTest:
 		c.handleTestEvent(evt.TestEvent)
@@ -52,12 +70,20 @@ func (c *Collector) Push(evt engine.Event) {
 	case engine.EventBuild:
 		c.handleBuildEvent(evt.BuildEvent)
 
+	case engine.EventRawLine:
+		// Raw lines are output that isn't part of the test stream (e.g. build output)
+		// We add them to the current run's non-test output.
+		// In theory, the main loop won't send us raw lines when there is no run.
+		if c.state.CurrentRun != nil {
+			c.state.CurrentRun.NonTestOutput = append(c.state.CurrentRun.NonTestOutput, string(evt.RawLine))
+		}
+
 	case engine.EventComplete:
 		// Finish current run if any
 		c.Finish()
 
 	case engine.EventError:
-		// Log error but continue processing
+		// TODO: Log error but continue processing
 		_ = evt.Error
 	}
 }

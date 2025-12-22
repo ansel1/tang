@@ -9,8 +9,11 @@ import (
 	"sync"
 	"syscall"
 
+	"time"
+
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/output"
+	"github.com/ansel1/tang/output/format"
 	"github.com/ansel1/tang/output/junit"
 	"github.com/ansel1/tang/results"
 	"github.com/ansel1/tang/tui"
@@ -163,74 +166,108 @@ func run() int {
 		}
 	} else {
 		// TUI mode
-		m := tui.NewModel(*replay, *rate, collector)
-		p := tea.NewProgram(m)
+		var p *tea.Program
+		var pDone chan struct{}
+		var eventCount int
 
-		// Forward engine events to bubbletea
-		go func() {
-			var batch []engine.Event
-			const maxBatchSize = 50
+		printSummary := func() {
+			// finish the current run, in case it was interrupted
+			collector.Finish()
 
-			// Consume events until channel closes
-			for {
-				// Block waiting for the first event
-				evt, ok := <-engineEvents
-				if !ok {
-					break
+			lastRun := collector.State().MostRecentRun()
+			if lastRun != nil {
+				// Reprint non-test output
+				for _, line := range lastRun.NonTestOutput {
+					fmt.Print(line)
 				}
-
-				// Start a new batch
-				// Note: We intentionally allocate a new slice backing array here
-				// so that we can safely pass it to the TUI (which runs in another goroutine)
-				// without race conditions.
-				batch = make([]engine.Event, 0, maxBatchSize)
-				batch = append(batch, evt)
-
-				// Drain additional available events up to maxBatchSize
-			DrainLoop:
-				for len(batch) < maxBatchSize {
-					select {
-					case nextEvt, ok := <-engineEvents:
-						if !ok {
-							// Channel closed
-							if len(batch) > 0 {
-								p.Send(tui.EngineEventBatchMsg(batch))
-							}
-							p.Send(tui.EOFMsg{})
-							return
-						}
-
-						batch = append(batch, nextEvt)
-					default:
-						// No more events immediately available
-						break DrainLoop
-					}
-				}
-
-				if len(batch) > 0 {
-					p.Send(tui.EngineEventBatchMsg(batch))
-					batch = nil
+				fmt.Print("\n")
+				formatter := format.NewSummaryFormatter(80) // 80 is fallback width, should ideally be dynamic
+				summary := format.ComputeSummary(lastRun, 10*time.Second)
+				if summary != nil {
+					fmt.Println(formatter.Format(summary))
 				}
 			}
 
-			// Signal completion
-			p.Send(tui.EOFMsg{})
-		}()
+		}
 
-		// Run the program
-		finalModel, err := p.Run()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error running program: %v\n", err)
-			return 1
+		// Consume events
+	EventLoop:
+		for evt := range engineEvents {
+			collector.Push(evt)
+
+			if p == nil {
+				// TUI is NOT running
+				// safe to access state without lock
+
+				// Check if run is active
+				if collector.State().CurrentRun != nil {
+					// Run started! Start TUI.
+					m := tui.NewModel(*replay, *rate, collector)
+					p = tea.NewProgram(m)
+					pDone = make(chan struct{})
+
+					go func() {
+						if _, err := p.Run(); err != nil {
+							fmt.Fprintf(os.Stderr, "Error running TUI: %v\n", err)
+						}
+						close(pDone)
+					}()
+				} else {
+					// No run active. Print raw lines directly.
+					if evt.Type == engine.EventRawLine {
+						fmt.Print(string(evt.RawLine))
+					}
+				}
+			} else {
+				// TUI IS running
+				// Check if TUI exited unexpectedly (e.g. user pressed q)
+				select {
+				case <-pDone:
+					// TUI finished but run is still active (or we haven't processed the end event yet)
+					// This implies user requested quit.
+					// We should exit the whole program.
+					printSummary()
+					p = nil
+					pDone = nil
+					break EventLoop
+				default:
+				}
+
+				collector.Lock()
+				currentRun := collector.State().CurrentRun
+				collector.Unlock()
+
+				if currentRun == nil {
+					// Run finished! Stop TUI.
+					p.Quit()
+					<-pDone
+					p = nil
+					pDone = nil
+
+					// Print Summary for the finished run
+					printSummary()
+				} else {
+					// Run still running.
+					// Send repaint occasionally to keep UI updated
+					eventCount++
+					if eventCount%50 == 0 {
+						p.Send(tui.RepaintMsg{})
+					}
+				}
+			}
+		}
+
+		// Ensure TUI is closed if loop finishes
+		if p != nil {
+			p.Quit()
+			<-pDone
 		}
 
 		// Set exit code based on test failures
-		if _, ok := finalModel.(*tui.Model); ok {
-			for _, run := range collector.State().Runs {
-				if run.Counts.Failed > 0 {
-					exitCode = 1
-					break
-				}
+		for _, run := range collector.State().Runs {
+			if run.Counts.Failed > 0 {
+				exitCode = 1
+				break
 			}
 		}
 	}

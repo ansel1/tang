@@ -57,8 +57,12 @@ func TestEventBatching(t *testing.T) {
 		},
 	}
 
-	// Send as a single batch message
-	m.Update(EngineEventBatchMsg(events))
+	// Push events to collector directly
+	for _, e := range events {
+		collector.Push(e)
+	}
+	// Verify state
+	m.Update(RepaintMsg{}) // Trigger an update pass just in case, though View pulls directly
 
 	// Verify state
 	output := viewLatest(m)

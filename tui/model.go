@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/output/format"
 	"github.com/ansel1/tang/results"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -14,14 +13,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-// EngineEventMsg wraps engine events for bubbletea
-type EngineEventMsg engine.Event
-
-// EngineEventBatchMsg wraps a batch of engine events
-type EngineEventBatchMsg []engine.Event
-
-// EOFMsg signals that stdin has been closed (kept for backward compatibility)
-type EOFMsg struct{}
+// RepaintMsg forces a redraw
+type RepaintMsg struct{}
 
 // TickMsg is used for timer updates to refresh elapsed times
 type TickMsg struct{}
@@ -30,8 +23,8 @@ const MaxOutputLines = 6
 
 // Model represents the TUI state for the enhanced hierarchical test output display.
 //
-// The Model implements the Bubbletea Model interface. It consumes engine.Event
-// and pushes them to the collector, then reads state from the collector for rendering.
+// The Model implements the Bubbletea Model interface.
+// It is a passive view that renders the state from the collector.
 type Model struct {
 	// Collector reference (read-only from TUI perspective)
 	collector *results.Collector
@@ -55,8 +48,7 @@ type Model struct {
 
 	interrupted bool
 
-	NonTestOutput     []string
-	UnprocessedEvents []engine.Event
+	NonTestOutput []string
 }
 
 // NewModel creates a new TUI model
@@ -92,34 +84,18 @@ func (m *Model) Init() tea.Cmd {
 // Update handles messages
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case EngineEventMsg:
-
-		cmd := m.handleEvent(engine.Event(msg))
-		return m, cmd
-
-	case EngineEventBatchMsg:
-		var cmds []tea.Cmd
-		for _, evt := range msg {
-			if cmd := m.handleEvent(evt); cmd != nil {
-				cmds = append(cmds, cmd)
-			}
-		}
-		return m, tea.Sequence(cmds...)
+	case RepaintMsg:
+		return m, nil
 
 	case tea.WindowSizeMsg:
 		// Update terminal width and height
 		m.TerminalWidth = msg.Width
 		m.TerminalHeight = msg.Height
 
-	case EOFMsg:
-		m.collector.Finish()
-		return m, tea.Quit
-
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			m.interrupted = true
-			m.collector.Finish()
 			return m, tea.Quit
 		}
 
@@ -132,46 +108,17 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *Model) handleEvents(evt ...engine.Event) tea.Cmd {
-	for i, e := range evt {
-		switch e.Type {
-		case engine.EventRawLine:
-			m.UnprocessedEvents = append(m.UnprocessedEvents, e)
-		default:
-			m.collector.Push(e)
-		}
-
-		if m.collector.State().CurrentRun == nil {
-			m.UnprocessedEvents = m.UnprocessedEvents[i+1:]
-			return
-		}
-	}
-}
-
-// printFinalReport handles the printing of the final run state and summary
-func (m *Model) printFinalReport(run *results.Run) tea.Cmd {
-	// Render the final state of the run
-	finalView := expandTabs(m.renderRun(run), 8)
-
-	// Generate summary
-	summary := format.ComputeSummary(run, 10*time.Second)
-	summaryText := ""
-	if summary != nil {
-		formatter := format.NewSummaryFormatter(m.TerminalWidth)
-		summaryText = "\n" + formatter.Format(summary)
-	}
-
-	return tea.Println(finalView + summaryText)
-}
-
 // View renders the TUI
 func (m *Model) View() string {
-	state := m.collector.State()
-	if state.CurrentRun == nil {
+	m.collector.Lock()
+	defer m.collector.Unlock()
+
+	currentRun := m.collector.State().MostRecentRun()
+	if currentRun == nil {
 		return ""
 	}
 	// Pass the specific run to render
-	return strings.TrimRight(expandTabs(m.renderRun(state.CurrentRun), 8), "\n")
+	return strings.TrimRight(expandTabs(m.renderRun(currentRun), 8), "\n")
 }
 
 // expandTabs replaces tab characters in a string with spaces.

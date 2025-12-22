@@ -112,6 +112,13 @@ type State struct {
 	CurrentRun *Run   // Currently active run (nil if no active run)
 }
 
+func (s *State) MostRecentRun() *Run {
+	if len(s.Runs) == 0 {
+		return nil
+	}
+	return s.Runs[len(s.Runs)-1]
+}
+
 // NewRun creates a new run.
 func NewRun(id int) *Run {
 	return &Run{
