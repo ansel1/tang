@@ -2,3 +2,5 @@ tang
 .*
 !.gitignore
 solo.test.out
+
+local_*
