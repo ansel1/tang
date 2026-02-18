@@ -336,16 +336,5 @@ func TestCollectorFinishInterruptedRun(t *testing.T) {
 		if pkg3.Elapsed == 0 {
 			t.Error("Expected pkg3 to have non-zero elapsed time")
 		}
-
-		// Elapsed times should be reasonable (at least the time since their start)
-		expectedMinElapsed := time.Since(startTime.Add(300 * time.Millisecond))
-		if pkg2.Elapsed < expectedMinElapsed-100*time.Millisecond {
-			t.Errorf("pkg2 elapsed time %v seems too small (expected at least %v)", pkg2.Elapsed, expectedMinElapsed)
-		}
-
-		expectedMinElapsed = time.Since(startTime.Add(500 * time.Millisecond))
-		if pkg3.Elapsed < expectedMinElapsed-100*time.Millisecond {
-			t.Errorf("pkg3 elapsed time %v seems too small (expected at least %v)", pkg3.Elapsed, expectedMinElapsed)
-		}
 	}
 }

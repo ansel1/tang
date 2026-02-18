@@ -43,7 +43,7 @@ type Model struct {
 	// Replay state
 	ReplayRate float64
 
-	spinner       spinner.Model // Bubbles spinner component
+	spinner       spinner.Model // Bubbles spinner component ⏺
 	frozenSpinner spinner.Model // Bubbles frozen spinner component
 
 	interrupted bool
@@ -54,10 +54,10 @@ type Model struct {
 // NewModel creates a new TUI model
 func NewModel(replayMode bool, replayRate float64, collector *results.Collector) *Model {
 	s := spinner.New()
-	s.Spinner = spinner.Jump
+	s.Spinner = spinner.MiniDot
 
 	sf := spinner.New()
-	sf.Spinner = spinner.Jump
+	sf.Spinner = spinner.MiniDot
 
 	return &Model{
 		collector:      collector,
@@ -455,7 +455,6 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 		// Bold the name and elapsed time for running tests
 		summary = m.boldStyle.Render(summary)
 		elapsedVal = m.boldStyle.Render(elapsedVal)
-		prefix = m.getStatusPrefix(test.Status, false)
 	}
 
 	m.renderAlignedLine(b, summary, elapsedVal, prefix)

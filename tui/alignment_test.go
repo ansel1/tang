@@ -51,7 +51,7 @@ func TestAlignment(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: evt})
 	}
 
 	output := viewLatest(m)

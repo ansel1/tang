@@ -285,54 +285,56 @@ func (c *Collector) checkRunFinished(run *Run) {
 // Finish finishes the current run if any.
 // This should be called when processing is complete or interrupted.
 func (c *Collector) Finish() {
-	if c.state.CurrentRun != nil {
-		run := c.state.CurrentRun
-
-		// Determine end time: use last event time if available, otherwise now
-		endTime := c.lastEventTime
-		if c.lastEventTime.IsZero() {
-			endTime = time.Now()
-			if c.isReplay {
-				// Calculate simulated end time based on wall clock duration and replay rate
-				// This ensures that the summary matches the TUI's "perceived" time
-				wallDuration := time.Since(run.WallStartTime)
-
-				// Apply rate (rate is inverse speed, e.g. 0.5 means 2x speed)
-				// If rate is 0 (instant), we fall back to lastEventTime
-				if c.replayRate > 0 {
-					wallDuration = time.Duration(float64(wallDuration) / c.replayRate)
-				}
-				endTime = run.FirstEventTime.Add(wallDuration)
-			}
-		}
-		run.LastEventTime = endTime
-
-		var interrupted bool
-
-		// Mark any still-running packages as interrupted and compute their elapsed time
-		for _, pkg := range run.Packages {
-			if pkg.Status == StatusRunning {
-				interrupted = true
-				pkg.Status = StatusInterrupted
-
-				// Calculate elapsed time based on run duration and package start offset
-				// This ensures consistency with TUI even if ReplayReader doesn't sleep exactly as expected
-				wallRunDuration := time.Since(pkg.WallStartTime)
-				if c.isReplay && c.replayRate > 0 {
-					wallRunDuration = time.Duration(float64(wallRunDuration) / c.replayRate)
-				}
-				pkg.Elapsed = wallRunDuration
-			}
-		}
-
-		if interrupted {
-			run.Status = StatusInterrupted
-		} else if run.Counts.Failed > 0 {
-			run.Status = StatusFailed
-		} else {
-			run.Status = StatusPassed
-		}
-
-		c.state.CurrentRun = nil
+	if c.state.CurrentRun == nil {
+		return
 	}
+
+	run := c.state.CurrentRun
+
+	// Determine end time: use last event time if available, otherwise now
+	endTime := c.lastEventTime
+	if c.lastEventTime.IsZero() {
+		endTime = time.Now()
+		if c.isReplay {
+			// Calculate simulated end time based on wall clock duration and replay rate
+			// This ensures that the summary matches the TUI's "perceived" time
+			wallDuration := time.Since(run.WallStartTime)
+
+			// Apply rate (rate is inverse speed, e.g. 0.5 means 2x speed)
+			// If rate is 0 (instant), we fall back to lastEventTime
+			if c.replayRate > 0 {
+				wallDuration = time.Duration(float64(wallDuration) / c.replayRate)
+			}
+			endTime = run.FirstEventTime.Add(wallDuration)
+		}
+	}
+	run.LastEventTime = endTime
+
+	var interrupted bool
+
+	// Mark any still-running packages as interrupted and compute their elapsed time
+	for _, pkg := range run.Packages {
+		if pkg.Status == StatusRunning {
+			interrupted = true
+			pkg.Status = StatusInterrupted
+
+			// Calculate elapsed time based on run duration and package start offset
+			// This ensures consistency with TUI even if ReplayReader doesn't sleep exactly as expected
+			wallRunDuration := time.Since(pkg.WallStartTime)
+			if c.isReplay && c.replayRate > 0 {
+				wallRunDuration = time.Duration(float64(wallRunDuration) / c.replayRate)
+			}
+			pkg.Elapsed = wallRunDuration
+		}
+	}
+
+	if interrupted {
+		run.Status = StatusInterrupted
+	} else if run.Counts.Failed > 0 {
+		run.Status = StatusFailed
+	} else {
+		run.Status = StatusPassed
+	}
+
+	c.state.CurrentRun = nil
 }

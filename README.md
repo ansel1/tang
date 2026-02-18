@@ -69,3 +69,10 @@ License
 -------
 
 This project is licensed under the terms of the MIT license.
+
+Contributing
+------------
+
+**Debugging**
+
+    dlv debug --headless --api-version=2 --listen=127.0.0.1:43000 . -- [args]

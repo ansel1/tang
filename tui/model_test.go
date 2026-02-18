@@ -48,7 +48,7 @@ func TestPackageSummaryLastOutput(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		m.Update(EngineEventMsg(evt))
+		collector.Push(evt)
 	}
 
 	output := viewLatest(m)

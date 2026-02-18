@@ -151,7 +151,7 @@ func TestHierarchicalRendering(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: evt})
 	}
 
 	output := viewLatest(m)
@@ -219,7 +219,7 @@ func TestRunningPackagesShowTests(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: evt})
 	}
 
 	output := m.String()
@@ -332,7 +332,7 @@ func TestBoldRunningEntities(t *testing.T) {
 	}
 
 	for _, evt := range events {
-		m.Update(EngineEventMsg(engine.Event{Type: engine.EventTest, TestEvent: evt}))
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: evt})
 	}
 
 	output := m.String()
