@@ -40,7 +40,7 @@ TODO
 - [x] -junitfile <filename>: write junit xml to the specified file
 
 **optimizations**
-- [ ] update to bubbletea v2
+- [x] update to bubbletea v2
 - [ ] The replay reader parses each line.  The same line gets parsed again later.  So we're double parsing.  Would be more efficient to implement the replay logic later in the data pipeline.  Also, the replay reader reads all the lines into memory.
 - [x] in replay mode, it looks like printing a lot of output is *much* slower than the pace at which the logs are read from the input stream.  A test might appear to take 5 minutes to complete, but actually took .04 seconds.  Let's experiment with draining the event channel in batches between display frames.  Not sure if that's going to make the UI too jumpy...
 - [ ] If there's a line in the output which is json, but not a test/build event, I'm not sure what we'll do

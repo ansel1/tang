@@ -8,7 +8,7 @@ import (
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 func TestAlignment(t *testing.T) {

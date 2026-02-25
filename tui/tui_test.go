@@ -10,8 +10,6 @@ import (
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/muesli/termenv"
 )
 
 // ScriptBlock represents a test block with input, expected output, and match type
@@ -301,9 +299,6 @@ func TestRunScriptsWithTeatest(t *testing.T) {
 
 // TestBoldRunningEntities verifies that running entities are bolded
 func TestBoldRunningEntities(t *testing.T) {
-	// Force lipgloss to emit ansi escape codes
-	lipgloss.SetColorProfile(termenv.ANSI)
-
 	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80

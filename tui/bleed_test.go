@@ -46,7 +46,7 @@ func TestBleedProtection(t *testing.T) {
 	run.Counts.Running++
 
 	// Render
-	output := m.View()
+	output := m.String()
 
 	// Check if the output line is followed by a reset sequence
 	lines := strings.Split(output, "\n")

@@ -17,7 +17,7 @@ import (
 	"github.com/ansel1/tang/output/junit"
 	"github.com/ansel1/tang/results"
 	"github.com/ansel1/tang/tui"
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func main() {

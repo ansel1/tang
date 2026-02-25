@@ -8,9 +8,9 @@ import (
 
 	"github.com/ansel1/tang/output/format"
 	"github.com/ansel1/tang/results"
-	"github.com/charmbracelet/bubbles/spinner"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/spinner"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // RepaintMsg forces a redraw
@@ -53,11 +53,8 @@ type Model struct {
 
 // NewModel creates a new TUI model
 func NewModel(replayMode bool, replayRate float64, collector *results.Collector) *Model {
-	s := spinner.New()
-	s.Spinner = spinner.MiniDot
-
-	sf := spinner.New()
-	sf.Spinner = spinner.MiniDot
+	s := spinner.New(spinner.WithSpinner(spinner.MiniDot))
+	sf := spinner.New(spinner.WithSpinner(spinner.MiniDot))
 
 	return &Model{
 		collector:      collector,
@@ -92,7 +89,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.TerminalWidth = msg.Width
 		m.TerminalHeight = msg.Height
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			m.interrupted = true
@@ -109,7 +106,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 // View renders the TUI
-func (m *Model) View() string {
+func (m *Model) View() tea.View {
+	return tea.NewView(m.renderView())
+}
+
+// renderView produces the rendered string for the TUI
+func (m *Model) renderView() string {
 	m.collector.Lock()
 	defer m.collector.Unlock()
 
@@ -144,7 +146,7 @@ func expandTabs(s string, tabWidth int) string {
 
 // String renders the TUI (for backward compatibility)
 func (m *Model) String() string {
-	return m.View()
+	return m.renderView()
 }
 
 func (m *Model) packageElapsed(pkg *results.PackageResult) time.Duration {

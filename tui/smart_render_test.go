@@ -115,7 +115,7 @@ func TestSmartRendering(t *testing.T) {
 	// Total needed: 1+1+2+1 = 5 lines.
 	// 7 < 16, so ALL should be visible.
 
-	output := m.View()
+	output := m.String()
 	if !strings.Contains(output, "TestPassed") {
 		t.Error("Expected TestPassed to be visible")
 	}
@@ -138,7 +138,7 @@ func TestSmartRendering(t *testing.T) {
 	// t2 (Failed), t1 (Passed), t4 (Passed) should be hidden.
 
 	m.TerminalHeight = 4 + 2 // 6 lines total
-	output = m.View()
+	output = m.String()
 	if !strings.Contains(output, "TestRunning") {
 		t.Error("Expected TestRunning to be visible with height 6 (priority 1)")
 	}
@@ -172,7 +172,7 @@ func TestSmartRendering(t *testing.T) {
 	// Logic: if availableLines >= len(lines) -> full. else if availableLines > 0 -> partial.
 	// So t5 gets 1 line. 1 left. t3 gets 1 line (Summary).
 
-	output = m.View()
+	output = m.String()
 	if !strings.Contains(output, "TestRunningNew") {
 		t.Error("Expected TestRunningNew (newer) to be visible")
 	}
@@ -205,7 +205,7 @@ func TestSmartRendering(t *testing.T) {
 	// Should go to t6 (Newer Failed).
 
 	m.TerminalHeight = 4 + 4 // 8 lines total
-	output = m.View()
+	output = m.String()
 	if !strings.Contains(output, "TestFailedNew") {
 		t.Error("Expected TestFailedNew (newer failed) to be visible")
 	}
