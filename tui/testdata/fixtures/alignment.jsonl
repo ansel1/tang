@@ -1,0 +1,5 @@
+{"Time":"2025-01-01T00:00:00Z","Action":"start","Package":"github.com/test/pkg1"}
+{"Time":"2025-01-01T00:00:00.01Z","Action":"run","Package":"github.com/test/pkg1","Test":"TestExample"}
+{"Time":"2025-01-01T00:00:00.02Z","Action":"pass","Package":"github.com/test/pkg1","Test":"TestExample","Elapsed":0.05}
+{"Time":"2025-01-01T00:00:00.03Z","Action":"output","Package":"github.com/test/pkg1","Output":"ok\tgithub.com/test/pkg1\t0.10s\n"}
+{"Time":"2025-01-01T00:00:00.04Z","Action":"pass","Package":"github.com/test/pkg1","Elapsed":0.10}
