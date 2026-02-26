@@ -11,13 +11,13 @@ import (
 
 	"time"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/output"
 	"github.com/ansel1/tang/output/format"
 	"github.com/ansel1/tang/output/junit"
 	"github.com/ansel1/tang/results"
 	"github.com/ansel1/tang/tui"
-	tea "charm.land/bubbletea/v2"
 )
 
 func main() {
@@ -246,6 +246,11 @@ func run() int {
 
 					// Print Summary for the finished run
 					printSummary()
+
+					// If the run finished because of a raw line, print it now
+					if evt.Type == engine.EventRawLine {
+						fmt.Print(string(evt.RawLine))
+					}
 				} else {
 					// Run still running.
 					// Send repaint occasionally to keep UI updated

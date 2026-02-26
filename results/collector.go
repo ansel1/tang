@@ -71,6 +71,9 @@ func (c *Collector) Push(evt engine.Event) {
 		c.handleBuildEvent(evt.BuildEvent)
 
 	case engine.EventRawLine:
+		// Raw lines act as a hard boundary to force the run to finish
+		c.Finish()
+
 		// Raw lines are output that isn't part of the test stream (e.g. build output)
 		// We add them to the current run's non-test output.
 		// In theory, the main loop won't send us raw lines when there is no run.
@@ -131,6 +134,40 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) {
 
 	// Get or create package result
 	pkgResult, exists := run.Packages[event.Package]
+
+	// Detect if a new `go test` invocation has started in a continuous stream.
+	// If we see an event for a package that has already completed in the
+	// current run, it means the test suite is being re-run (e.g., watch mode).
+	if exists && pkgResult.Status != StatusRunning && event.Action == "start" {
+		// 1. Subtract the old package counts from the global run counts
+		run.Counts.Passed -= pkgResult.Counts.Passed
+		run.Counts.Failed -= pkgResult.Counts.Failed
+		run.Counts.Skipped -= pkgResult.Counts.Skipped
+
+		// 2. Reset the package's internal counters
+		pkgResult.Counts.Passed = 0
+		pkgResult.Counts.Failed = 0
+		pkgResult.Counts.Skipped = 0
+		pkgResult.Counts.Running = 0
+
+		// 3. Clear out old test results from the run map
+		for _, testName := range pkgResult.TestOrder {
+			delete(run.TestResults, event.Package+"/"+testName)
+		}
+		pkgResult.TestOrder = make([]string, 0)
+
+		// 4. Reset package status and metadata
+		pkgResult.Status = StatusRunning
+		pkgResult.StartTime = event.Time
+		pkgResult.WallStartTime = time.Now()
+		pkgResult.Elapsed = 0
+		pkgResult.Output = ""
+		pkgResult.FailedBuild = ""
+
+		run.RunningPkgs++
+		return
+	}
+
 	if !exists {
 		pkgResult = &PackageResult{
 			Name:          event.Package,
@@ -172,7 +209,6 @@ func (c *Collector) handlePackageEvent(run *Run, pkg *PackageResult, event parse
 		pkg.Status = StatusPassed
 		pkg.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
 		run.RunningPkgs--
-		c.checkRunFinished(run)
 
 	case "fail":
 		pkg.Status = StatusFailed
@@ -181,13 +217,11 @@ func (c *Collector) handlePackageEvent(run *Run, pkg *PackageResult, event parse
 			pkg.FailedBuild = event.FailedBuild
 		}
 		run.RunningPkgs--
-		c.checkRunFinished(run)
 
 	case "skip":
 		pkg.Status = StatusSkipped
 		pkg.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
 		run.RunningPkgs--
-		c.checkRunFinished(run)
 	}
 }
 
@@ -273,13 +307,6 @@ func (c *Collector) startNewRun() {
 
 	c.state.Runs = append(c.state.Runs, run)
 	c.state.CurrentRun = run
-}
-
-// checkRunFinished checks if the current run has finished.
-func (c *Collector) checkRunFinished(run *Run) {
-	if run.RunningPkgs == 0 {
-		c.Finish()
-	}
 }
 
 // Finish finishes the current run if any.

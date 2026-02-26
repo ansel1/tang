@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ansel1/tang/output/format"
-	"github.com/ansel1/tang/results"
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/ansel1/tang/output/format"
+	"github.com/ansel1/tang/results"
 )
 
 // RepaintMsg forces a redraw

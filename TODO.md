@@ -30,6 +30,12 @@ TODO
 - [x] in the slow test section, the line is wrapping
   anyway, maybe that section should be layed out like the other sections: grouped by package
 - [x] maybe ditch the package stats?  not very useful.
+- [ ] let's not print out the last frame of the tui.  It's redundant with the summary.
+- [ ] let's brainstorm revising the summary
+  - should be cleaner and more concise
+  - must show the full standard output of failed tests
+  - must show build errors and other non-test output
+  - 
 
 
 **Browse**

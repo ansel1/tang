@@ -7,8 +7,8 @@ import (
 
 	"os"
 
-	"github.com/ansel1/tang/results"
 	"charm.land/lipgloss/v2"
+	"github.com/ansel1/tang/results"
 	"github.com/mattn/go-isatty"
 )
 

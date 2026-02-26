@@ -1,6 +1,8 @@
 package testdata
 
 import (
+	"fmt"
+	"os"
 	"testing"
 	"time"
 )
@@ -25,4 +27,13 @@ func TestSlow(t *testing.T) {
 
 func TestAnother(t *testing.T) {
 	t.Log("Another passing test")
+}
+
+func TestMain(m *testing.M) {
+	fmt.Fprintln(os.Stderr, "This is output from TestMain")
+	m.Run()
+}
+
+func TestOutput(t *testing.T) {
+	fmt.Fprintln(os.Stderr, "This is output from a test")
 }

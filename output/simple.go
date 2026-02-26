@@ -36,8 +36,12 @@ func (s *SimpleOutput) ProcessEvents(events <-chan engine.Event) error {
 
 		switch evt.Type {
 		case engine.EventRawLine:
-			// Accumulate raw (non-JSON) lines for output
-			s.output = append(s.output, string(evt.RawLine))
+			// Raw lines act as boundaries. Write accumulated output/summary
+			s.writeOutput()
+			// Reset the state for the next run
+			s.output = make([]string, 0)
+			// Print the raw line itself
+			fmt.Fprint(s.writer, string(evt.RawLine))
 
 		case engine.EventTest:
 			// Accumulate test output

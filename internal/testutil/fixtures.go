@@ -49,6 +49,9 @@ func LoadFixture(t *testing.T, name string) *tui.Model {
 		}
 	}
 
+	// Push EventComplete to cleanly finish the run
+	collector.Push(engine.Event{Type: engine.EventComplete})
+
 	m := tui.NewModel(false, 1.0, collector)
 	m.TerminalWidth = 80
 	m.TerminalHeight = 24

@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"charm.land/lipgloss/v2"
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
-	"charm.land/lipgloss/v2"
 )
 
 func TestAlignment(t *testing.T) {
