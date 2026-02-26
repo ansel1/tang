@@ -331,13 +331,14 @@ func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResu
 		for _, pkg := range packages {
 			symbol := SymbolPass
 			symbolStyle := sf.passStyle
-			if pkg.Status == results.StatusFailed {
+			switch pkg.Status {
+			case results.StatusFailed:
 				symbol = SymbolFail
 				symbolStyle = sf.failStyle
-			} else if pkg.Status == results.StatusSkipped {
+			case results.StatusSkipped:
 				symbol = SymbolSkip
 				symbolStyle = sf.skipStyle
-			} else if pkg.Status == results.StatusInterrupted {
+			case results.StatusInterrupted:
 				// For interrupted packages:
 				// - Use Fail icon if there were failures
 				// - Use Skip icon if no tests were run (no pass/fail/skip)
@@ -582,15 +583,6 @@ func (sf *SummaryFormatter) formatSlowTests(slowTests []*results.TestResult) str
 			fmt.Fprintf(sb, "  %s\n", test.Package)
 		}
 	})
-}
-
-// horizontalLine returns a horizontal separator line.
-func (sf *SummaryFormatter) horizontalLine() string {
-	line := ""
-	for i := 0; i < sf.width; i++ {
-		line += "-"
-	}
-	return line
 }
 
 func renderSectionHeader(header string) string {

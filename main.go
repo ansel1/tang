@@ -53,7 +53,7 @@ func run() int {
 			fmt.Fprintf(os.Stderr, "Error opening input file: %v\n", err)
 			return 1
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 
 		// Wrap with ReplayReader if replay mode is enabled
 		if *replay {
@@ -78,7 +78,7 @@ func run() int {
 			fmt.Fprintf(os.Stderr, "Error creating output file: %v\n", err)
 			return 1
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		opts = append(opts, engine.WithRawOutput(f))
 	}
 
@@ -89,7 +89,7 @@ func run() int {
 			fmt.Fprintf(os.Stderr, "Error creating JSON file: %v\n", err)
 			return 1
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		opts = append(opts, engine.WithJSONOutput(f))
 	}
 
@@ -113,7 +113,7 @@ func run() int {
 					fmt.Fprintf(os.Stderr, "Error creating JUnit file: %v\n", err)
 					return
 				}
-				defer f.Close()
+				defer func() { _ = f.Close() }()
 
 				if err := junit.WriteXML(f, collector.State()); err != nil {
 					fmt.Fprintf(os.Stderr, "Error writing JUnit XML: %v\n", err)

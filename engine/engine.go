@@ -75,8 +75,8 @@ func (e *Engine) Stream(input io.Reader) <-chan Event {
 
 			// Always write raw output to file if configured
 			if e.rawWriter != nil {
-				e.rawWriter.Write(line)
-				e.rawWriter.Write([]byte("\n"))
+				_, _ = e.rawWriter.Write(line)
+				_, _ = e.rawWriter.Write([]byte("\n"))
 			}
 
 			// Try to parse as JSON event (build or test)
@@ -95,8 +95,8 @@ func (e *Engine) Stream(input io.Reader) <-chan Event {
 
 			// Successfully parsed - write to JSON output file if configured
 			if e.jsonWriter != nil {
-				e.jsonWriter.Write(line)
-				e.jsonWriter.Write([]byte("\n"))
+				_, _ = e.jsonWriter.Write(line)
+				_, _ = e.jsonWriter.Write([]byte("\n"))
 			}
 
 			// Determine event type and emit

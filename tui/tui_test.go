@@ -25,7 +25,7 @@ func parseScriptFile(filename string) ([]ScriptBlock, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	scanner := bufio.NewScanner(file)
 	var result []ScriptBlock
@@ -62,9 +62,10 @@ func parseScriptFile(filename string) ([]ScriptBlock, error) {
 			currentMatchType = "contains"
 		default:
 			// Regular line - add to current section
-			if mode == "input" {
+			switch mode {
+			case "input":
 				currentInput = append(currentInput, line)
-			} else if mode == "expected" {
+			case "expected":
 				currentExpected = append(currentExpected, line)
 			}
 		}

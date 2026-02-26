@@ -315,11 +315,12 @@ func (m *Model) renderRun(run *results.Run) string {
 	// We use a simple bucket approach since we have few priorities
 	var p1, p2, p3 []renderItem
 	for _, item := range items {
-		if item.priority == 1 {
+		switch item.priority {
+		case 1:
 			p1 = append(p1, item)
-		} else if item.priority == 2 {
+		case 2:
 			p2 = append(p2, item)
-		} else {
+		default:
 			p3 = append(p3, item)
 		}
 	}

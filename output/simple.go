@@ -37,11 +37,11 @@ func (s *SimpleOutput) ProcessEvents(events <-chan engine.Event) error {
 		switch evt.Type {
 		case engine.EventRawLine:
 			// Raw lines act as boundaries. Write accumulated output/summary
-			s.writeOutput()
+			_ = s.writeOutput()
 			// Reset the state for the next run
 			s.output = make([]string, 0)
 			// Print the raw line itself
-			fmt.Fprint(s.writer, string(evt.RawLine))
+			_, _ = fmt.Fprint(s.writer, string(evt.RawLine))
 
 		case engine.EventTest:
 			// Accumulate test output
@@ -85,8 +85,8 @@ func (s *SimpleOutput) writeOutput() error {
 			summaryText := formatter.Format(summary)
 
 			// Print summary
-			fmt.Fprintln(s.writer)
-			fmt.Fprintln(s.writer, summaryText)
+			_, _ = fmt.Fprintln(s.writer)
+			_, _ = fmt.Fprintln(s.writer, summaryText)
 		}
 	}
 
