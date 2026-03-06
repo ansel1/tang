@@ -16,6 +16,10 @@ import (
 // RepaintMsg forces a redraw
 type RepaintMsg struct{}
 
+// QuitMsg signals the TUI to quit cleanly, rendering an empty final frame
+// so the terminal is left clean for summary output.
+type QuitMsg struct{}
+
 // TickMsg is used for timer updates to refresh elapsed times
 type TickMsg struct{}
 
@@ -47,6 +51,7 @@ type Model struct {
 	frozenSpinner spinner.Model // Bubbles frozen spinner component
 
 	interrupted bool
+	quitting    bool
 
 	NonTestOutput []string
 }
@@ -89,10 +94,15 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.TerminalWidth = msg.Width
 		m.TerminalHeight = msg.Height
 
+	case QuitMsg:
+		m.quitting = true
+		return m, tea.Quit
+
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "q", "esc", "ctrl+c":
 			m.interrupted = true
+			m.quitting = true
 			return m, tea.Quit
 		}
 
@@ -112,6 +122,10 @@ func (m *Model) View() tea.View {
 
 // renderView produces the rendered string for the TUI
 func (m *Model) renderView() string {
+	if m.quitting {
+		return ""
+	}
+
 	m.collector.Lock()
 	defer m.collector.Unlock()
 

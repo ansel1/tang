@@ -238,8 +238,8 @@ func run() int {
 				collector.Unlock()
 
 				if currentRun == nil {
-					// Run finished! Stop TUI.
-					p.Quit()
+					// Run finished! Quit TUI with an empty final render.
+					p.Send(tui.QuitMsg{})
 					<-pDone
 					p = nil
 					pDone = nil
@@ -264,7 +264,7 @@ func run() int {
 
 		// Ensure TUI is closed if loop finishes
 		if p != nil {
-			p.Quit()
+			p.Send(tui.QuitMsg{})
 			<-pDone
 		}
 
