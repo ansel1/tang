@@ -233,7 +233,7 @@ func (m *Model) renderRun(run *results.Run) string {
 	}
 
 	// Calculate max widths for each column
-	var maxPassed, maxFailed, maxSkipped, maxElapsed int
+	var maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed int
 	for _, pkg := range run.Packages {
 		if passedLen := len(fmt.Sprintf("%d", pkg.Counts.Passed)); passedLen > maxPassed {
 			maxPassed = passedLen
@@ -243,6 +243,10 @@ func (m *Model) renderRun(run *results.Run) string {
 		}
 		if skippedLen := len(fmt.Sprintf("%d", pkg.Counts.Skipped)); skippedLen > maxSkipped {
 			maxSkipped = skippedLen
+		}
+		total := pkg.Counts.Passed + pkg.Counts.Failed + pkg.Counts.Skipped
+		if totalLen := len(fmt.Sprintf("%d", total)); totalLen > maxTotal {
+			maxTotal = totalLen
 		}
 
 		if elapsedLen := len(formatElapsedTime(m.packageElapsed(pkg))); elapsedLen > maxElapsed {
@@ -369,11 +373,8 @@ func (m *Model) renderRun(run *results.Run) string {
 	allocate(p2)
 	allocate(p3)
 
-	// Render packages
-	for _, pkgName := range run.PackageOrder {
-		pkgState := run.Packages[pkgName]
-		m.renderPackage(&b, run, pkgState, maxPassed, maxFailed, maxSkipped, maxElapsed, linesToShow[pkgName])
-	}
+	// Summary line at top
+	m.renderSummaryLine(&b, run)
 
 	// Add separator line
 	if len(run.PackageOrder) > 0 {
@@ -381,16 +382,19 @@ func (m *Model) renderRun(run *results.Run) string {
 		b.WriteString("\n")
 	}
 
-	// Summary line
-	m.renderSummaryLine(&b, run)
+	// Render packages
+	for _, pkgName := range run.PackageOrder {
+		pkgState := run.Packages[pkgName]
+		m.renderPackage(&b, run, pkgState, maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed, linesToShow[pkgName])
+	}
 
 	return b.String()
 }
 
 // renderPackage renders a single package and its tests
-func (m *Model) renderPackage(b *strings.Builder, run *results.Run, pkg *results.PackageResult, wPassed, wFailed, wSkipped, wElapsed int, testLines map[string]int) {
+func (m *Model) renderPackage(b *strings.Builder, run *results.Run, pkg *results.PackageResult, wPassed, wFailed, wSkipped, wTotal, wElapsed int, testLines map[string]int) {
 	// Render package header
-	m.renderPackageHeader(b, pkg, wPassed, wFailed, wSkipped, wElapsed)
+	m.renderPackageHeader(b, pkg, wPassed, wFailed, wSkipped, wTotal, wElapsed)
 
 	// Render tests if allocated
 	if pkg.Status == results.StatusRunning || pkg.Status == results.StatusInterrupted {
@@ -406,12 +410,12 @@ func (m *Model) renderPackage(b *strings.Builder, run *results.Run, pkg *results
 }
 
 // renderPackageHeader renders the package summary line
-func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResult, wPassed, wFailed, wSkipped, wElapsed int) {
+func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResult, wPassed, wFailed, wSkipped, wTotal, wElapsed int) {
 	var leftPart string
 	var rightPart string
 
 	// Passed column
-	passedStr := fmt.Sprintf("✓ %*d", wPassed, pkg.Counts.Passed)
+	passedStr := fmt.Sprintf("✓%*d", wPassed, pkg.Counts.Passed)
 	if pkg.Counts.Passed > 0 {
 		passedStr = m.passStyle.Render(passedStr)
 	} else {
@@ -419,7 +423,7 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 	}
 
 	// Failed column
-	failedStr := fmt.Sprintf("✗ %*d", wFailed, pkg.Counts.Failed)
+	failedStr := fmt.Sprintf("✗%*d", wFailed, pkg.Counts.Failed)
 	if pkg.Counts.Failed > 0 {
 		failedStr = m.failStyle.Render(failedStr)
 	} else {
@@ -427,12 +431,16 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 	}
 
 	// Skipped column
-	skippedStr := fmt.Sprintf("∅ %*d", wSkipped, pkg.Counts.Skipped)
+	skippedStr := fmt.Sprintf("∅%*d", wSkipped, pkg.Counts.Skipped)
 	if pkg.Counts.Skipped > 0 {
 		skippedStr = m.skipStyle.Render(skippedStr)
 	} else {
 		skippedStr = m.neutralStyle.Render(skippedStr)
 	}
+
+	// Total column
+	total := pkg.Counts.Passed + pkg.Counts.Failed + pkg.Counts.Skipped
+	totalStr := m.neutralStyle.Render(fmt.Sprintf("=%*d", wTotal, total))
 
 	// Elapsed column
 	var elapsedVal string
@@ -440,7 +448,7 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 	elapsedVal = formatElapsedTime(currentElapsed)
 	elapsedStr := fmt.Sprintf("%*s", wElapsed, elapsedVal)
 
-	rightPart = fmt.Sprintf("%s  %s  %s  %s", passedStr, failedStr, skippedStr, elapsedStr)
+	rightPart = fmt.Sprintf("%s %s %s %s %s", passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 	leftPart = pkg.Name
 	if pkg.Status != results.StatusRunning && pkg.Output != "" {
 		// Expand tabs to ensure correct width calculation

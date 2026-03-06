@@ -161,7 +161,7 @@ func TestHierarchicalRendering(t *testing.T) {
 		contains string
 	}{
 		{"Package name", "github.com/test/pkg1"},
-		{"Pass count", "✓ 1"},
+		{"Pass count", "✓1"},
 		{"Separator line", "--------"},
 	}
 

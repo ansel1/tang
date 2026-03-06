@@ -71,7 +71,7 @@ func TestAlignment(t *testing.T) {
 	}
 
 	// Verify the package summary line contains the expected test count
-	if !strings.Contains(summaryLine, "✓ 1") {
+	if !strings.Contains(summaryLine, "✓1") {
 		t.Errorf("Summary line missing counts: %q", summaryLine)
 	}
 

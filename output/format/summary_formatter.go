@@ -271,6 +271,7 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 	maxPassedLen := 0
 	maxFailedLen := 0
 	maxSkippedLen := 0
+	maxTotalLen := 0
 
 	for _, pkg := range summary.Packages {
 		pl := pkgLine{pkg: pkg}
@@ -311,6 +312,10 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		}
 		if len(skippedStr) > maxSkippedLen {
 			maxSkippedLen = len(skippedStr)
+		}
+		totalStr := fmt.Sprintf("%d", pkg.Counts.Passed+pkg.Counts.Failed+pkg.Counts.Skipped)
+		if len(totalStr) > maxTotalLen {
+			maxTotalLen = len(totalStr)
 		}
 
 		if len(pl.statusWord) > maxStatusLen {
@@ -364,28 +369,31 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		hasCounts := pl.pkg.Counts.Passed > 0 || pl.pkg.Counts.Failed > 0 || pl.pkg.Counts.Skipped > 0
 		countsStr := ""
 		if hasCounts {
-			passedStr := fmt.Sprintf("%s %*d", SymbolPass, maxPassedLen, pl.pkg.Counts.Passed)
+			passedStr := fmt.Sprintf("%s%*d", SymbolPass, maxPassedLen, pl.pkg.Counts.Passed)
 			if pl.pkg.Counts.Passed > 0 {
 				passedStr = f.passStyle.Render(passedStr)
 			} else {
 				passedStr = f.neutralStyle.Render(passedStr)
 			}
 
-			failedStr := fmt.Sprintf("%s %*d", SymbolFail, maxFailedLen, pl.pkg.Counts.Failed)
+			failedStr := fmt.Sprintf("%s%*d", SymbolFail, maxFailedLen, pl.pkg.Counts.Failed)
 			if pl.pkg.Counts.Failed > 0 {
 				failedStr = f.failStyle.Render(failedStr)
 			} else {
 				failedStr = f.neutralStyle.Render(failedStr)
 			}
 
-			skippedStr := fmt.Sprintf("%s %*d", SymbolSkip, maxSkippedLen, pl.pkg.Counts.Skipped)
+			skippedStr := fmt.Sprintf("%s%*d", SymbolSkip, maxSkippedLen, pl.pkg.Counts.Skipped)
 			if pl.pkg.Counts.Skipped > 0 {
 				skippedStr = f.skipStyle.Render(skippedStr)
 			} else {
 				skippedStr = f.neutralStyle.Render(skippedStr)
 			}
 
-			countsStr = fmt.Sprintf("%s  %s  %s", passedStr, failedStr, skippedStr)
+			total := pl.pkg.Counts.Passed + pl.pkg.Counts.Failed + pl.pkg.Counts.Skipped
+			totalStr := f.neutralStyle.Render(fmt.Sprintf("=%*d", maxTotalLen, total))
+
+			countsStr = fmt.Sprintf("%s %s %s %s", passedStr, failedStr, skippedStr, totalStr)
 		}
 
 		elapsed := formatDuration(pl.pkg.Elapsed)
@@ -394,7 +402,7 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 			fmt.Fprintf(sb, "%s    %s  %s  %s\n",
 				statusStr, coloredNameExtra, countsStr, elapsed)
 		} else {
-			countsWidth := 3 + 7 + maxPassedLen + maxFailedLen + maxSkippedLen
+			countsWidth := 4 + 3 + maxPassedLen + maxFailedLen + maxSkippedLen + maxTotalLen
 			emptyCounts := strings.Repeat(" ", countsWidth)
 			fmt.Fprintf(sb, "%s    %s  %s  %s\n",
 				statusStr, coloredNameExtra, emptyCounts, elapsed)
