@@ -89,6 +89,13 @@ type Summary struct {
 	MostTestsPackage *results.PackageResult
 }
 
+// HasTestDetails reports whether the summary contains test-level detail
+// messages (failures, skipped tests, slow tests, or build failures) that
+// will be rendered above the package summary table.
+func (s *Summary) HasTestDetails() bool {
+	return len(s.Failures) > 0 || len(s.Skipped) > 0 || len(s.SlowTests) > 0 || len(s.BuildFailures) > 0
+}
+
 // ComputeSummary calculates summary statistics from a Run.
 //
 // This function processes the run data and computes all necessary

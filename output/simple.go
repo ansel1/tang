@@ -79,7 +79,9 @@ func (s *SimpleOutput) writeOutput() error {
 		if summary != nil {
 			summaryText := format.NewSummaryFormatter(80).Format(summary)
 
-			_, _ = fmt.Fprintln(s.writer)
+			if len(s.output) > 0 || summary.HasTestDetails() {
+				_, _ = fmt.Fprintln(s.writer)
+			}
 			_, _ = fmt.Fprintln(s.writer, summaryText)
 		}
 	}

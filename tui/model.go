@@ -9,7 +9,6 @@ import (
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
-	"github.com/ansel1/tang/output/format"
 	"github.com/ansel1/tang/results"
 )
 
@@ -666,30 +665,4 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wPassed,
 	}
 
 	m.renderAlignedLine(b, leftPart, rightPart, prefix)
-}
-
-// DisplaySummary retrieves the summary from the collector and displays it.
-func (m *Model) DisplaySummary() {
-	if m.collector == nil {
-		return
-	}
-
-	// Compute summary directly from state (single-threaded access assumed after runtime)
-	var summary *format.Summary
-
-	state := m.collector.State()
-	if len(state.Runs) > 0 {
-		run := state.Runs[len(state.Runs)-1]
-		summary = format.ComputeSummary(run, 10*time.Second)
-	}
-
-	if summary == nil {
-		return
-	}
-
-	formatter := format.NewSummaryFormatter(m.TerminalWidth)
-	summaryText := formatter.Format(summary)
-
-	fmt.Println()
-	fmt.Println(summaryText)
 }

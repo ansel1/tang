@@ -178,10 +178,12 @@ func run() int {
 				for _, line := range lastRun.NonTestOutput {
 					fmt.Print(line)
 				}
-				fmt.Print("\n")
 				summary := format.ComputeSummary(lastRun, 10*time.Second)
 				if summary != nil {
 					summaryText := format.NewSummaryFormatter(80).Format(summary)
+					if len(lastRun.NonTestOutput) > 0 || summary.HasTestDetails() {
+						fmt.Print("\n")
+					}
 					fmt.Println(summaryText)
 				}
 			}
