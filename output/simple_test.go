@@ -55,8 +55,7 @@ func TestSimpleOutput_ProcessEvents_BasicTest(t *testing.T) {
 	output := buf.String()
 	// Check that output contains test output
 	assert.Contains(t, output, "=== RUN   TestFoo")
-	// Check that summary is displayed
-	assert.Contains(t, output, "OVERALL RESULTS")
+	assert.Contains(t, output, "Total tests:")
 }
 
 func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
@@ -97,7 +96,7 @@ func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
 
 	output := buf.String()
 	assert.Contains(t, output, "assertion failed")
-	assert.Contains(t, output, "OVERALL RESULTS")
+	assert.Contains(t, output, "Total tests:")
 	// Should have failures (checked via collector state)
 	assert.True(t, simple.HasFailures())
 }

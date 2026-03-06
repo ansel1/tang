@@ -171,23 +171,20 @@ func run() int {
 		var eventCount int
 
 		printSummary := func() {
-			// finish the current run, in case it was interrupted
 			collector.Finish()
 
 			lastRun := collector.State().MostRecentRun()
 			if lastRun != nil {
-				// Reprint non-test output
 				for _, line := range lastRun.NonTestOutput {
 					fmt.Print(line)
 				}
 				fmt.Print("\n")
-				formatter := format.NewSummaryFormatter(80) // 80 is fallback width, should ideally be dynamic
 				summary := format.ComputeSummary(lastRun, 10*time.Second)
 				if summary != nil {
-					fmt.Println(formatter.Format(summary))
+					summaryText := format.NewSummaryFormatter(80).Format(summary)
+					fmt.Println(summaryText)
 				}
 			}
-
 		}
 
 		// Consume events

@@ -11,15 +11,12 @@ import (
 	"github.com/ansel1/tang/results"
 )
 
-// SimpleOutput writes simple text output for -notty mode
-// It accumulates output and displays summary at completion using shared collector
 type SimpleOutput struct {
 	writer    io.Writer
 	output    []string
 	collector *results.Collector
 }
 
-// NewSimpleOutput creates a simple output writer
 func NewSimpleOutput(w io.Writer, collector *results.Collector) *SimpleOutput {
 	return &SimpleOutput{
 		writer:    w,
@@ -80,11 +77,8 @@ func (s *SimpleOutput) writeOutput() error {
 		}
 
 		if summary != nil {
-			// Format summary using default terminal width (80 columns)
-			formatter := format.NewSummaryFormatter(80)
-			summaryText := formatter.Format(summary)
+			summaryText := format.NewSummaryFormatter(80).Format(summary)
 
-			// Print summary
 			_, _ = fmt.Fprintln(s.writer)
 			_, _ = fmt.Fprintln(s.writer, summaryText)
 		}
