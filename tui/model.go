@@ -464,12 +464,33 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 		leftPart = expandTabs(pkg.Output, 8)
 	}
 
-	if pkg.Status == results.StatusRunning {
-		// Bold the entire line for running packages
-		leftPart = m.boldStyle.Render(leftPart)
-		rightPart = m.boldStyle.Render(rightPart)
+	switch pkg.Status {
+	case results.StatusRunning, results.StatusInterrupted:
+		if pkg.Counts.Failed > 0 {
+			failBold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
+			leftPart = failBold.Render(leftPart)
+			rightPart = m.boldStyle.Render(rightPart)
+		} else {
+			leftPart = m.boldStyle.Render(leftPart)
+			rightPart = m.boldStyle.Render(rightPart)
+		}
+	case results.StatusFailed:
+		leftPart = m.failStyle.Render(leftPart)
+	case results.StatusSkipped:
+		leftPart = m.skipStyle.Render(leftPart)
+	case results.StatusPassed:
+		leftPart = m.passStyle.Render(leftPart)
 	}
-	prefix := m.getStatusPrefix(pkg.Status, pkg.Counts.Failed > 0)
+
+	var prefix string
+	switch pkg.Status {
+	case results.StatusRunning, results.StatusInterrupted:
+		prefix = m.getStatusPrefix(pkg.Status, pkg.Counts.Failed > 0)
+	case results.StatusPaused:
+		prefix = m.getStatusPrefix(pkg.Status, pkg.Counts.Failed > 0)
+	default:
+		prefix = "  "
+	}
 
 	m.renderAlignedLine(b, leftPart, rightPart, prefix)
 }
