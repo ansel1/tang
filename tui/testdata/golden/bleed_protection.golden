@@ -1,4 +1,4 @@
-[32m~[m [1mRUNNING: 0 passed, 0 failed, 0 skipped, 1 running, 1 total[m[0m           [1mX.Xs[m
+[32m~[m [1mRUNNING (1)[m[0m                                              [1m✓0 ✗0 ∅0 =1 X.Xs[m
 --------------------------------------------------------------------------------
 [32m~[m [1mpkg1[m[0m                                                     [1m✓0 ✗0 ∅0 =0 X.Xs[m
   [1m  === RUN   TestBleed[m[0m                                                [1mX.Xs[m

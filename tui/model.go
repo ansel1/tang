@@ -232,8 +232,17 @@ func (m *Model) renderRun(run *results.Run) string {
 		b.WriteString("\n")
 	}
 
-	// Calculate max widths for each column
+	// Calculate max widths for each column (including run-level counts for the summary line)
 	var maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed int
+
+	// Include run-level counts in width calculation
+	runTotal := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped + run.Counts.Running
+	maxPassed = len(fmt.Sprintf("%d", run.Counts.Passed))
+	maxFailed = len(fmt.Sprintf("%d", run.Counts.Failed))
+	maxSkipped = len(fmt.Sprintf("%d", run.Counts.Skipped))
+	maxTotal = len(fmt.Sprintf("%d", runTotal))
+	maxElapsed = len(formatElapsedTime(m.runElapsed(run)))
+
 	for _, pkg := range run.Packages {
 		if passedLen := len(fmt.Sprintf("%d", pkg.Counts.Passed)); passedLen > maxPassed {
 			maxPassed = passedLen
@@ -374,7 +383,7 @@ func (m *Model) renderRun(run *results.Run) string {
 	allocate(p3)
 
 	// Summary line at top
-	m.renderSummaryLine(&b, run)
+	m.renderSummaryLine(&b, run, maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed)
 
 	// Add separator line
 	if len(run.PackageOrder) > 0 {
@@ -575,37 +584,67 @@ func (m *Model) renderAlignedLine(b *strings.Builder, left, right, prefix string
 	b.WriteString("\n")
 }
 
-// renderSummaryLine renders the final summary line
-func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run) {
-	total := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped + run.Counts.Running
+// renderSummaryLine renders the top summary line
+func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wPassed, wFailed, wSkipped, wTotal, wElapsed int) {
+	var leftPart string
+	var rightPart string
 
-	elapsedVal := formatElapsedTime(m.runElapsed(run))
-
-	var statusPrefix string
+	var statusLabel string
 	switch run.Status {
 	case results.StatusRunning:
-		statusPrefix = "RUNNING"
+		statusLabel = "RUNNING"
 	case results.StatusFailed:
-		statusPrefix = "FAILED"
+		statusLabel = "FAILED"
 	case results.StatusPassed:
-		statusPrefix = "PASSED"
+		statusLabel = "PASSED"
 	case results.StatusInterrupted:
-		statusPrefix = "INTERRUPTED"
+		statusLabel = "INTERRUPTED"
 	default:
-		statusPrefix = "UNKNOWN"
+		statusLabel = "UNKNOWN"
 	}
 
-	leftPart := fmt.Sprintf("%s: %d passed, %d failed, %d skipped, %d running, %d total",
-		statusPrefix, run.Counts.Passed, run.Counts.Failed, run.Counts.Skipped, run.Counts.Running, total)
+	if run.Counts.Running > 0 {
+		leftPart = fmt.Sprintf("%s (%d)", statusLabel, run.Counts.Running)
+	} else {
+		leftPart = statusLabel
+	}
+
+	passedStr := fmt.Sprintf("✓%*d", wPassed, run.Counts.Passed)
+	if run.Counts.Passed > 0 {
+		passedStr = m.passStyle.Render(passedStr)
+	} else {
+		passedStr = m.neutralStyle.Render(passedStr)
+	}
+
+	failedStr := fmt.Sprintf("✗%*d", wFailed, run.Counts.Failed)
+	if run.Counts.Failed > 0 {
+		failedStr = m.failStyle.Render(failedStr)
+	} else {
+		failedStr = m.neutralStyle.Render(failedStr)
+	}
+
+	skippedStr := fmt.Sprintf("∅%*d", wSkipped, run.Counts.Skipped)
+	if run.Counts.Skipped > 0 {
+		skippedStr = m.skipStyle.Render(skippedStr)
+	} else {
+		skippedStr = m.neutralStyle.Render(skippedStr)
+	}
+
+	total := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped + run.Counts.Running
+	totalStr := m.neutralStyle.Render(fmt.Sprintf("=%*d", wTotal, total))
+
+	elapsedVal := formatElapsedTime(m.runElapsed(run))
+	elapsedStr := fmt.Sprintf("%*s", wElapsed, elapsedVal)
+
+	rightPart = fmt.Sprintf("%s %s %s %s %s", passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 
 	prefix := m.getStatusPrefix(run.Status, run.Counts.Failed > 0)
 	if run.Status == results.StatusRunning {
-		// Bold the summary line for running status
 		leftPart = m.boldStyle.Render(leftPart)
-		elapsedVal = m.boldStyle.Render(elapsedVal)
+		rightPart = m.boldStyle.Render(rightPart)
 	}
 
-	m.renderAlignedLine(b, leftPart, elapsedVal, prefix)
+	m.renderAlignedLine(b, leftPart, rightPart, prefix)
 }
 
 // DisplaySummary retrieves the summary from the collector and displays it.

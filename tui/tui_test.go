@@ -231,8 +231,7 @@ func TestRunningPackagesShowTests(t *testing.T) {
 		{"Package name", "github.com/test/pkg1"},
 		{"Test name", "TestBar"},
 		{"Test output", "bar_test.go:20"},
-		{"Running indicator", "RUNNING:"},
-		{"Running count", "1 running"},
+		{"Running indicator", "RUNNING"},
 	}
 
 	for _, test := range tests {
@@ -348,8 +347,7 @@ func TestBoldRunningEntities(t *testing.T) {
 	}
 
 	// 3. Summary line should be bolded (RUNNING status)
-	// The summary format is "RUNNING: X passed, ..."
-	if !strings.Contains(output, bold+"RUNNING:") {
+	if !strings.Contains(output, bold+"RUNNING") {
 		t.Errorf("Expected summary line to be bolded.\nGot:\n%s", output)
 	}
 }
