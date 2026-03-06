@@ -36,8 +36,8 @@ func TestSummaryFormatterBasic(t *testing.T) {
 	if !strings.Contains(output, "github.com/user/project/pkg1") {
 		t.Error("Expected package name")
 	}
-	if !strings.Contains(output, "Total tests:") {
-		t.Error("Expected total tests line")
+	if !strings.Contains(output, "(1 packages)") {
+		t.Error("Expected totals line with package count")
 	}
 	if !strings.Contains(output, SymbolPass) {
 		t.Error("Expected pass symbol")
@@ -219,29 +219,48 @@ func TestSummaryFormatterNoFailuresOrSkips(t *testing.T) {
 	}
 }
 
-func TestSummaryFormatterPercentages(t *testing.T) {
+func TestSummaryFormatterTotalsLine(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusPassed,
+		Elapsed: 3 * time.Second,
+	}
+	pkg1.Counts.Passed = 8
+	pkg1.Counts.Failed = 1
+	pkg1.Counts.Skipped = 1
+
+	pkg2 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg2",
+		Status:  results.StatusPassed,
+		Elapsed: 2 * time.Second,
+	}
+	pkg2.Counts.Passed = 5
+
 	summary := &Summary{
-		Packages:     []*results.PackageResult{},
-		TotalTests:   100,
-		PassedTests:  97,
-		FailedTests:  2,
+		Packages:     []*results.PackageResult{pkg1, pkg2},
+		TotalTests:   15,
+		PassedTests:  13,
+		FailedTests:  1,
 		SkippedTests: 1,
 		TotalTime:    5 * time.Second,
-		PackageCount: 1,
+		PackageCount: 2,
 	}
 
 	output := formatter.Format(summary)
 
-	if !strings.Contains(output, "97.0%") {
-		t.Error("Expected 97.0% for passed tests")
+	if !strings.Contains(output, "(2 packages)") {
+		t.Error("Expected totals line with package count")
 	}
-	if !strings.Contains(output, "2.0%") {
-		t.Error("Expected 2.0% for failed tests")
+	if !strings.Contains(output, SymbolPass) {
+		t.Error("Expected pass symbol in totals")
 	}
-	if !strings.Contains(output, "1.0%") {
-		t.Error("Expected 1.0% for skipped tests")
+	if !strings.Contains(output, SymbolFail) {
+		t.Error("Expected fail symbol in totals")
+	}
+	if !strings.Contains(output, SymbolSkip) {
+		t.Error("Expected skip symbol in totals")
 	}
 }
 

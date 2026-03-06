@@ -57,7 +57,6 @@ func (f *SummaryFormatter) Format(summary *Summary) string {
 	var sb strings.Builder
 	f.formatTestDetails(&sb, summary)
 	f.formatPackageSummary(&sb, summary)
-	f.formatTotalSummary(&sb, summary)
 	return sb.String()
 }
 
@@ -273,6 +272,11 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 	maxSkippedLen := 0
 	maxTotalLen := 0
 
+	maxPassedLen = len(fmt.Sprintf("%d", summary.PassedTests))
+	maxFailedLen = len(fmt.Sprintf("%d", summary.FailedTests))
+	maxSkippedLen = len(fmt.Sprintf("%d", summary.SkippedTests))
+	maxTotalLen = len(fmt.Sprintf("%d", summary.TotalTests))
+
 	for _, pkg := range summary.Packages {
 		pl := pkgLine{pkg: pkg}
 
@@ -337,8 +341,6 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 	if f.width > separatorLen {
 		separatorLen = f.width
 	}
-	sb.WriteString(strings.Repeat("-", separatorLen))
-	sb.WriteString("\n")
 
 	for _, pl := range lines {
 		var statusStr string
@@ -409,32 +411,36 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		}
 	}
 
+	sb.WriteString(strings.Repeat("-", separatorLen))
 	sb.WriteString("\n")
-}
 
-func (f *SummaryFormatter) formatTotalSummary(sb *strings.Builder, summary *Summary) {
-	passPercent := 0.0
-	failPercent := 0.0
-	skipPercent := 0.0
-	if summary.TotalTests > 0 {
-		passPercent = float64(summary.PassedTests) / float64(summary.TotalTests) * 100
-		failPercent = float64(summary.FailedTests) / float64(summary.TotalTests) * 100
-		skipPercent = float64(summary.SkippedTests) / float64(summary.TotalTests) * 100
+	pkgLabel := fmt.Sprintf("(%d packages)", summary.PackageCount)
+
+	passedStr := fmt.Sprintf("%s%*d", SymbolPass, maxPassedLen, summary.PassedTests)
+	if summary.PassedTests > 0 {
+		passedStr = f.passStyle.Render(passedStr)
+	} else {
+		passedStr = f.neutralStyle.Render(passedStr)
 	}
 
-	passIcon := SymbolPass
-	failIcon := SymbolFail
-	skipIcon := SymbolSkip
-	if f.useColors {
-		passIcon = f.passStyle.Render(SymbolPass)
-		failIcon = f.failStyle.Render(SymbolFail)
-		skipIcon = f.skipStyle.Render(SymbolSkip)
+	failedStr := fmt.Sprintf("%s%*d", SymbolFail, maxFailedLen, summary.FailedTests)
+	if summary.FailedTests > 0 {
+		failedStr = f.failStyle.Render(failedStr)
+	} else {
+		failedStr = f.neutralStyle.Render(failedStr)
 	}
 
-	fmt.Fprintf(sb, "Total tests:    %d\n", summary.TotalTests)
-	fmt.Fprintf(sb, "Passed:         %d %s (%.1f%%)\n", summary.PassedTests, passIcon, passPercent)
-	fmt.Fprintf(sb, "Failed:         %d %s (%.1f%%)\n", summary.FailedTests, failIcon, failPercent)
-	fmt.Fprintf(sb, "Skipped:        %d %s (%.1f%%)\n", summary.SkippedTests, skipIcon, skipPercent)
-	fmt.Fprintf(sb, "Total time:     %s\n", formatDuration(summary.TotalTime))
-	fmt.Fprintf(sb, "Packages:       %d\n", summary.PackageCount)
+	skippedStr := fmt.Sprintf("%s%*d", SymbolSkip, maxSkippedLen, summary.SkippedTests)
+	if summary.SkippedTests > 0 {
+		skippedStr = f.skipStyle.Render(skippedStr)
+	} else {
+		skippedStr = f.neutralStyle.Render(skippedStr)
+	}
+
+	totalStr := f.neutralStyle.Render(fmt.Sprintf("=%*d", maxTotalLen, summary.TotalTests))
+	countsStr := fmt.Sprintf("%s %s %s %s", passedStr, failedStr, skippedStr, totalStr)
+	elapsed := formatDuration(summary.TotalTime)
+
+	labelWidth := maxStatusLen + 4 + maxNameExtraLen
+	fmt.Fprintf(sb, "%-*s  %s  %s\n", labelWidth, pkgLabel, countsStr, elapsed)
 }
