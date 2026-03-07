@@ -338,3 +338,109 @@ func TestCollectorFinishInterruptedRun(t *testing.T) {
 		}
 	}
 }
+
+func TestCollectorTimeoutPanic(t *testing.T) {
+	collector := NewCollector()
+
+	startTime := time.Now().Add(-2 * time.Second)
+	pkg := "github.com/test/pkg1"
+
+	events := []engine.Event{
+		// Start running tests
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime, Action: "run", Package: pkg, Test: "TestA",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime, Action: "run", Package: pkg, Test: "TestB",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(10 * time.Millisecond), Action: "pause", Package: pkg, Test: "TestB",
+		}},
+		// TestA is running, TestB is paused
+
+		// Timeout panic output lands on TestA
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Second), Action: "output", Package: pkg, Test: "TestA",
+			Output: "panic: test timed out after 1s\n",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Second), Action: "output", Package: pkg, Test: "TestA",
+			Output: "\trunning tests:\n",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Second), Action: "output", Package: pkg, Test: "TestA",
+			Output: "\t\tTestA (1s)\n",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Second), Action: "output", Package: pkg, Test: "TestA",
+			Output: "\n",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Second), Action: "output", Package: pkg, Test: "TestA",
+			Output: "goroutine 41 [running]:\n",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Second), Action: "output", Package: pkg, Test: "TestA",
+			Output: "testing.(*M).startAlarm.func1()\n",
+		}},
+
+		// Package fails
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Second), Action: "output", Package: pkg,
+			Output: "FAIL\tgithub.com/test/pkg1\t1.5s\n",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Second), Action: "fail", Package: pkg, Elapsed: 1.5,
+		}},
+	}
+
+	for _, evt := range events {
+		collector.Push(evt)
+	}
+
+	run := collector.State().MostRecentRun()
+	if run == nil {
+		t.Fatal("Expected a run")
+	}
+
+	pkgResult := run.Packages[pkg]
+	if pkgResult.Status != StatusFailed {
+		t.Errorf("Expected package status Failed, got %s", pkgResult.Status)
+	}
+	if pkgResult.PanicTestKey != pkg+"/TestA" {
+		t.Errorf("Expected PanicTestKey %q, got %q", pkg+"/TestA", pkgResult.PanicTestKey)
+	}
+
+	testA := run.TestResults[pkg+"/TestA"]
+	if testA.Status != StatusFailed {
+		t.Errorf("Expected TestA status Failed, got %s", testA.Status)
+	}
+	if !testA.TimedOut {
+		t.Error("Expected TestA.TimedOut to be true")
+	}
+	if len(testA.Output) == 0 {
+		t.Error("Expected TestA to retain its panic output")
+	}
+
+	testB := run.TestResults[pkg+"/TestB"]
+	if testB.Status != StatusFailed {
+		t.Errorf("Expected TestB status Failed, got %s", testB.Status)
+	}
+	if !testB.TimedOut {
+		t.Error("Expected TestB.TimedOut to be true")
+	}
+	if len(testB.Output) != 0 {
+		t.Errorf("Expected TestB to have no output (deduped), got %d lines", len(testB.Output))
+	}
+
+	// Verify counts
+	if run.Counts.Failed != 2 {
+		t.Errorf("Expected 2 failed tests, got %d", run.Counts.Failed)
+	}
+	if pkgResult.Counts.Failed != 2 {
+		t.Errorf("Expected package to have 2 failed tests, got %d", pkgResult.Counts.Failed)
+	}
+	if run.Counts.Running != 0 {
+		t.Errorf("Expected 0 running tests, got %d", run.Counts.Running)
+	}
+}

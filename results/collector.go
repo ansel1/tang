@@ -216,6 +216,7 @@ func (c *Collector) handlePackageEvent(run *Run, pkg *PackageResult, event parse
 		if event.FailedBuild != "" {
 			pkg.FailedBuild = event.FailedBuild
 		}
+		c.failInterruptedTests(run, pkg)
 		run.RunningPkgs--
 
 	case "skip":
@@ -258,6 +259,12 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 				testResult.SummaryLine = output
 			} else {
 				testResult.Output = append(testResult.Output, output)
+
+				// Detect timeout panic: go test emits the panic stacktrace as
+				// output on one arbitrary running test per package.
+				if strings.HasPrefix(output, "panic: test timed out after ") {
+					pkg.PanicTestKey = testKey
+				}
 			}
 		}
 
@@ -290,6 +297,35 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 
 	case "cont":
 		testResult.Status = StatusRunning
+	}
+}
+
+// failInterruptedTests transitions still-running tests in a failed package to
+// StatusFailed. When a timeout panic is detected, the test that received the
+// panic output is marked as the primary failure (retaining its output), and
+// the remaining interrupted tests are marked as timed out.
+func (c *Collector) failInterruptedTests(run *Run, pkg *PackageResult) {
+	if pkg.PanicTestKey == "" {
+		return
+	}
+
+	for _, testName := range pkg.TestOrder {
+		testKey := pkg.Name + "/" + testName
+		tr := run.TestResults[testKey]
+		if tr == nil || !tr.Running() {
+			continue
+		}
+
+		tr.Status = StatusFailed
+		tr.TimedOut = true
+		pkg.Counts.Failed++
+		pkg.Counts.Running--
+		run.Counts.Failed++
+		run.Counts.Running--
+
+		if testKey != pkg.PanicTestKey {
+			tr.Output = nil
+		}
 	}
 }
 

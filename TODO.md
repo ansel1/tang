@@ -1,25 +1,13 @@
 TODO
 ----
-
-- [x] -1 exit code if tests fail
-- [x] -f <filename>: read input from file rather than stdin, and just display a summary of the results
-- [x] -replay: when used with -f, replay events with pauses to simulate original test run
-- [x] -rate: when used with -replay, set rate to replay.  Defaults to 1 (original speed), 0.5 = double speed, 0 = no pause
-- [x] pass any lines which are not `go test -json` output directly to the terminal
-- [x] if the output stream contains multiple, seperate test runs (like the output of a make target that calls `go test` twice)
-      then detect the start and end of each run.  At the end of a run, print the summary to the terminal.  Stream any additional 
-      non-test ouput to the terminal.  When the next test run start is detected, restart the TUI for the duration of the next run.  Etc.
-- [x] Keep printing output after tests complete until pipe is empty
 - [ ] detect and report panics
-- [x] -slow-threshold: set slow test threshold
-- [x] -notty: don't use the tui, just stream results to terminal, then print the summary
-- [x] -help
-- [x] LICENSE
-- [x] if output lines have escape sequences, they bleed into the tui.  Need to reset terminal state after test output
-- [x] elide output lines from all finished tests (even failed tests)
-- [x] try a spinner column on the left for the status of each package and test.  Use the colors to indicate the status. When a package is finished, replace the spinner with a checkmark or xmark.
-- [x] when in replay mode using a sped up rate, show the elapsed time of the original test run next to the elapsed time of the replayed run.
-- [x] add an elapsed time to the tui summary line
+- [ ] Play with the UX: make the tui feed more like the summary format
+- [ ] try decreasing the standard indent to 2, and indenting subtests in the tui
+- [ ] add a `-v` flag.  In both tui and notty, outputs something closer to the original 
+      test verbose output, including all tests
+- [ ] Consider leaving failed (and skipped and slow?) tests in the tui
+- [ ] add flag to hide skipped tests
+- [ ] add flag to hide slow tests
 
 **Bugs**
 - [ ] with `-count=2`, the package summary will show 1, but the total summary will show 2.  I think
@@ -27,7 +15,7 @@ TODO
   test as seperate runs.  Just print out the result for each run, and keep incrementing the counts
   and elapsed times.  So with `-count 100`, it would show 100 runs.
 
-**Summary**
+
 
 
 **Browse**

@@ -195,7 +195,10 @@ func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.Test
 		logIndent = indent + IndentLevel2    // 12 spaces for subtest log output
 	}
 
-	elapsed := fmt.Sprintf("(%.2fs)", tr.Elapsed.Seconds())
+	annotation := fmt.Sprintf("(%.2fs)", tr.Elapsed.Seconds())
+	if tr.TimedOut && len(tr.Output) == 0 {
+		annotation = "(timed out)"
+	}
 
 	sb.WriteString(indent)
 	sb.WriteString("--- ")
@@ -203,7 +206,7 @@ func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.Test
 	sb.WriteString(": ")
 	sb.WriteString(colorStyle.Render(tr.Name))
 	sb.WriteString(" ")
-	sb.WriteString(f.dimStyle.Render(elapsed))
+	sb.WriteString(f.dimStyle.Render(annotation))
 	sb.WriteString("\n")
 
 	for _, line := range tr.Output {
