@@ -33,6 +33,7 @@ func run() int {
 	notty := flag.Bool("notty", false, "Don't use TUI, output to stdout")
 	replay := flag.Bool("replay", false, "Replay events with timing from original test run (requires -f)")
 	rate := flag.Float64("rate", 1.0, "Replay rate multiplier (0=instant, 1=original speed, 0.5=2x speed)")
+	slowThreshold := flag.Duration("slow-threshold", 10*time.Second, "Duration threshold for slow test detection")
 	flag.Parse()
 
 	// Validate flag combinations
@@ -153,7 +154,7 @@ func run() int {
 
 	if skipTUI {
 		// Simple output mode (no TUI)
-		simple := output.NewSimpleOutput(os.Stdout, collector)
+		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold)
 		if err := simple.ProcessEvents(engineEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			return 1
@@ -178,7 +179,7 @@ func run() int {
 				for _, line := range lastRun.NonTestOutput {
 					fmt.Print(line)
 				}
-				summary := format.ComputeSummary(lastRun, 10*time.Second)
+				summary := format.ComputeSummary(lastRun, *slowThreshold)
 				if summary != nil {
 					summaryText := format.NewSummaryFormatter(80).Format(summary)
 					if len(lastRun.NonTestOutput) > 0 || summary.HasTestDetails() {

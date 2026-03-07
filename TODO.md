@@ -11,7 +11,7 @@ TODO
       non-test ouput to the terminal.  When the next test run start is detected, restart the TUI for the duration of the next run.  Etc.
 - [x] Keep printing output after tests complete until pipe is empty
 - [ ] detect and report panics
-- [ ] -slow-threshold: set slow test threshold
+- [x] -slow-threshold: set slow test threshold
 - [x] -notty: don't use the tui, just stream results to terminal, then print the summary
 - [x] -help
 - [x] LICENSE

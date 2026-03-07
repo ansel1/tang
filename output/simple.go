@@ -12,16 +12,18 @@ import (
 )
 
 type SimpleOutput struct {
-	writer    io.Writer
-	output    []string
-	collector *results.Collector
+	writer        io.Writer
+	output        []string
+	collector     *results.Collector
+	slowThreshold time.Duration
 }
 
-func NewSimpleOutput(w io.Writer, collector *results.Collector) *SimpleOutput {
+func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold time.Duration) *SimpleOutput {
 	return &SimpleOutput{
-		writer:    w,
-		output:    make([]string, 0),
-		collector: collector,
+		writer:        w,
+		output:        make([]string, 0),
+		collector:     collector,
+		slowThreshold: slowThreshold,
 	}
 }
 
@@ -72,8 +74,7 @@ func (s *SimpleOutput) writeOutput() error {
 		state := s.collector.State()
 		if len(state.Runs) > 0 {
 			run := state.Runs[len(state.Runs)-1]
-			// Compute summary with 10 second slow test threshold
-			summary = format.ComputeSummary(run, 10*time.Second)
+			summary = format.ComputeSummary(run, s.slowThreshold)
 		}
 
 		if summary != nil {
