@@ -257,10 +257,11 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 	}
 
 	type pkgLine struct {
-		statusWord string
-		name       string
-		extra      string
-		pkg        *results.PackageResult
+		statusWord   string
+		name         string
+		extra        string
+		showDuration bool
+		pkg          *results.PackageResult
 	}
 
 	lines := make([]pkgLine, 0, len(summary.Packages))
@@ -305,6 +306,14 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 			}
 		}
 
+		// Omit durations for packages that didn't actually run tests.
+		switch pl.extra {
+		case "[build failed]", "[no test files]", "(cached)":
+			pl.showDuration = false
+		default:
+			pl.showDuration = true
+		}
+
 		passedStr := fmt.Sprintf("%d", pkg.Counts.Passed)
 		failedStr := fmt.Sprintf("%d", pkg.Counts.Failed)
 		skippedStr := fmt.Sprintf("%d", pkg.Counts.Skipped)
@@ -339,8 +348,10 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 
 	maxElapsedLen := 0
 	for _, pl := range lines {
-		if el := len(formatDuration(pl.pkg.Elapsed)); el > maxElapsedLen {
-			maxElapsedLen = el
+		if pl.showDuration {
+			if el := len(formatDuration(pl.pkg.Elapsed)); el > maxElapsedLen {
+				maxElapsedLen = el
+			}
 		}
 	}
 	if el := len(formatDuration(summary.TotalTime)); el > maxElapsedLen {
@@ -410,14 +421,17 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 			countsStr = fmt.Sprintf("%s %s %s %s", passedStr, failedStr, skippedStr, totalStr)
 		}
 
-		elapsed := fmt.Sprintf("%*s", maxElapsedLen, formatDuration(pl.pkg.Elapsed))
+		elapsed := ""
+		if pl.showDuration {
+			elapsed = fmt.Sprintf("  %*s", maxElapsedLen, formatDuration(pl.pkg.Elapsed))
+		}
 
 		if countsStr != "" {
-			fmt.Fprintf(sb, "%s    %s  %s  %s\n",
+			fmt.Fprintf(sb, "%s    %s  %s%s\n",
 				statusStr, coloredNameExtra, countsStr, elapsed)
 		} else {
 			emptyCounts := strings.Repeat(" ", countsWidth)
-			fmt.Fprintf(sb, "%s    %s  %s  %s\n",
+			fmt.Fprintf(sb, "%s    %s  %s%s\n",
 				statusStr, coloredNameExtra, emptyCounts, elapsed)
 		}
 	}

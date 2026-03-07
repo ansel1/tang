@@ -21,36 +21,33 @@ TODO
 - [x] when in replay mode using a sped up rate, show the elapsed time of the original test run next to the elapsed time of the replayed run.
 - [x] add an elapsed time to the tui summary line
 
+**Bugs**
+- [ ] with `-count=2`, the package summary will show 1, but the total summary will show 2.  I think
+  I'd prefer if package count showed 2 as well, and generally, just treat duplicate runs of the same
+  test as seperate runs.  Just print out the result for each run, and keep incrementing the counts
+  and elapsed times.  So with `-count 100`, it would show 100 runs.
+
 **Summary**
-- [x] final summary, including failed tests with last 20 lines of output, slow tests, and skipped tests
-- [x] if quitting the tui with ctrl-c, print the summary to the terminal
-- [x] if just passing file, and not replaying, don't use tui, just print summary
-- [x] if ctrl-c is pressed, the package that was still in progress is not displayed in the summary
-- [x] in the packages summary, the elapsed times are if different formats.  Just use the full format
-- [x] in the slow test section, the line is wrapping
-  anyway, maybe that section should be layed out like the other sections: grouped by package
-- [x] maybe ditch the package stats?  not very useful.
-- [ ] let's not print out the last frame of the tui.  It's redundant with the summary.
-- [ ] let's brainstorm revising the summary
-  - should be cleaner and more concise
-  - must show the full standard output of failed tests
-  - must show build errors and other non-test output
-  - 
 
 
 **Browse**
 - [ ] add browse command: must pass a file, and opens a tui which lets user navigate to any test run, and view the output
 - [ ] add option to locate specific test in file (maybe with regex?) and dump it
 
-**junit**
-- [x] -junitfile <filename>: write junit xml to the specified file
+**Run**
+- [ ] add a subcommand which runs `go test`, as an alternative to piping output, e.g.:
+
+        tang test ./... -v
+
+**tui**
+- [ ] 
 
 **optimizations**
 - [x] update to bubbletea v2
 - [ ] The replay reader parses each line.  The same line gets parsed again later.  So we're double parsing.  Would be more efficient to implement the replay logic later in the data pipeline.  Also, the replay reader reads all the lines into memory.
 - [x] in replay mode, it looks like printing a lot of output is *much* slower than the pace at which the logs are read from the input stream.  A test might appear to take 5 minutes to complete, but actually took .04 seconds.  Let's experiment with draining the event channel in batches between display frames.  Not sure if that's going to make the UI too jumpy...
 - [ ] If there's a line in the output which is json, but not a test/build event, I'm not sure what we'll do
-- [ ] Don't bother with the gutter icon for paused tests
+- [x] Don't bother with the gutter icon for paused tests
 - [ ] need to rethink the notty mode
 - [ ] ctrl-c doesn't work if the tui hasn't started yet
 - [x] `cat simple.out | tang` doesn't show anything.  
