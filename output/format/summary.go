@@ -1,30 +1,26 @@
 package format
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
 	"github.com/ansel1/tang/results"
 )
 
-// formatDuration formats a duration according to the summary display rules.
-//
-// This function implements the HH:MM:SS.mmm format consistently.
-//
-// Parameters:
-//   - d: Duration to format
-//
-// Returns:
-//   - Formatted duration string
+// formatDuration formats a duration using Go's native String() with up to 3
+// fractional digits on the smallest unit (truncated, not rounded).
 func formatDuration(d time.Duration) string {
-	// Format as HH:MM:SS.mmm
-	hours := int(d.Hours())
-	minutes := int(d.Minutes()) % 60
-	seconds := int(d.Seconds()) % 60
-	milliseconds := int(d.Milliseconds()) % 1000
-
-	return fmt.Sprintf("%02d:%02d:%02d.%03d", hours, minutes, seconds, milliseconds)
+	if d <= 0 {
+		return "0s"
+	}
+	switch {
+	case d >= time.Second:
+		return d.Truncate(time.Millisecond).String()
+	case d >= time.Millisecond:
+		return d.Truncate(time.Microsecond).String()
+	default:
+		return d.Truncate(time.Nanosecond).String()
+	}
 }
 
 // Symbol constants for test results

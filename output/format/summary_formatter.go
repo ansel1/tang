@@ -337,7 +337,19 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		lines = append(lines, pl)
 	}
 
-	separatorLen := 94
+	maxElapsedLen := 0
+	for _, pl := range lines {
+		if el := len(formatDuration(pl.pkg.Elapsed)); el > maxElapsedLen {
+			maxElapsedLen = el
+		}
+	}
+	if el := len(formatDuration(summary.TotalTime)); el > maxElapsedLen {
+		maxElapsedLen = el
+	}
+
+	countsWidth := 4 + 3 + maxPassedLen + maxFailedLen + maxSkippedLen + maxTotalLen
+	lineWidth := maxStatusLen + 4 + maxNameExtraLen + 2 + countsWidth + 2 + maxElapsedLen
+	separatorLen := lineWidth
 	if f.width > separatorLen {
 		separatorLen = f.width
 	}
@@ -398,13 +410,12 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 			countsStr = fmt.Sprintf("%s %s %s %s", passedStr, failedStr, skippedStr, totalStr)
 		}
 
-		elapsed := formatDuration(pl.pkg.Elapsed)
+		elapsed := fmt.Sprintf("%*s", maxElapsedLen, formatDuration(pl.pkg.Elapsed))
 
 		if countsStr != "" {
 			fmt.Fprintf(sb, "%s    %s  %s  %s\n",
 				statusStr, coloredNameExtra, countsStr, elapsed)
 		} else {
-			countsWidth := 4 + 3 + maxPassedLen + maxFailedLen + maxSkippedLen + maxTotalLen
 			emptyCounts := strings.Repeat(" ", countsWidth)
 			fmt.Fprintf(sb, "%s    %s  %s  %s\n",
 				statusStr, coloredNameExtra, emptyCounts, elapsed)
@@ -439,7 +450,7 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 
 	totalStr := f.neutralStyle.Render(fmt.Sprintf("=%*d", maxTotalLen, summary.TotalTests))
 	countsStr := fmt.Sprintf("%s %s %s %s", passedStr, failedStr, skippedStr, totalStr)
-	elapsed := formatDuration(summary.TotalTime)
+	elapsed := fmt.Sprintf("%*s", maxElapsedLen, formatDuration(summary.TotalTime))
 
 	labelWidth := maxStatusLen + 4 + maxNameExtraLen
 	fmt.Fprintf(sb, "%-*s  %s  %s\n", labelWidth, pkgLabel, countsStr, elapsed)
