@@ -210,6 +210,7 @@ func run() int {
 				if collector.State().CurrentRun != nil {
 					// Run started! Start TUI.
 					m := tui.NewModel(*replay, *rate, collector)
+					m.SlowThreshold = *slowThreshold
 					p = tea.NewProgram(m)
 					pDone = make(chan struct{})
 

@@ -12,6 +12,9 @@ import (
 	"github.com/ansel1/tang/results"
 )
 
+// DefaultSlowThreshold is the fallback threshold used when none is specified.
+const DefaultSlowThreshold = 10 * time.Second
+
 // RepaintMsg forces a redraw
 type RepaintMsg struct{}
 
@@ -40,13 +43,17 @@ type Model struct {
 	passStyle    lipgloss.Style
 	failStyle    lipgloss.Style
 	skipStyle    lipgloss.Style
+	slowStyle    lipgloss.Style
 	neutralStyle lipgloss.Style
 
 	brightStyle   lipgloss.Style
 	brightFail    lipgloss.Style
 	brightPass    lipgloss.Style
 	brightSkip    lipgloss.Style
+	brightSlow    lipgloss.Style
 	brightNeutral lipgloss.Style
+
+	SlowThreshold time.Duration
 
 	// Replay state
 	ReplayRate float64
@@ -72,12 +79,15 @@ func NewModel(replayMode bool, replayRate float64, collector *results.Collector)
 		passStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("2")), // green
 		failStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
 		skipStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
+		slowStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("4")), // blue
 		neutralStyle:   lipgloss.NewStyle(),
 		brightStyle:    lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15")),
 		brightFail:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("9")),
 		brightPass:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("10")),
 		brightSkip:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("11")),
+		brightSlow:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12")),
 		brightNeutral:  lipgloss.NewStyle().Bold(true),
+		SlowThreshold:  DefaultSlowThreshold,
 		spinner:        s,
 		frozenSpinner:  sf,
 		ReplayRate:     replayRate,
@@ -519,6 +529,12 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 	if test.Running() {
 		summary = m.brightStyle.Render(summary)
 		elapsedVal = m.brightStyle.Render(elapsedVal)
+	} else {
+		style := m.testStyle(test)
+		if style != nil {
+			summary = style.Render(summary)
+			elapsedVal = style.Render(elapsedVal)
+		}
 	}
 
 	m.renderAlignedLine(b, summary, elapsedVal, prefix)
@@ -540,6 +556,20 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 
 		maxLines--
 	}
+}
+
+func (m *Model) testStyle(test *results.TestResult) *lipgloss.Style {
+	switch test.Status {
+	case results.StatusFailed:
+		return &m.failStyle
+	case results.StatusSkipped:
+		return &m.skipStyle
+	case results.StatusPassed:
+		if m.SlowThreshold > 0 && test.Elapsed >= m.SlowThreshold {
+			return &m.slowStyle
+		}
+	}
+	return nil
 }
 
 // formatTestSummary formats the test summary line (left part)

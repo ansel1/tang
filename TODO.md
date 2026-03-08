@@ -2,12 +2,9 @@ TODO
 ----
 - [x] detect and report panics
 - [ ] Play with the UX: make the tui feed more like the summary format
-- [ ] try decreasing the standard indent to 2, and indenting subtests in the tui
 - [ ] add a `-v` flag.  In both tui and notty, outputs something closer to the original 
       test verbose output, including all tests
 - [ ] Consider leaving failed (and skipped and slow?) tests in the tui
-- [ ] add flag to hide skipped tests
-- [ ] add flag to hide slow tests
 
 **Bugs**
 - [ ] with `-count=2`, the package summary will show 1, but the total summary will show 2.  I think
