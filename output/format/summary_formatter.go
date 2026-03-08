@@ -198,12 +198,8 @@ func isSubtest(name string) bool {
 }
 
 func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.TestResult, label string, boldStyle, colorStyle lipgloss.Style) {
-	indent := IndentLevel2             // 4 spaces for top-level tests
-	logIndent := indent + IndentLevel2 // 8 spaces for log output
-	if isSubtest(tr.Name) {
-		indent = IndentLevel2 + IndentLevel2 // 8 spaces for subtests
-		logIndent = indent + IndentLevel2    // 12 spaces for subtest log output
-	}
+	indent := testIndent(tr.Name)
+	logIndent := indent + "    "
 
 	annotation := fmt.Sprintf("(%.2fs)", tr.Elapsed.Seconds())
 	if tr.TimedOut && len(tr.Output) == 0 {
@@ -227,10 +223,7 @@ func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.Test
 }
 
 func (f *SummaryFormatter) formatSlowTestIssue(sb *strings.Builder, tr *results.TestResult) {
-	indent := IndentLevel2
-	if isSubtest(tr.Name) {
-		indent = IndentLevel2 + IndentLevel2
-	}
+	indent := testIndent(tr.Name)
 
 	elapsed := fmt.Sprintf("(%.2fs)", tr.Elapsed.Seconds())
 

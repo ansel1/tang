@@ -32,9 +32,14 @@ const (
 
 // Indentation constants
 const (
-	IndentLevel1 = "  "   // 2 spaces
-	IndentLevel2 = "    " // 4 spaces
+	IndentLevel1 = "  " // 2 spaces
+	IndentLevel2 = "  " // 2 spaces
 )
+
+func testIndent(testName string) string {
+	depth := strings.Count(testName, "/")
+	return strings.Repeat(IndentLevel2, depth+1)
+}
 
 // expandTabs replaces tab characters with spaces.
 func expandTabs(s string, tabWidth int) string {

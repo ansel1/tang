@@ -529,11 +529,12 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 	if l > MaxOutputLines {
 		l = MaxOutputLines
 	}
+	logIndent := prefix + testIndent(test.Name)
 	for _, outputLine := range test.Output[len(test.Output)-l:] {
 		if maxLines <= 0 {
 			break
 		}
-		line := "      " + outputLine // Increased indent (2 padding + 4 indent)
+		line := logIndent + outputLine
 		b.WriteString(ensureReset(truncateLine(line, m.TerminalWidth)))
 		b.WriteString("\n")
 
@@ -543,10 +544,11 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 
 // formatTestSummary formats the test summary line (left part)
 func (m *Model) formatTestSummary(test *results.TestResult) string {
+	indent := testIndent(test.Name)
 	if test.SummaryLine != "" {
-		return fmt.Sprintf("  %s", test.SummaryLine)
+		return indent + test.SummaryLine
 	}
-	return fmt.Sprintf("  === RUN   %s", test.Name)
+	return fmt.Sprintf("%s=== RUN   %s", indent, test.Name)
 }
 
 // getStatusPrefix returns the icon string with appropriate color/style for the status
