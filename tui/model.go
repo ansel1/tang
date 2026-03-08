@@ -41,7 +41,12 @@ type Model struct {
 	failStyle    lipgloss.Style
 	skipStyle    lipgloss.Style
 	neutralStyle lipgloss.Style
-	boldStyle    lipgloss.Style
+
+	brightStyle   lipgloss.Style
+	brightFail    lipgloss.Style
+	brightPass    lipgloss.Style
+	brightSkip    lipgloss.Style
+	brightNeutral lipgloss.Style
 
 	// Replay state
 	ReplayRate float64
@@ -68,7 +73,11 @@ func NewModel(replayMode bool, replayRate float64, collector *results.Collector)
 		failStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
 		skipStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
 		neutralStyle:   lipgloss.NewStyle(),
-		boldStyle:      lipgloss.NewStyle().Bold(true),
+		brightStyle:    lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15")),
+		brightFail:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("9")),
+		brightPass:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("10")),
+		brightSkip:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("11")),
+		brightNeutral:  lipgloss.NewStyle().Bold(true),
 		spinner:        s,
 		frozenSpinner:  sf,
 		ReplayRate:     replayRate,
@@ -422,57 +431,59 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 	var leftPart string
 	var rightPart string
 
-	// Passed column
+	running := pkg.Status == results.StatusRunning || pkg.Status == results.StatusInterrupted
+
+	passColor, failColor, skipColor, neutralColor := m.passStyle, m.failStyle, m.skipStyle, m.neutralStyle
+	if running {
+		passColor, failColor, skipColor, neutralColor = m.brightPass, m.brightFail, m.brightSkip, m.brightNeutral
+	}
+
 	passedStr := fmt.Sprintf("✓%*d", wPassed, pkg.Counts.Passed)
 	if pkg.Counts.Passed > 0 {
-		passedStr = m.passStyle.Render(passedStr)
+		passedStr = passColor.Render(passedStr)
 	} else {
-		passedStr = m.neutralStyle.Render(passedStr)
+		passedStr = neutralColor.Render(passedStr)
 	}
 
-	// Failed column
 	failedStr := fmt.Sprintf("✗%*d", wFailed, pkg.Counts.Failed)
 	if pkg.Counts.Failed > 0 {
-		failedStr = m.failStyle.Render(failedStr)
+		failedStr = failColor.Render(failedStr)
 	} else {
-		failedStr = m.neutralStyle.Render(failedStr)
+		failedStr = neutralColor.Render(failedStr)
 	}
 
-	// Skipped column
 	skippedStr := fmt.Sprintf("∅%*d", wSkipped, pkg.Counts.Skipped)
 	if pkg.Counts.Skipped > 0 {
-		skippedStr = m.skipStyle.Render(skippedStr)
+		skippedStr = skipColor.Render(skippedStr)
 	} else {
-		skippedStr = m.neutralStyle.Render(skippedStr)
+		skippedStr = neutralColor.Render(skippedStr)
 	}
 
-	// Total column
 	total := pkg.Counts.Passed + pkg.Counts.Failed + pkg.Counts.Skipped
-	totalStr := m.neutralStyle.Render(fmt.Sprintf("=%*d", wTotal, total))
+	totalStr := neutralColor.Render(fmt.Sprintf("=%*d", wTotal, total))
 
-	// Elapsed column
 	var elapsedVal string
 	currentElapsed := m.packageElapsed(pkg)
 	elapsedVal = formatElapsedTime(currentElapsed)
 	elapsedStr := fmt.Sprintf("%*s", wElapsed, elapsedVal)
+	if running {
+		elapsedStr = m.brightStyle.Render(elapsedStr)
+	}
 
 	rightPart = fmt.Sprintf("%s %s %s %s %s", passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 	leftPart = pkg.Name
-	if pkg.Status != results.StatusRunning && pkg.Output != "" {
-		// Expand tabs to ensure correct width calculation
+	if !running && pkg.Output != "" {
 		leftPart = expandTabs(pkg.Output, 8)
 	}
 
 	switch pkg.Status {
 	case results.StatusRunning, results.StatusInterrupted:
 		if pkg.Counts.Failed > 0 {
-			failBold := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("1"))
-			leftPart = failBold.Render(leftPart)
-			rightPart = m.boldStyle.Render(rightPart)
+			leftPart = m.brightFail.Render(leftPart)
 		} else {
-			leftPart = m.boldStyle.Render(leftPart)
-			rightPart = m.boldStyle.Render(rightPart)
+			leftPart = m.brightStyle.Render(leftPart)
 		}
+		rightPart = m.brightStyle.Render(rightPart)
 	case results.StatusFailed:
 		leftPart = m.failStyle.Render(leftPart)
 	case results.StatusSkipped:
@@ -506,9 +517,8 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 	prefix := "  "
 
 	if test.Running() {
-		// Bold the name and elapsed time for running tests
-		summary = m.boldStyle.Render(summary)
-		elapsedVal = m.boldStyle.Render(elapsedVal)
+		summary = m.brightStyle.Render(summary)
+		elapsedVal = m.brightStyle.Render(elapsedVal)
 	}
 
 	m.renderAlignedLine(b, summary, elapsedVal, prefix)
@@ -629,29 +639,35 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wPassed,
 		leftPart = statusLabel
 	}
 
+	running := run.Status == results.StatusRunning
+	passColor, failColor, skipColor, neutralColor := m.passStyle, m.failStyle, m.skipStyle, m.neutralStyle
+	if running {
+		passColor, failColor, skipColor, neutralColor = m.brightPass, m.brightFail, m.brightSkip, m.brightNeutral
+	}
+
 	passedStr := fmt.Sprintf("✓%*d", wPassed, run.Counts.Passed)
 	if run.Counts.Passed > 0 {
-		passedStr = m.passStyle.Render(passedStr)
+		passedStr = passColor.Render(passedStr)
 	} else {
-		passedStr = m.neutralStyle.Render(passedStr)
+		passedStr = neutralColor.Render(passedStr)
 	}
 
 	failedStr := fmt.Sprintf("✗%*d", wFailed, run.Counts.Failed)
 	if run.Counts.Failed > 0 {
-		failedStr = m.failStyle.Render(failedStr)
+		failedStr = failColor.Render(failedStr)
 	} else {
-		failedStr = m.neutralStyle.Render(failedStr)
+		failedStr = neutralColor.Render(failedStr)
 	}
 
 	skippedStr := fmt.Sprintf("∅%*d", wSkipped, run.Counts.Skipped)
 	if run.Counts.Skipped > 0 {
-		skippedStr = m.skipStyle.Render(skippedStr)
+		skippedStr = skipColor.Render(skippedStr)
 	} else {
-		skippedStr = m.neutralStyle.Render(skippedStr)
+		skippedStr = neutralColor.Render(skippedStr)
 	}
 
 	total := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped + run.Counts.Running
-	totalStr := m.neutralStyle.Render(fmt.Sprintf("=%*d", wTotal, total))
+	totalStr := neutralColor.Render(fmt.Sprintf("=%*d", wTotal, total))
 
 	elapsedVal := formatElapsedTime(m.runElapsed(run))
 	elapsedStr := fmt.Sprintf("%*s", wElapsed, elapsedVal)
@@ -659,9 +675,9 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wPassed,
 	rightPart = fmt.Sprintf("%s %s %s %s %s", passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 
 	prefix := m.getStatusPrefix(run.Status, run.Counts.Failed > 0)
-	if run.Status == results.StatusRunning {
-		leftPart = m.boldStyle.Render(leftPart)
-		rightPart = m.boldStyle.Render(rightPart)
+	if running {
+		leftPart = m.brightStyle.Render(leftPart)
+		rightPart = m.brightStyle.Render(rightPart)
 	}
 
 	m.renderAlignedLine(b, leftPart, rightPart, prefix)

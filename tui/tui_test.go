@@ -332,22 +332,17 @@ func TestBoldRunningEntities(t *testing.T) {
 
 	output := m.String()
 
-	// Define ANSI bold code
-	const bold = "\x1b[1m"
+	const brightWhiteBold = "\x1b[1;97m"
 
-	// Check for bolded elements
-	// 1. Package name should be bolded
-	if !strings.Contains(output, bold+"github.com/test/running-pkg") {
-		t.Errorf("Expected running package name to be bolded.\nGot:\n%s", output)
+	if !strings.Contains(output, brightWhiteBold+"github.com/test/running-pkg") {
+		t.Errorf("Expected running package name to be bright white bold.\nGot:\n%s", output)
 	}
 
-	// 2. Test name should be bolded
-	if !strings.Contains(output, bold+"  === RUN   TestRunning") {
-		t.Errorf("Expected running test summary to be bolded.\nGot:\n%s", output)
+	if !strings.Contains(output, brightWhiteBold+"  === RUN   TestRunning") {
+		t.Errorf("Expected running test summary to be bright white bold.\nGot:\n%s", output)
 	}
 
-	// 3. Summary line should be bolded (RUNNING status)
-	if !strings.Contains(output, bold+"RUNNING") {
-		t.Errorf("Expected summary line to be bolded.\nGot:\n%s", output)
+	if !strings.Contains(output, brightWhiteBold+"RUNNING") {
+		t.Errorf("Expected summary line to be bright white bold.\nGot:\n%s", output)
 	}
 }
