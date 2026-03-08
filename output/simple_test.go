@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ansel1/tang/engine"
+	"github.com/ansel1/tang/output/format"
 	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ func TestSimpleOutput_ProcessEvents_BasicTest(t *testing.T) {
 	run.PackageOrder = append(run.PackageOrder, "example.com/pkg")
 
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{})
 
 	// Create events for simple output
 	events := make(chan engine.Event, 10)
@@ -76,7 +77,7 @@ func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
 	run.PackageOrder = append(run.PackageOrder, "example.com/pkg")
 
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{})
 
 	events := make(chan engine.Event, 10)
 	events <- engine.Event{
@@ -104,7 +105,7 @@ func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
 func TestSimpleOutput_ProcessEvents_RawLines(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{})
 
 	events := make(chan engine.Event, 10)
 	events <- engine.Event{Type: engine.EventRawLine, RawLine: []byte("This is a raw line")}
@@ -127,7 +128,7 @@ func TestSimpleOutput_HasFailures(t *testing.T) {
 	state.Runs = append(state.Runs, run)
 
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{})
 
 	// Initially no failures
 	assert.False(t, simple.HasFailures())

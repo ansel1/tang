@@ -16,6 +16,7 @@ import (
 type SummaryFormatter struct {
 	width     int
 	useColors bool
+	options   SummaryOptions
 
 	failStyle    lipgloss.Style
 	passStyle    lipgloss.Style
@@ -30,15 +31,21 @@ type SummaryFormatter struct {
 	neutralStyle lipgloss.Style
 }
 
-func NewSummaryFormatter(width int) *SummaryFormatter {
+func NewSummaryFormatter(width int, opts ...SummaryOptions) *SummaryFormatter {
 	if width <= 0 {
 		width = 80
 	}
 	useColors := isatty.IsTerminal(os.Stdout.Fd())
 
+	var options SummaryOptions
+	if len(opts) > 0 {
+		options = opts[0]
+	}
+
 	return &SummaryFormatter{
 		width:        width,
 		useColors:    useColors,
+		options:      options,
 		failStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("1")),
 		passStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("2")),
 		skipStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("3")),
@@ -101,9 +108,12 @@ func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summa
 		case results.StatusFailed:
 			return "fail", tr
 		case results.StatusSkipped:
+			if !f.options.IncludeSkipped {
+				return "", nil
+			}
 			return "skip", tr
 		default:
-			if slowSet[testKey] {
+			if slowSet[testKey] && f.options.IncludeSlow {
 				return "slow", tr
 			}
 		}

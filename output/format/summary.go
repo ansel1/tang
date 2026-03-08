@@ -85,11 +85,33 @@ type Summary struct {
 	MostTestsPackage *results.PackageResult
 }
 
+// SummaryOptions controls which optional detail sections appear in the
+// formatted summary output. Failures and build failures are always shown.
+type SummaryOptions struct {
+	IncludeSkipped bool // Show individual skipped test details
+	IncludeSlow    bool // Show individual slow test details
+}
+
 // HasTestDetails reports whether the summary contains test-level detail
 // messages (failures, skipped tests, slow tests, or build failures) that
 // will be rendered above the package summary table.
 func (s *Summary) HasTestDetails() bool {
-	return len(s.Failures) > 0 || len(s.Skipped) > 0 || len(s.SlowTests) > 0 || len(s.BuildFailures) > 0
+	return s.HasTestDetailsWithOptions(SummaryOptions{IncludeSkipped: true, IncludeSlow: true})
+}
+
+// HasTestDetailsWithOptions is like HasTestDetails but respects the given options
+// for which optional sections to consider.
+func (s *Summary) HasTestDetailsWithOptions(opts SummaryOptions) bool {
+	if len(s.Failures) > 0 || len(s.BuildFailures) > 0 {
+		return true
+	}
+	if opts.IncludeSkipped && len(s.Skipped) > 0 {
+		return true
+	}
+	if opts.IncludeSlow && len(s.SlowTests) > 0 {
+		return true
+	}
+	return false
 }
 
 // ComputeSummary calculates summary statistics from a Run.

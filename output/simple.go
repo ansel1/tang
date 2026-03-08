@@ -12,18 +12,20 @@ import (
 )
 
 type SimpleOutput struct {
-	writer        io.Writer
-	output        []string
-	collector     *results.Collector
-	slowThreshold time.Duration
+	writer         io.Writer
+	output         []string
+	collector      *results.Collector
+	slowThreshold  time.Duration
+	summaryOptions format.SummaryOptions
 }
 
-func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold time.Duration) *SimpleOutput {
+func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold time.Duration, summaryOptions format.SummaryOptions) *SimpleOutput {
 	return &SimpleOutput{
-		writer:        w,
-		output:        make([]string, 0),
-		collector:     collector,
-		slowThreshold: slowThreshold,
+		writer:         w,
+		output:         make([]string, 0),
+		collector:      collector,
+		slowThreshold:  slowThreshold,
+		summaryOptions: summaryOptions,
 	}
 }
 
@@ -78,9 +80,9 @@ func (s *SimpleOutput) writeOutput() error {
 		}
 
 		if summary != nil {
-			summaryText := format.NewSummaryFormatter(80).Format(summary)
+			summaryText := format.NewSummaryFormatter(80, s.summaryOptions).Format(summary)
 
-			if len(s.output) > 0 || summary.HasTestDetails() {
+			if len(s.output) > 0 || summary.HasTestDetailsWithOptions(s.summaryOptions) {
 				_, _ = fmt.Fprintln(s.writer)
 			}
 			_, _ = fmt.Fprintln(s.writer, summaryText)

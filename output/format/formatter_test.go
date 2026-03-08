@@ -95,7 +95,7 @@ func TestSummaryFormatterWithFailures(t *testing.T) {
 }
 
 func TestSummaryFormatterWithSkipped(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, SummaryOptions{IncludeSkipped: true})
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -145,7 +145,7 @@ func TestSummaryFormatterWithSkipped(t *testing.T) {
 }
 
 func TestSummaryFormatterWithSlowTests(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, SummaryOptions{IncludeSlow: true})
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -186,6 +186,95 @@ func TestSummaryFormatterWithSlowTests(t *testing.T) {
 	}
 	if !strings.Contains(output, "TestSlow") {
 		t.Error("Expected test name in slow tests")
+	}
+}
+
+func TestSummaryFormatterSkippedHiddenByDefault(t *testing.T) {
+	formatter := NewSummaryFormatter(80)
+
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusPassed,
+		Elapsed: 5 * time.Second,
+	}
+	pkg1.Counts.Passed = 8
+	pkg1.Counts.Skipped = 2
+
+	run := results.NewRun(1)
+	run.Packages["github.com/user/project/pkg1"] = pkg1
+	run.PackageOrder = []string{"github.com/user/project/pkg1"}
+
+	skipTest := &results.TestResult{
+		Package: "github.com/user/project/pkg1",
+		Name:    "TestSkipped",
+		Status:  results.StatusSkipped,
+		Elapsed: 0,
+		Output:  []string{"Skipping: not implemented yet"},
+	}
+	run.TestResults["github.com/user/project/pkg1/TestSkipped"] = skipTest
+	pkg1.TestOrder = []string{"TestSkipped"}
+
+	summary := &Summary{
+		Packages:     []*results.PackageResult{pkg1},
+		TotalTests:   10,
+		PassedTests:  8,
+		FailedTests:  0,
+		SkippedTests: 2,
+		TotalTime:    5 * time.Second,
+		PackageCount: 1,
+		Skipped:      []*results.TestResult{skipTest},
+		Run:          run,
+	}
+
+	output := formatter.Format(summary)
+
+	if strings.Contains(output, "--- SKIP") {
+		t.Error("Skipped test details should be hidden by default")
+	}
+	if strings.Contains(output, "TestSkipped") {
+		t.Error("Skipped test name should be hidden by default")
+	}
+}
+
+func TestSummaryFormatterSlowHiddenByDefault(t *testing.T) {
+	formatter := NewSummaryFormatter(80)
+
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusPassed,
+		Elapsed: 65 * time.Second,
+	}
+	pkg1.Counts.Passed = 2
+
+	slowTest := &results.TestResult{
+		Package: "github.com/user/project/pkg1",
+		Name:    "TestSlow",
+		Status:  results.StatusPassed,
+		Elapsed: 65 * time.Second,
+	}
+
+	run := results.NewRun(1)
+	run.Packages["github.com/user/project/pkg1"] = pkg1
+	run.PackageOrder = []string{"github.com/user/project/pkg1"}
+	run.TestResults["github.com/user/project/pkg1/TestSlow"] = slowTest
+	pkg1.TestOrder = []string{"TestSlow"}
+
+	summary := &Summary{
+		Packages:     []*results.PackageResult{pkg1},
+		TotalTests:   2,
+		PassedTests:  2,
+		FailedTests:  0,
+		SkippedTests: 0,
+		TotalTime:    65 * time.Second,
+		PackageCount: 1,
+		SlowTests:    []*results.TestResult{slowTest},
+		Run:          run,
+	}
+
+	output := formatter.Format(summary)
+
+	if strings.Contains(output, "SLOW") {
+		t.Error("Slow test details should be hidden by default")
 	}
 }
 
