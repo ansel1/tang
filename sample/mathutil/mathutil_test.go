@@ -1,6 +1,7 @@
 package mathutil
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -118,6 +119,41 @@ func TestIsPrimeSlow(t *testing.T) {
 		}
 		t.Log("  composites complete")
 	})
+}
+
+// TestFibonacciSequential verifies that successive Fibonacci numbers satisfy
+// the recurrence relation.  Each subtest depends on results captured by the
+// previous one, so they must run sequentially (no t.Parallel).
+func TestFibonacciSequential(t *testing.T) {
+	var prev, cur int
+
+	t.Run("fib(0)", func(t *testing.T) {
+		prev = Fibonacci(0)
+		if prev != 0 {
+			t.Fatalf("Fibonacci(0) = %d, want 0", prev)
+		}
+		t.Logf("Fibonacci(0) = %d", prev)
+	})
+
+	t.Run("fib(1)", func(t *testing.T) {
+		cur = Fibonacci(1)
+		if cur != 1 {
+			t.Fatalf("Fibonacci(1) = %d, want 1", cur)
+		}
+		t.Logf("Fibonacci(1) = %d", cur)
+	})
+
+	for i := 2; i <= 10; i++ {
+		t.Run(fmt.Sprintf("fib(%d)", i), func(t *testing.T) {
+			next := Fibonacci(i)
+			want := prev + cur
+			if next != want {
+				t.Fatalf("Fibonacci(%d) = %d, want %d (= %d + %d)", i, next, want, prev, cur)
+			}
+			t.Logf("Fibonacci(%d) = %d = %d + %d ✓", i, next, prev, cur)
+			prev, cur = cur, next
+		})
+	}
 }
 
 func TestIsPrime(t *testing.T) {

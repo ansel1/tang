@@ -1,0 +1,120 @@
+{"ImportPath":"github.com/ansel1/tang/testdata/keys","Action":"build-output","Output":"# github.com/ansel1/tang/testdata/keys\n"}
+{"ImportPath":"github.com/ansel1/tang/testdata/keys","Action":"build-output","Output":"keys/compile_fail.go:4:11: syntax error: unexpected name doesn, expected (\n"}
+{"ImportPath":"github.com/ansel1/tang/testdata/keys","Action":"build-output","Output":"keys/compile_fail.go:4:16: rune literal not terminated\n"}
+{"ImportPath":"github.com/ansel1/tang/testdata/keys","Action":"build-fail"}
+{"Time":"2025-11-22T08:23:37.949715-06:00","Action":"start","Package":"github.com/ansel1/tang/testdata"}
+{"Time":"2025-11-22T08:23:37.949818-06:00","Action":"start","Package":"github.com/ansel1/tang/testdata/groups"}
+{"Time":"2025-11-22T08:23:37.949863-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/groups","Output":"?   \tgithub.com/ansel1/tang/testdata/groups\t[no test files]\n"}
+{"Time":"2025-11-22T08:23:37.949875-06:00","Action":"start","Package":"github.com/ansel1/tang/testdata/keys"}
+{"Time":"2025-11-22T08:23:37.949877-06:00","Action":"skip","Package":"github.com/ansel1/tang/testdata/groups","Elapsed":0}
+{"Time":"2025-11-22T08:23:37.949882-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/keys","Output":"FAIL\tgithub.com/ansel1/tang/testdata/keys [build failed]\n"}
+{"Time":"2025-11-22T08:23:37.949891-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata/keys","Elapsed":0,"FailedBuild":"github.com/ansel1/tang/testdata/keys"}
+{"Time":"2025-11-22T08:23:37.949897-06:00","Action":"start","Package":"github.com/ansel1/tang/testdata/users"}
+{"Time":"2025-11-22T08:23:37.949917-06:00","Action":"start","Package":"github.com/ansel1/tang/testdata/widgets"}
+{"Time":"2025-11-22T08:23:38.256041-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata/users","Test":"TestUsers"}
+{"Time":"2025-11-22T08:23:38.25615-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestUsers","Output":"=== RUN   TestUsers\n"}
+{"Time":"2025-11-22T08:23:38.256175-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestUsers","Output":"    users_test.go:6: skipped test\n"}
+{"Time":"2025-11-22T08:23:38.256191-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestUsers","Output":"--- SKIP: TestUsers (0.00s)\n"}
+{"Time":"2025-11-22T08:23:38.256196-06:00","Action":"skip","Package":"github.com/ansel1/tang/testdata/users","Test":"TestUsers","Elapsed":0}
+{"Time":"2025-11-22T08:23:38.256201-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests"}
+{"Time":"2025-11-22T08:23:38.256204-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests","Output":"=== RUN   TestSubtests\n"}
+{"Time":"2025-11-22T08:23:38.256209-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest1"}
+{"Time":"2025-11-22T08:23:38.256211-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest1","Output":"=== RUN   TestSubtests/subtest1\n"}
+{"Time":"2025-11-22T08:23:38.256224-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest1","Output":"    users_test.go:11: skipped subtest\n"}
+{"Time":"2025-11-22T08:23:38.256269-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest1","Output":"--- SKIP: TestSubtests/subtest1 (0.00s)\n"}
+{"Time":"2025-11-22T08:23:38.256272-06:00","Action":"skip","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest1","Elapsed":0}
+{"Time":"2025-11-22T08:23:38.256276-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest2"}
+{"Time":"2025-11-22T08:23:38.256279-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest2","Output":"=== RUN   TestSubtests/subtest2\n"}
+{"Time":"2025-11-22T08:23:38.256282-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest2","Output":"--- PASS: TestSubtests/subtest2 (0.00s)\n"}
+{"Time":"2025-11-22T08:23:38.256284-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest2","Elapsed":0}
+{"Time":"2025-11-22T08:23:38.256287-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest3"}
+{"Time":"2025-11-22T08:23:38.256289-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest3","Output":"=== RUN   TestSubtests/subtest3\n"}
+{"Time":"2025-11-22T08:23:38.256291-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest3/subsubtest"}
+{"Time":"2025-11-22T08:23:38.256293-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest3/subsubtest","Output":"=== RUN   TestSubtests/subtest3/subsubtest\n"}
+{"Time":"2025-11-22T08:23:38.256302-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest3/subsubtest","Output":"--- PASS: TestSubtests/subtest3/subsubtest (0.00s)\n"}
+{"Time":"2025-11-22T08:23:38.256305-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest3/subsubtest","Elapsed":0}
+{"Time":"2025-11-22T08:23:38.256308-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest3","Output":"--- PASS: TestSubtests/subtest3 (0.00s)\n"}
+{"Time":"2025-11-22T08:23:38.256311-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest3","Elapsed":0}
+{"Time":"2025-11-22T08:23:38.256314-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest4"}
+{"Time":"2025-11-22T08:23:38.256316-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest4","Output":"=== RUN   TestSubtests/subtest4\n"}
+{"Time":"2025-11-22T08:23:38.256319-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest4","Output":"--- FAIL: TestSubtests/subtest4 (0.00s)\n"}
+{"Time":"2025-11-22T08:23:38.256345-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests/subtest4","Elapsed":0}
+{"Time":"2025-11-22T08:23:38.256349-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests","Output":"--- FAIL: TestSubtests (0.00s)\n"}
+{"Time":"2025-11-22T08:23:38.256351-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata/users","Test":"TestSubtests","Elapsed":0}
+{"Time":"2025-11-22T08:23:38.256353-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Output":"FAIL\n"}
+{"Time":"2025-11-22T08:23:38.25664-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/users","Output":"FAIL\tgithub.com/ansel1/tang/testdata/users\t0.307s\n"}
+{"Time":"2025-11-22T08:23:38.256662-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata/users","Elapsed":0.307}
+{"Time":"2025-11-22T08:23:38.496711-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestPass"}
+{"Time":"2025-11-22T08:23:38.496751-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestPass","Output":"=== RUN   TestPass\n"}
+{"Time":"2025-11-22T08:23:38.496758-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestPass","Output":"    widgets_test.go:9: passes\n"}
+{"Time":"2025-11-22T08:23:38.496767-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestPass","Output":"--- PASS: TestPass (0.00s)\n"}
+{"Time":"2025-11-22T08:23:38.49677-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestPass","Elapsed":0}
+{"Time":"2025-11-22T08:23:38.496773-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer"}
+{"Time":"2025-11-22T08:23:38.496775-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"=== RUN   TestTimer\n"}
+{"Time":"2025-11-22T08:23:38.998464-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 0.5 seconds\n"}
+{"Time":"2025-11-22T08:23:39.093731-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestPass1"}
+{"Time":"2025-11-22T08:23:39.093772-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestPass1","Output":"=== RUN   TestPass1\n"}
+{"Time":"2025-11-22T08:23:39.093809-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestPass1","Output":"    sample_test.go:9: This test passes\n"}
+{"Time":"2025-11-22T08:23:39.093822-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestPass1","Output":"--- PASS: TestPass1 (0.00s)\n"}
+{"Time":"2025-11-22T08:23:39.093834-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata","Test":"TestPass1","Elapsed":0}
+{"Time":"2025-11-22T08:23:39.093841-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestPass2"}
+{"Time":"2025-11-22T08:23:39.093845-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestPass2","Output":"=== RUN   TestPass2\n"}
+{"Time":"2025-11-22T08:23:39.093906-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestPass2","Output":"    sample_test.go:13: Another passing test\n"}
+{"Time":"2025-11-22T08:23:39.093945-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestPass2","Output":"--- PASS: TestPass2 (0.00s)\n"}
+{"Time":"2025-11-22T08:23:39.093951-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata","Test":"TestPass2","Elapsed":0}
+{"Time":"2025-11-22T08:23:39.093959-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestSlow"}
+{"Time":"2025-11-22T08:23:39.093963-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSlow","Output":"=== RUN   TestSlow\n"}
+{"Time":"2025-11-22T08:23:39.093967-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSlow","Output":"    sample_test.go:17: This test takes a moment\n"}
+{"Time":"2025-11-22T08:23:39.195151-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSlow","Output":"--- PASS: TestSlow (0.10s)\n"}
+{"Time":"2025-11-22T08:23:39.195206-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata","Test":"TestSlow","Elapsed":0.1}
+{"Time":"2025-11-22T08:23:39.195298-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest"}
+{"Time":"2025-11-22T08:23:39.195308-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest","Output":"=== RUN   TestSubtest\n"}
+{"Time":"2025-11-22T08:23:39.195319-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest1"}
+{"Time":"2025-11-22T08:23:39.195326-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest1","Output":"=== RUN   TestSubtest/Subtest1\n"}
+{"Time":"2025-11-22T08:23:39.195421-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest1","Output":"    sample_test.go:23: This is subtest 1\n"}
+{"Time":"2025-11-22T08:23:39.500236-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 1 seconds\n"}
+{"Time":"2025-11-22T08:23:39.696177-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest1","Output":"--- PASS: TestSubtest/Subtest1 (0.50s)\n"}
+{"Time":"2025-11-22T08:23:39.696224-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest1","Elapsed":0.5}
+{"Time":"2025-11-22T08:23:39.696244-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest2"}
+{"Time":"2025-11-22T08:23:39.696252-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest2","Output":"=== RUN   TestSubtest/Subtest2\n"}
+{"Time":"2025-11-22T08:23:39.696258-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest2","Output":"    sample_test.go:28: This is subtest 2\n"}
+{"Time":"2025-11-22T08:23:40.001463-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 1.5 seconds\n"}
+{"Time":"2025-11-22T08:23:40.197095-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest2","Output":"--- PASS: TestSubtest/Subtest2 (0.50s)\n"}
+{"Time":"2025-11-22T08:23:40.197172-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/Subtest2","Elapsed":0.5}
+{"Time":"2025-11-22T08:23:40.197186-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest"}
+{"Time":"2025-11-22T08:23:40.197191-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest","Output":"=== RUN   TestSubtest/SubtestWithSubtest\n"}
+{"Time":"2025-11-22T08:23:40.197202-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest","Output":"    sample_test.go:33: This is subtest has a subtest\n"}
+{"Time":"2025-11-22T08:23:40.197234-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Subsubtest"}
+{"Time":"2025-11-22T08:23:40.197239-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Subsubtest","Output":"=== RUN   TestSubtest/SubtestWithSubtest/Subsubtest\n"}
+{"Time":"2025-11-22T08:23:40.197244-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Subsubtest","Output":"    sample_test.go:35: This is a subsubtest\n"}
+{"Time":"2025-11-22T08:23:40.502329-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 2 seconds\n"}
+{"Time":"2025-11-22T08:23:40.698795-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Subsubtest","Output":"--- PASS: TestSubtest/SubtestWithSubtest/Subsubtest (0.50s)\n"}
+{"Time":"2025-11-22T08:23:40.698943-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Subsubtest","Elapsed":0.5}
+{"Time":"2025-11-22T08:23:40.69898-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/failing_subtest"}
+{"Time":"2025-11-22T08:23:40.698988-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/failing_subtest","Output":"=== RUN   TestSubtest/SubtestWithSubtest/failing_subtest\n"}
+{"Time":"2025-11-22T08:23:40.698997-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/failing_subtest","Output":"    sample_test.go:39: This is a failing subtest\n"}
+{"Time":"2025-11-22T08:23:41.003588-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 2.5 seconds\n"}
+{"Time":"2025-11-22T08:23:41.199923-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/failing_subtest","Output":"--- FAIL: TestSubtest/SubtestWithSubtest/failing_subtest (0.50s)\n"}
+{"Time":"2025-11-22T08:23:41.200001-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/failing_subtest","Elapsed":0.5}
+{"Time":"2025-11-22T08:23:41.200099-06:00","Action":"run","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest"}
+{"Time":"2025-11-22T08:23:41.200106-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest","Output":"=== RUN   TestSubtest/SubtestWithSubtest/Skipped_subtest\n"}
+{"Time":"2025-11-22T08:23:41.20011-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest","Output":"    sample_test.go:45: skipping subsubtest\n"}
+{"Time":"2025-11-22T08:23:41.200434-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest","Output":"--- SKIP: TestSubtest/SubtestWithSubtest/Skipped_subtest (0.00s)\n"}
+{"Time":"2025-11-22T08:23:41.200445-06:00","Action":"skip","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest/Skipped_subtest","Elapsed":0}
+{"Time":"2025-11-22T08:23:41.200451-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest","Output":"--- FAIL: TestSubtest/SubtestWithSubtest (1.00s)\n"}
+{"Time":"2025-11-22T08:23:41.200457-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest/SubtestWithSubtest","Elapsed":1}
+{"Time":"2025-11-22T08:23:41.200464-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest","Output":"--- FAIL: TestSubtest (2.00s)\n"}
+{"Time":"2025-11-22T08:23:41.20047-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata","Test":"TestSubtest","Elapsed":2}
+{"Time":"2025-11-22T08:23:41.200475-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Output":"FAIL\n"}
+{"Time":"2025-11-22T08:23:41.202016-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata","Output":"FAIL\tgithub.com/ansel1/tang/testdata\t3.252s\n"}
+{"Time":"2025-11-22T08:23:41.20205-06:00","Action":"fail","Package":"github.com/ansel1/tang/testdata","Elapsed":3.252}
+{"Time":"2025-11-22T08:23:41.504009-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 3 seconds\n"}
+{"Time":"2025-11-22T08:23:42.004945-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 3.5 seconds\n"}
+{"Time":"2025-11-22T08:23:42.507425-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 4 seconds\n"}
+{"Time":"2025-11-22T08:23:43.007138-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 4.5 seconds\n"}
+{"Time":"2025-11-22T08:23:43.510687-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"    widgets_test.go:15: Elapsed time: 5 seconds\n"}
+{"Time":"2025-11-22T08:23:43.510798-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Output":"--- PASS: TestTimer (5.01s)\n"}
+{"Time":"2025-11-22T08:23:43.510816-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata/widgets","Test":"TestTimer","Elapsed":5.01}
+{"Time":"2025-11-22T08:23:43.510834-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Output":"PASS\n"}
+{"Time":"2025-11-22T08:23:43.512427-06:00","Action":"output","Package":"github.com/ansel1/tang/testdata/widgets","Output":"ok  \tgithub.com/ansel1/tang/testdata/widgets\t5.562s\n"}
+{"Time":"2025-11-22T08:23:43.512464-06:00","Action":"pass","Package":"github.com/ansel1/tang/testdata/widgets","Elapsed":5.563}

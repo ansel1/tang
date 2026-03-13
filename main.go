@@ -31,6 +31,7 @@ func run() int {
 	jsonfile := flag.String("jsonfile", "", "Save JSON events to the specified file")
 	junitfile := flag.String("junitout", "", "Save cumulative test results to the specified JUnit XML file")
 	notty := flag.Bool("notty", false, "Don't use TUI, output to stdout")
+	verbose := flag.Bool("v", false, "Verbose output (show all test output in -notty mode)")
 	replay := flag.Bool("replay", false, "Replay events with timing from original test run (requires -f)")
 	rate := flag.Float64("rate", 1.0, "Replay rate multiplier (0=instant, 1=original speed, 0.5=2x speed)")
 	slowThreshold := flag.Duration("slow-threshold", 10*time.Second, "Duration threshold for slow test detection")
@@ -161,7 +162,7 @@ func run() int {
 
 	if skipTUI {
 		// Simple output mode (no TUI)
-		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts)
+		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts, *verbose)
 		if err := simple.ProcessEvents(engineEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			return 1

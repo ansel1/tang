@@ -1,0 +1,16 @@
+
+=== github.com/ansel1/tang/sample/broken
+  [31m# github.com/ansel1/tang/sample/broken[0m[m
+  [31mbroken/broken.go:7:1: syntax error: unexpected }, expected expression[0m[m
+
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/auth                  [m               344.791ms
+[1;31mFAIL[m    [31mgithub.com/ansel1/tang/sample/broken [build failed] [m             
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/cache                 [m               344.741ms
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/mathutil              [m               344.741ms
+[1;33m?   [m    [33mgithub.com/ansel1/tang/sample/models [no test files][m             
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/panicker              [m                344.74ms
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/stringutil            [m                344.74ms
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/validator             [m               344.739ms
+------------------------------------------------------------------------------------
+(8 packages)                                                  ✓0 ✗0 ∅0 =1  344.483ms
+

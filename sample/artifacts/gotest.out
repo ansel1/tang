@@ -1,0 +1,36 @@
+# github.com/ansel1/tang/sample/broken
+broken/broken.go:7:1: syntax error: unexpected }, expected expression
+--- FAIL: TestValidatePassword (0.00s)
+    --- FAIL: TestValidatePassword/missing_special_FAILS (0.00s)
+        auth_test.go:130: Issues found: [must contain a special character]
+        auth_test.go:133: expected 0 issues but got 1: [must contain a special character]
+FAIL
+FAIL	github.com/ansel1/tang/sample/auth	8.574s
+FAIL	github.com/ansel1/tang/sample/broken [build failed]
+ok  	github.com/ansel1/tang/sample/cache	12.794s
+ok  	github.com/ansel1/tang/sample/mathutil	3.926s
+?   	github.com/ansel1/tang/sample/models	[no test files]
+--- FAIL: TestProcessItemsPanic (0.60s)
+    panicker_test.go:40: processing first batch of valid items...
+    panicker_test.go:43: first batch OK, now processing batch with empty item...
+panic: empty item at index 1 [recovered, repanicked]
+
+goroutine 34 [running]:
+testing.tRunner.func1.2({0x102899a60, 0xdd922da62d0})
+	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1974 +0x1a0
+testing.tRunner.func1()
+	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1977 +0x318
+panic({0x102899a60?, 0xdd922da62d0?})
+	/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/panic.go:860 +0x12c
+github.com/ansel1/tang/sample/panicker.ProcessItems({0xdd922e87ef8?, 0x3, 0x3d?})
+	/Users/regan/dev/tang/sample/panicker/panicker.go:12 +0x20c
+github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0xdd922f18248)
+	/Users/regan/dev/tang/sample/panicker/panicker_test.go:45 +0xf0
+testing.tRunner(0xdd922f18248, 0x1028cbf10)
+	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4
+created by testing.(*T).Run in goroutine 1
+	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8
+FAIL	github.com/ansel1/tang/sample/panicker	1.795s
+ok  	github.com/ansel1/tang/sample/stringutil	14.460s
+ok  	github.com/ansel1/tang/sample/validator	17.669s
+FAIL

@@ -2,6 +2,7 @@ package output
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,107 +14,144 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSimpleOutput_ProcessEvents_BasicTest(t *testing.T) {
-	// Create collector and manually populate state for summary
-	collector := results.NewCollector()
-	state := collector.State()
-	run := results.NewRun(1)
-	state.Runs = append(state.Runs, run)
-	state.CurrentRun = run
+var baseTime = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	// Populate run with some data so summary is generated
-	pkg := &results.PackageResult{
-		Name:    "example.com/pkg",
-		Status:  results.StatusPassed,
-		Elapsed: 100 * time.Millisecond,
+func passingPackageEvents(pkg string) []engine.Event {
+	return []engine.Event{
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "start", Package: pkg}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "run", Package: pkg, Test: "TestFoo"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestFoo", Output: "=== RUN   TestFoo\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestFoo", Output: "--- PASS: TestFoo (0.00s)\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "pass", Package: pkg, Test: "TestFoo", Elapsed: 0.001}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "PASS\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "ok  \t" + pkg + "\t0.100s\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "pass", Package: pkg, Elapsed: 0.1}},
 	}
-	pkg.Counts.Passed = 1
-	run.Packages["example.com/pkg"] = pkg
-	run.PackageOrder = append(run.PackageOrder, "example.com/pkg")
-
-	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{})
-
-	// Create events for simple output
-	events := make(chan engine.Event, 10)
-	// We need engine events now
-	// To simulate "TestOutputEvent", we send an engine.Event with Type=EventTest and Action=output
-	events <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Action:  "output",
-			Package: "example.com/pkg",
-			Test:    "TestFoo",
-			Output:  "=== RUN   TestFoo\n",
-		},
-	}
-	events <- engine.Event{Type: engine.EventComplete}
-	close(events)
-
-	err := simple.ProcessEvents(events)
-	require.NoError(t, err)
-
-	output := buf.String()
-	// Check that output contains test output
-	assert.Contains(t, output, "=== RUN   TestFoo")
-	assert.Contains(t, output, "(1 packages)")
 }
 
-func TestSimpleOutput_ProcessEvents_FailedTest(t *testing.T) {
+func failingPackageEvents(pkg string) []engine.Event {
+	return []engine.Event{
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "start", Package: pkg}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "run", Package: pkg, Test: "TestFail"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestFail", Output: "=== RUN   TestFail\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestFail", Output: "    test_fail.go:10: assertion failed\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestFail", Output: "--- FAIL: TestFail (0.00s)\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "fail", Package: pkg, Test: "TestFail", Elapsed: 0.001}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "FAIL\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "FAIL\t" + pkg + "\t0.100s\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "fail", Package: pkg, Elapsed: 0.1}},
+	}
+}
+
+func sendEvents(events []engine.Event) <-chan engine.Event {
+	ch := make(chan engine.Event, len(events)+1)
+	for _, evt := range events {
+		ch <- evt
+	}
+	ch <- engine.Event{Type: engine.EventComplete}
+	close(ch)
+	return ch
+}
+
+func TestSimpleOutput_Verbose_PassingTest(t *testing.T) {
 	collector := results.NewCollector()
-	state := collector.State()
-	run := results.NewRun(1)
-	state.Runs = append(state.Runs, run)
-	state.CurrentRun = run
-
-	// Populate run with failure
-	pkg := &results.PackageResult{
-		Name:    "example.com/pkg",
-		Status:  results.StatusFailed,
-		Elapsed: 100 * time.Millisecond,
-	}
-	pkg.Counts.Failed = 1
-	run.Packages["example.com/pkg"] = pkg
-	run.PackageOrder = append(run.PackageOrder, "example.com/pkg")
-
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{})
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true)
 
-	events := make(chan engine.Event, 10)
-	events <- engine.Event{
-		Type: engine.EventTest,
-		TestEvent: parser.TestEvent{
-			Action:  "output",
-			Package: "example.com/pkg",
-			Test:    "TestFail",
-			Output:  "    test_fail.go:10: assertion failed\n",
-		},
-	}
-	events <- engine.Event{Type: engine.EventComplete}
-	close(events)
-
-	err := simple.ProcessEvents(events)
+	err := simple.ProcessEvents(sendEvents(passingPackageEvents("example.com/pkg")))
 	require.NoError(t, err)
 
 	output := buf.String()
-	assert.Contains(t, output, "assertion failed")
+	assert.Contains(t, output, "=== RUN   TestFoo")
+	assert.Contains(t, output, "--- PASS: TestFoo")
 	assert.Contains(t, output, "(1 packages)")
-	// Should have failures (checked via collector state)
+	assert.False(t, simple.HasFailures())
+}
+
+func TestSimpleOutput_Verbose_FailedTest(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true)
+
+	err := simple.ProcessEvents(sendEvents(failingPackageEvents("example.com/pkg")))
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "=== RUN   TestFail")
+	assert.Contains(t, output, "assertion failed")
+	assert.Contains(t, output, "--- FAIL: TestFail")
+	assert.Contains(t, output, "(1 packages)")
 	assert.True(t, simple.HasFailures())
 }
 
-func TestSimpleOutput_ProcessEvents_RawLines(t *testing.T) {
+func TestSimpleOutput_NonVerbose_PassingTest(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{})
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
 
-	events := make(chan engine.Event, 10)
-	events <- engine.Event{Type: engine.EventRawLine, RawLine: []byte("This is a raw line")}
-	events <- engine.Event{Type: engine.EventRawLine, RawLine: []byte("Another raw line")}
-	events <- engine.Event{Type: engine.EventComplete}
-	close(events)
+	err := simple.ProcessEvents(sendEvents(passingPackageEvents("example.com/pkg")))
+	require.NoError(t, err)
 
-	err := simple.ProcessEvents(events)
+	output := buf.String()
+	assert.NotContains(t, output, "=== RUN")
+	assert.NotContains(t, output, "--- PASS")
+	assert.Contains(t, output, "ok  \texample.com/pkg")
+	assert.Contains(t, output, "(1 packages)")
+}
+
+func TestSimpleOutput_NonVerbose_FailedTest(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
+
+	err := simple.ProcessEvents(sendEvents(failingPackageEvents("example.com/pkg")))
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.NotContains(t, output, "=== RUN")
+	assert.Contains(t, output, "assertion failed")
+	assert.Contains(t, output, "--- FAIL: TestFail (0.00s)")
+	assert.Contains(t, output, "FAIL\texample.com/pkg")
+	assert.Contains(t, output, "(1 packages)")
+	assert.True(t, simple.HasFailures())
+
+	failIdx := strings.Index(output, "--- FAIL: TestFail")
+	logIdx := strings.Index(output, "assertion failed")
+	assert.Greater(t, logIdx, failIdx, "log output should come after --- FAIL line")
+}
+
+func TestSimpleOutput_NonVerbose_BuildError(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
+
+	events := []engine.Event{
+		{Type: engine.EventBuild, BuildEvent: parser.BuildEvent{ImportPath: "example.com/broken", Action: "build-output", Output: "# example.com/broken\n"}},
+		{Type: engine.EventBuild, BuildEvent: parser.BuildEvent{ImportPath: "example.com/broken", Action: "build-output", Output: "broken.go:7:1: syntax error\n"}},
+		{Type: engine.EventBuild, BuildEvent: parser.BuildEvent{ImportPath: "example.com/broken", Action: "build-fail"}},
+	}
+	events = append(events, passingPackageEvents("example.com/ok")...)
+
+	err := simple.ProcessEvents(sendEvents(events))
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "# example.com/broken")
+	assert.Contains(t, output, "syntax error")
+	assert.Contains(t, output, "ok  \texample.com/ok")
+}
+
+func TestSimpleOutput_RawLines(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
+
+	events := []engine.Event{
+		{Type: engine.EventRawLine, RawLine: []byte("This is a raw line")},
+		{Type: engine.EventRawLine, RawLine: []byte("Another raw line")},
+	}
+
+	err := simple.ProcessEvents(sendEvents(events))
 	require.NoError(t, err)
 
 	output := buf.String()
@@ -128,12 +166,10 @@ func TestSimpleOutput_HasFailures(t *testing.T) {
 	state.Runs = append(state.Runs, run)
 
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{})
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
 
-	// Initially no failures
 	assert.False(t, simple.HasFailures())
 
-	// Manually add failure to collector state
 	pkg := &results.PackageResult{
 		Name:   "pkg",
 		Status: results.StatusFailed,
@@ -142,6 +178,5 @@ func TestSimpleOutput_HasFailures(t *testing.T) {
 	run.Packages["pkg"] = pkg
 	run.Counts.Failed = 1
 
-	// Now should have failures
 	assert.True(t, simple.HasFailures())
 }

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="136" failures="3" errors="1" time="59.256">
+  <testsuite name="github.com/ansel1/tang/sample/auth" tests="20" failures="2" skipped="1" time="8.084" timestamp="2026-03-22T22:45:35-05:00">
+    <properties>
+      <property name="run_id" value="1"></property>
+    </properties>
+    <testcase name="TestRegister" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestAuthenticate" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestValidatePassword" classname="github.com/ansel1/tang/sample/auth" time="0.000">
+      <failure message="Failed"></failure>
+    </testcase>
+    <testcase name="TestPasswordHashingNotImplemented" classname="github.com/ansel1/tang/sample/auth" time="0.000">
+      <skipped message="Skipped"></skipped>
+    </testcase>
+    <testcase name="TestRateLimiting" classname="github.com/ansel1/tang/sample/auth" time="3.710"></testcase>
+    <testcase name="TestBruteForceProtection" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestRegister/success" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestRegister/weak_password" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestAuthenticate/valid_credentials" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestAuthenticate/wrong_password" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestAuthenticate/unknown_user" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestAuthenticate/locked_account" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestValidatePassword/strong_password" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestValidatePassword/too_short" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestValidatePassword/missing_uppercase" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestValidatePassword/missing_digit" classname="github.com/ansel1/tang/sample/auth" time="0.000"></testcase>
+    <testcase name="TestValidatePassword/missing_special_FAILS" classname="github.com/ansel1/tang/sample/auth" time="0.000">
+      <failure message="Failed">[    auth_test.go:130: Issues found: [must contain a special character]     auth_test.go:133: expected 0 issues but got 1: [must contain a special character]]</failure>
+    </testcase>
+    <testcase name="TestBruteForceProtection/dictionary_attack" classname="github.com/ansel1/tang/sample/auth" time="4.010"></testcase>
+    <testcase name="TestBruteForceProtection/credential_stuffing" classname="github.com/ansel1/tang/sample/auth" time="3.510"></testcase>
+    <testcase name="TestBruteForceProtection/timing_analysis" classname="github.com/ansel1/tang/sample/auth" time="3.610"></testcase>
+  </testsuite>
+  <testsuite name="github.com/ansel1/tang/sample/broken" tests="0" failures="0" skipped="0" time="0.000" timestamp="2026-03-22T22:45:35-05:00">
+    <properties>
+      <property name="run_id" value="1"></property>
+    </properties>
+    <testcase name="TestMain" classname="" time="0.000">
+      <error message="Build failed" type="BuildError"># github.com/ansel1/tang/sample/broken&#xA;broken/broken.go:7:1: syntax error: unexpected }, expected expression&#xA;</error>
+    </testcase>
+  </testsuite>
+  <testsuite name="github.com/ansel1/tang/sample/cache" tests="12" failures="0" skipped="0" time="12.002" timestamp="2026-03-22T22:45:35-05:00">
+    <properties>
+      <property name="run_id" value="1"></property>
+    </properties>
+    <testcase name="TestNew" classname="github.com/ansel1/tang/sample/cache" time="0.000"></testcase>
+    <testcase name="TestSetAndGet" classname="github.com/ansel1/tang/sample/cache" time="0.000"></testcase>
+    <testcase name="TestExpiration" classname="github.com/ansel1/tang/sample/cache" time="3.010"></testcase>
+    <testcase name="TestPurge" classname="github.com/ansel1/tang/sample/cache" time="2.210"></testcase>
+    <testcase name="TestConcurrentAccess" classname="github.com/ansel1/tang/sample/cache" time="0.000"></testcase>
+    <testcase name="TestCacheWarming" classname="github.com/ansel1/tang/sample/cache" time="5.610"></testcase>
+    <testcase name="TestSetAndGet/store_and_retrieve" classname="github.com/ansel1/tang/sample/cache" time="0.000"></testcase>
+    <testcase name="TestSetAndGet/missing_key" classname="github.com/ansel1/tang/sample/cache" time="0.000"></testcase>
+    <testcase name="TestConcurrentAccess/writers_only" classname="github.com/ansel1/tang/sample/cache" time="0.540"></testcase>
+    <testcase name="TestSetAndGet/overwrite" classname="github.com/ansel1/tang/sample/cache" time="0.000"></testcase>
+    <testcase name="TestConcurrentAccess/readers_only" classname="github.com/ansel1/tang/sample/cache" time="0.590"></testcase>
+    <testcase name="TestConcurrentAccess/mixed_read_write" classname="github.com/ansel1/tang/sample/cache" time="0.540"></testcase>
+  </testsuite>
+  <testsuite name="github.com/ansel1/tang/sample/mathutil" tests="38" failures="0" skipped="0" time="5.258" timestamp="2026-03-22T22:45:35-05:00">
+    <properties>
+      <property name="run_id" value="1"></property>
+    </properties>
+    <testcase name="TestAdd" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestSubtract" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestMultiply" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestDivide" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacci" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacci/zero" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacci/one" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacci/small" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacci/medium" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacci/larger" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrimeSlow" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(0)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(1)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(2)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(3)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(4)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(5)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(6)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(7)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(8)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(9)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestFibonacciSequential/fib(10)" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrime" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrime/negative" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrime/zero" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrime/one" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrime/two" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrime/three" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrime/four" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrime/large_prime" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrime/large_composite" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestDivide/basic" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestDivide/integer_truncation" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestDivide/negative" classname="github.com/ansel1/tang/sample/mathutil" time="0.000"></testcase>
+    <testcase name="TestIsPrimeSlow/small_primes" classname="github.com/ansel1/tang/sample/mathutil" time="3.010"></testcase>
+    <testcase name="TestIsPrimeSlow/large_primes" classname="github.com/ansel1/tang/sample/mathutil" time="3.610"></testcase>
+    <testcase name="TestIsPrimeSlow/composites" classname="github.com/ansel1/tang/sample/mathutil" time="2.810"></testcase>
+  </testsuite>
+  <testsuite name="github.com/ansel1/tang/sample/models" tests="0" failures="0" skipped="0" time="0.000" timestamp="2026-03-22T22:45:35-05:00">
+    <properties>
+      <property name="run_id" value="1"></property>
+    </properties>
+  </testsuite>
+  <testsuite name="github.com/ansel1/tang/sample/panicker" tests="4" failures="1" skipped="0" time="2.331" timestamp="2026-03-22T22:45:35-05:00">
+    <properties>
+      <property name="run_id" value="1"></property>
+    </properties>
+    <testcase name="TestProcessItemsValid" classname="github.com/ansel1/tang/sample/panicker" time="0.200"></testcase>
+    <testcase name="TestBuildIndexUnique" classname="github.com/ansel1/tang/sample/panicker" time="0.200"></testcase>
+    <testcase name="TestSafeRecursion" classname="github.com/ansel1/tang/sample/panicker" time="0.200"></testcase>
+    <testcase name="TestProcessItemsPanic" classname="github.com/ansel1/tang/sample/panicker" time="0.600">
+      <failure message="Failed">[    panicker_test.go:40: processing first batch of valid items...     panicker_test.go:43: first batch OK, now processing batch with empty item... panic: empty item at index 1 [recovered, repanicked]  goroutine 24 [running]: testing.tRunner.func1.2({0x101051a60, 0x41c2d10283b0}) &#x9;/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1974 +0x1a0 testing.tRunner.func1() &#x9;/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1977 +0x318 panic({0x101051a60?, 0x41c2d10283b0?}) &#x9;/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/panic.go:860 +0x12c github.com/ansel1/tang/sample/panicker.ProcessItems({0x41c2d1038ef8?, 0x3, 0x3d?}) &#x9;/Users/regan/dev/tang/sample/panicker/panicker.go:12 +0x20c github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x41c2d10766c8) &#x9;/Users/regan/dev/tang/sample/panicker/panicker_test.go:45 +0xf0 testing.tRunner(0x41c2d10766c8, 0x101083f10) &#x9;/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4 created by testing.(*T).Run in goroutine 1 &#x9;/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8]</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="github.com/ansel1/tang/sample/stringutil" tests="28" failures="0" skipped="2" time="14.709" timestamp="2026-03-22T22:45:35-05:00">
+    <properties>
+      <property name="run_id" value="1"></property>
+    </properties>
+    <testcase name="TestReverse" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestPalindromeStress" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestPalindrome" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestWordCount" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestTruncate" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestSlowReverse" classname="github.com/ansel1/tang/sample/stringutil" time="5.610"></testcase>
+    <testcase name="TestReverseBatch" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestSkippedFeature" classname="github.com/ansel1/tang/sample/stringutil" time="0.000">
+      <skipped message="Skipped"></skipped>
+    </testcase>
+    <testcase name="TestConditionalSkip" classname="github.com/ansel1/tang/sample/stringutil" time="0.000">
+      <skipped message="Skipped"></skipped>
+    </testcase>
+    <testcase name="TestWordCountSlow" classname="github.com/ansel1/tang/sample/stringutil" time="4.210"></testcase>
+    <testcase name="TestReverse/simple" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestReverse/empty" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestReverse/unicode" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestPalindrome/racecar" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestPalindrome/hello" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestReverse/single_char" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestPalindrome/mixed_case" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestPalindromeStress/known_palindromes" classname="github.com/ansel1/tang/sample/stringutil" time="3.510"></testcase>
+    <testcase name="TestPalindrome/single_char" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestTruncate/no_truncation" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestPalindrome/empty" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestReverseBatch/short_words" classname="github.com/ansel1/tang/sample/stringutil" time="3.010"></testcase>
+    <testcase name="TestReverseBatch/long_words" classname="github.com/ansel1/tang/sample/stringutil" time="3.510"></testcase>
+    <testcase name="TestReverseBatch/sentences" classname="github.com/ansel1/tang/sample/stringutil" time="3.200"></testcase>
+    <testcase name="TestPalindromeStress/non_palindromes" classname="github.com/ansel1/tang/sample/stringutil" time="3.010"></testcase>
+    <testcase name="TestTruncate/exact_length" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestTruncate/truncated" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+    <testcase name="TestTruncate/very_short_max" classname="github.com/ansel1/tang/sample/stringutil" time="0.000"></testcase>
+  </testsuite>
+  <testsuite name="github.com/ansel1/tang/sample/validator" tests="34" failures="0" skipped="1" time="16.872" timestamp="2026-03-22T22:45:35-05:00">
+    <properties>
+      <property name="run_id" value="1"></property>
+    </properties>
+    <testcase name="TestRequired" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMinLength" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMaxLength" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestValidate" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestSlowValidation" classname="github.com/ansel1/tang/sample/validator" time="10.010"></testcase>
+    <testcase name="TestFormValidation" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestSkippedDatabaseValidation" classname="github.com/ansel1/tang/sample/validator" time="0.000">
+      <skipped message="Skipped"></skipped>
+    </testcase>
+    <testcase name="TestRequired/valid" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestRequired/empty" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestRequired/whitespace_only" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestFormValidation/user_registration" classname="github.com/ansel1/tang/sample/validator" time="5.010"></testcase>
+    <testcase name="TestFormValidation/contact_form" classname="github.com/ansel1/tang/sample/validator" time="5.010"></testcase>
+    <testcase name="TestFormValidation/settings_form" classname="github.com/ansel1/tang/sample/validator" time="6.010"></testcase>
+    <testcase name="TestValidate/all_pass" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestValidate/multiple_failures" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestValidate/partial_failure" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/email" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/phone" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/url" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/email/valid" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/email/invalid" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/email/missing_domain" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMaxLength/valid" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMaxLength/too_long" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMinLength/valid" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMinLength/too_short" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMinLength/exact" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/url/valid_https" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/url/valid_http" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/url/missing_scheme" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/phone/valid_US" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/phone/too_short" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+    <testcase name="TestMatchesPattern/phone/letters" classname="github.com/ansel1/tang/sample/validator" time="0.000"></testcase>
+  </testsuite>
+</testsuites>
