@@ -2,6 +2,10 @@ package tui
 
 import "strings"
 
+func testIndent(_ string) string {
+	return "  "
+}
+
 // ensureReset ensures that the string ends with a terminal reset sequence.
 // This prevents color bleeding from truncated output or output that leaves colors open.
 func ensureReset(s string) string {

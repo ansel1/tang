@@ -1,0 +1,712 @@
+{"ImportPath":"github.com/ansel1/tang/sample/broken","Action":"build-output","Output":"# github.com/ansel1/tang/sample/broken\n"}
+{"ImportPath":"github.com/ansel1/tang/sample/broken","Action":"build-output","Output":"broken/broken.go:7:1: syntax error: unexpected }, expected expression\n"}
+{"ImportPath":"github.com/ansel1/tang/sample/broken","Action":"build-fail"}
+{"Time":"2026-03-07T15:18:04.682294-06:00","Action":"start","Package":"github.com/ansel1/tang/sample/auth"}
+{"Time":"2026-03-07T15:18:04.682411-06:00","Action":"start","Package":"github.com/ansel1/tang/sample/broken"}
+{"Time":"2026-03-07T15:18:04.682428-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/broken","Output":"FAIL\tgithub.com/ansel1/tang/sample/broken [build failed]\n"}
+{"Time":"2026-03-07T15:18:04.682448-06:00","Action":"fail","Package":"github.com/ansel1/tang/sample/broken","Elapsed":0,"FailedBuild":"github.com/ansel1/tang/sample/broken"}
+{"Time":"2026-03-07T15:18:04.682442-06:00","Action":"start","Package":"github.com/ansel1/tang/sample/cache"}
+{"Time":"2026-03-07T15:18:04.682469-06:00","Action":"start","Package":"github.com/ansel1/tang/sample/mathutil"}
+{"Time":"2026-03-07T15:18:04.682486-06:00","Action":"start","Package":"github.com/ansel1/tang/sample/models"}
+{"Time":"2026-03-07T15:18:04.682508-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/models","Output":"?   \tgithub.com/ansel1/tang/sample/models\t[no test files]\n"}
+{"Time":"2026-03-07T15:18:04.682512-06:00","Action":"skip","Package":"github.com/ansel1/tang/sample/models","Elapsed":0}
+{"Time":"2026-03-07T15:18:04.682515-06:00","Action":"start","Package":"github.com/ansel1/tang/sample/panicker"}
+{"Time":"2026-03-07T15:18:04.682527-06:00","Action":"start","Package":"github.com/ansel1/tang/sample/stringutil"}
+{"Time":"2026-03-07T15:18:04.682531-06:00","Action":"start","Package":"github.com/ansel1/tang/sample/validator"}
+{"Time":"2026-03-07T15:18:05.176604-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestReverse"}
+{"Time":"2026-03-07T15:18:05.176699-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestReverse","Output":"=== RUN   TestReverse\n"}
+{"Time":"2026-03-07T15:18:05.17671-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestReverse","Output":"=== PAUSE TestReverse\n"}
+{"Time":"2026-03-07T15:18:05.176713-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestReverse"}
+{"Time":"2026-03-07T15:18:05.176719-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestPalindromeStress"}
+{"Time":"2026-03-07T15:18:05.176721-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestPalindromeStress","Output":"=== RUN   TestPalindromeStress\n"}
+{"Time":"2026-03-07T15:18:05.176737-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestPalindromeStress","Output":"=== PAUSE TestPalindromeStress\n"}
+{"Time":"2026-03-07T15:18:05.176738-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestPalindromeStress"}
+{"Time":"2026-03-07T15:18:05.17674-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestPalindrome"}
+{"Time":"2026-03-07T15:18:05.176741-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestPalindrome","Output":"=== RUN   TestPalindrome\n"}
+{"Time":"2026-03-07T15:18:05.176745-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestPalindrome","Output":"=== PAUSE TestPalindrome\n"}
+{"Time":"2026-03-07T15:18:05.176746-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestPalindrome"}
+{"Time":"2026-03-07T15:18:05.176748-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestWordCount"}
+{"Time":"2026-03-07T15:18:05.176749-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestWordCount","Output":"=== RUN   TestWordCount\n"}
+{"Time":"2026-03-07T15:18:05.176751-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestWordCount","Output":"=== PAUSE TestWordCount\n"}
+{"Time":"2026-03-07T15:18:05.176752-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestWordCount"}
+{"Time":"2026-03-07T15:18:05.176754-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestTruncate"}
+{"Time":"2026-03-07T15:18:05.176755-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestTruncate","Output":"=== RUN   TestTruncate\n"}
+{"Time":"2026-03-07T15:18:05.176756-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestTruncate","Output":"=== PAUSE TestTruncate\n"}
+{"Time":"2026-03-07T15:18:05.176757-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestTruncate"}
+{"Time":"2026-03-07T15:18:05.176759-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse"}
+{"Time":"2026-03-07T15:18:05.17676-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"=== RUN   TestSlowReverse\n"}
+{"Time":"2026-03-07T15:18:05.176761-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"    stringutil_test.go:163:   reversing word 1/7: \"apple\"...\n"}
+{"Time":"2026-03-07T15:18:05.37876-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsValid"}
+{"Time":"2026-03-07T15:18:05.378782-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsValid","Output":"=== RUN   TestProcessItemsValid\n"}
+{"Time":"2026-03-07T15:18:05.378814-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsValid","Output":"    panicker_test.go:9: processing valid items...\n"}
+{"Time":"2026-03-07T15:18:05.57357-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRegister"}
+{"Time":"2026-03-07T15:18:05.573592-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRegister","Output":"=== RUN   TestRegister\n"}
+{"Time":"2026-03-07T15:18:05.57361-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRegister","Output":"=== PAUSE TestRegister\n"}
+{"Time":"2026-03-07T15:18:05.573612-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRegister"}
+{"Time":"2026-03-07T15:18:05.573614-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/auth","Test":"TestAuthenticate"}
+{"Time":"2026-03-07T15:18:05.573615-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestAuthenticate","Output":"=== RUN   TestAuthenticate\n"}
+{"Time":"2026-03-07T15:18:05.573618-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestAuthenticate","Output":"=== PAUSE TestAuthenticate\n"}
+{"Time":"2026-03-07T15:18:05.573619-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/auth","Test":"TestAuthenticate"}
+{"Time":"2026-03-07T15:18:05.573628-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/auth","Test":"TestValidatePassword"}
+{"Time":"2026-03-07T15:18:05.573629-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestValidatePassword","Output":"=== RUN   TestValidatePassword\n"}
+{"Time":"2026-03-07T15:18:05.573631-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestValidatePassword","Output":"=== PAUSE TestValidatePassword\n"}
+{"Time":"2026-03-07T15:18:05.573632-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/auth","Test":"TestValidatePassword"}
+{"Time":"2026-03-07T15:18:05.573635-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/auth","Test":"TestPasswordHashingNotImplemented"}
+{"Time":"2026-03-07T15:18:05.573639-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestPasswordHashingNotImplemented","Output":"=== RUN   TestPasswordHashingNotImplemented\n"}
+{"Time":"2026-03-07T15:18:05.573642-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestPasswordHashingNotImplemented","Output":"    auth_test.go:140: password hashing not yet implemented (tracked in #42)\n"}
+{"Time":"2026-03-07T15:18:05.573651-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestPasswordHashingNotImplemented","Output":"--- SKIP: TestPasswordHashingNotImplemented (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.573654-06:00","Action":"skip","Package":"github.com/ansel1/tang/sample/auth","Test":"TestPasswordHashingNotImplemented","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.573656-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting"}
+{"Time":"2026-03-07T15:18:05.573658-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"=== RUN   TestRateLimiting\n"}
+{"Time":"2026-03-07T15:18:05.573659-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"    auth_test.go:145: Simulating rate limit window...\n"}
+{"Time":"2026-03-07T15:18:05.573693-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"    auth_test.go:151:   attempt 1/8: failed auth (expected)\n"}
+{"Time":"2026-03-07T15:18:05.579724-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsValid","Output":"    panicker_test.go:15: valid items processed successfully\n"}
+{"Time":"2026-03-07T15:18:05.57975-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsValid","Output":"--- PASS: TestProcessItemsValid (0.20s)\n"}
+{"Time":"2026-03-07T15:18:05.579752-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsValid","Elapsed":0.2}
+{"Time":"2026-03-07T15:18:05.579765-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestBuildIndexUnique"}
+{"Time":"2026-03-07T15:18:05.579766-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestBuildIndexUnique","Output":"=== RUN   TestBuildIndexUnique\n"}
+{"Time":"2026-03-07T15:18:05.579768-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestBuildIndexUnique","Output":"    panicker_test.go:19: building index with unique keys...\n"}
+{"Time":"2026-03-07T15:18:05.754409-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/cache","Test":"TestNew"}
+{"Time":"2026-03-07T15:18:05.754428-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestNew","Output":"=== RUN   TestNew\n"}
+{"Time":"2026-03-07T15:18:05.754446-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestNew","Output":"=== PAUSE TestNew\n"}
+{"Time":"2026-03-07T15:18:05.754447-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/cache","Test":"TestNew"}
+{"Time":"2026-03-07T15:18:05.754449-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/cache","Test":"TestSetAndGet"}
+{"Time":"2026-03-07T15:18:05.754451-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestSetAndGet","Output":"=== RUN   TestSetAndGet\n"}
+{"Time":"2026-03-07T15:18:05.754473-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestSetAndGet","Output":"=== PAUSE TestSetAndGet\n"}
+{"Time":"2026-03-07T15:18:05.754474-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/cache","Test":"TestSetAndGet"}
+{"Time":"2026-03-07T15:18:05.754478-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration"}
+{"Time":"2026-03-07T15:18:05.754479-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"=== RUN   TestExpiration\n"}
+{"Time":"2026-03-07T15:18:05.754503-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"    cache_test.go:57: Creating cache with 1.5s TTL\n"}
+{"Time":"2026-03-07T15:18:05.754539-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"    cache_test.go:64: Verifying all keys exist before expiration...\n"}
+{"Time":"2026-03-07T15:18:05.754552-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"    cache_test.go:69:   key-a: present\n"}
+{"Time":"2026-03-07T15:18:05.780078-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestBuildIndexUnique","Output":"    panicker_test.go:26: unique keys OK\n"}
+{"Time":"2026-03-07T15:18:05.780116-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestBuildIndexUnique","Output":"--- PASS: TestBuildIndexUnique (0.20s)\n"}
+{"Time":"2026-03-07T15:18:05.780121-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestBuildIndexUnique","Elapsed":0.2}
+{"Time":"2026-03-07T15:18:05.780151-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestSafeRecursion"}
+{"Time":"2026-03-07T15:18:05.780156-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestSafeRecursion","Output":"=== RUN   TestSafeRecursion\n"}
+{"Time":"2026-03-07T15:18:05.780162-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestSafeRecursion","Output":"    panicker_test.go:30: testing safe recursion depth of 5\n"}
+{"Time":"2026-03-07T15:18:05.944488-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestAdd"}
+{"Time":"2026-03-07T15:18:05.944505-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestAdd","Output":"=== RUN   TestAdd\n"}
+{"Time":"2026-03-07T15:18:05.944524-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestAdd","Output":"=== PAUSE TestAdd\n"}
+{"Time":"2026-03-07T15:18:05.944525-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestAdd"}
+{"Time":"2026-03-07T15:18:05.944528-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestSubtract"}
+{"Time":"2026-03-07T15:18:05.944532-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestSubtract","Output":"=== RUN   TestSubtract\n"}
+{"Time":"2026-03-07T15:18:05.944534-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestSubtract","Output":"=== PAUSE TestSubtract\n"}
+{"Time":"2026-03-07T15:18:05.944535-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestSubtract"}
+{"Time":"2026-03-07T15:18:05.944537-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestMultiply"}
+{"Time":"2026-03-07T15:18:05.944538-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestMultiply","Output":"=== RUN   TestMultiply\n"}
+{"Time":"2026-03-07T15:18:05.944592-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestMultiply","Output":"=== PAUSE TestMultiply\n"}
+{"Time":"2026-03-07T15:18:05.944618-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestMultiply"}
+{"Time":"2026-03-07T15:18:05.944625-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide"}
+{"Time":"2026-03-07T15:18:05.944629-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide","Output":"=== RUN   TestDivide\n"}
+{"Time":"2026-03-07T15:18:05.94464-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide","Output":"=== PAUSE TestDivide\n"}
+{"Time":"2026-03-07T15:18:05.944644-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide"}
+{"Time":"2026-03-07T15:18:05.944649-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci"}
+{"Time":"2026-03-07T15:18:05.944652-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci","Output":"=== RUN   TestFibonacci\n"}
+{"Time":"2026-03-07T15:18:05.944656-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/zero"}
+{"Time":"2026-03-07T15:18:05.94466-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/zero","Output":"=== RUN   TestFibonacci/zero\n"}
+{"Time":"2026-03-07T15:18:05.944663-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/zero","Output":"=== PAUSE TestFibonacci/zero\n"}
+{"Time":"2026-03-07T15:18:05.944667-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/zero"}
+{"Time":"2026-03-07T15:18:05.944671-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/one"}
+{"Time":"2026-03-07T15:18:05.944674-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/one","Output":"=== RUN   TestFibonacci/one\n"}
+{"Time":"2026-03-07T15:18:05.944678-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/one","Output":"=== PAUSE TestFibonacci/one\n"}
+{"Time":"2026-03-07T15:18:05.944681-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/one"}
+{"Time":"2026-03-07T15:18:05.944684-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/small"}
+{"Time":"2026-03-07T15:18:05.944687-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/small","Output":"=== RUN   TestFibonacci/small\n"}
+{"Time":"2026-03-07T15:18:05.944691-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/small","Output":"=== PAUSE TestFibonacci/small\n"}
+{"Time":"2026-03-07T15:18:05.944695-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/small"}
+{"Time":"2026-03-07T15:18:05.944698-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/medium"}
+{"Time":"2026-03-07T15:18:05.944708-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/medium","Output":"=== RUN   TestFibonacci/medium\n"}
+{"Time":"2026-03-07T15:18:05.944711-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/medium","Output":"=== PAUSE TestFibonacci/medium\n"}
+{"Time":"2026-03-07T15:18:05.944714-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/medium"}
+{"Time":"2026-03-07T15:18:05.944721-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/larger"}
+{"Time":"2026-03-07T15:18:05.944724-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/larger","Output":"=== RUN   TestFibonacci/larger\n"}
+{"Time":"2026-03-07T15:18:05.944728-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/larger","Output":"=== PAUSE TestFibonacci/larger\n"}
+{"Time":"2026-03-07T15:18:05.944731-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/larger"}
+{"Time":"2026-03-07T15:18:05.944734-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/zero"}
+{"Time":"2026-03-07T15:18:05.944737-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/zero","Output":"=== CONT  TestFibonacci/zero\n"}
+{"Time":"2026-03-07T15:18:05.944744-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/zero","Output":"--- PASS: TestFibonacci/zero (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.944747-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/zero","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.944752-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/small"}
+{"Time":"2026-03-07T15:18:05.944756-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/small","Output":"=== CONT  TestFibonacci/small\n"}
+{"Time":"2026-03-07T15:18:05.944764-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/small","Output":"--- PASS: TestFibonacci/small (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.944773-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/small","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.944776-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/one"}
+{"Time":"2026-03-07T15:18:05.944779-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/one","Output":"=== CONT  TestFibonacci/one\n"}
+{"Time":"2026-03-07T15:18:05.944783-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/one","Output":"--- PASS: TestFibonacci/one (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.944787-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/one","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.94479-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/larger"}
+{"Time":"2026-03-07T15:18:05.944793-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/larger","Output":"=== CONT  TestFibonacci/larger\n"}
+{"Time":"2026-03-07T15:18:05.944797-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/larger","Output":"--- PASS: TestFibonacci/larger (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.9448-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/larger","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.944803-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/medium"}
+{"Time":"2026-03-07T15:18:05.944809-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/medium","Output":"=== CONT  TestFibonacci/medium\n"}
+{"Time":"2026-03-07T15:18:05.944813-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/medium","Output":"--- PASS: TestFibonacci/medium (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.944818-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci/medium","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.944821-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci","Output":"--- PASS: TestFibonacci (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.944825-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestFibonacci","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.944829-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow"}
+{"Time":"2026-03-07T15:18:05.944832-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow","Output":"=== RUN   TestIsPrimeSlow\n"}
+{"Time":"2026-03-07T15:18:05.944836-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow","Output":"=== PAUSE TestIsPrimeSlow\n"}
+{"Time":"2026-03-07T15:18:05.944839-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow"}
+{"Time":"2026-03-07T15:18:05.944842-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime"}
+{"Time":"2026-03-07T15:18:05.944845-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime","Output":"=== RUN   TestIsPrime\n"}
+{"Time":"2026-03-07T15:18:05.944848-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/negative"}
+{"Time":"2026-03-07T15:18:05.944851-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/negative","Output":"=== RUN   TestIsPrime/negative\n"}
+{"Time":"2026-03-07T15:18:05.944856-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/negative","Output":"=== PAUSE TestIsPrime/negative\n"}
+{"Time":"2026-03-07T15:18:05.94486-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/negative"}
+{"Time":"2026-03-07T15:18:05.944863-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/zero"}
+{"Time":"2026-03-07T15:18:05.944866-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/zero","Output":"=== RUN   TestIsPrime/zero\n"}
+{"Time":"2026-03-07T15:18:05.94487-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/zero","Output":"=== PAUSE TestIsPrime/zero\n"}
+{"Time":"2026-03-07T15:18:05.944873-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/zero"}
+{"Time":"2026-03-07T15:18:05.944877-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/one"}
+{"Time":"2026-03-07T15:18:05.94488-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/one","Output":"=== RUN   TestIsPrime/one\n"}
+{"Time":"2026-03-07T15:18:05.944884-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/one","Output":"=== PAUSE TestIsPrime/one\n"}
+{"Time":"2026-03-07T15:18:05.944887-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/one"}
+{"Time":"2026-03-07T15:18:05.944919-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/two"}
+{"Time":"2026-03-07T15:18:05.944922-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/two","Output":"=== RUN   TestIsPrime/two\n"}
+{"Time":"2026-03-07T15:18:05.944927-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/two","Output":"=== PAUSE TestIsPrime/two\n"}
+{"Time":"2026-03-07T15:18:05.944931-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/two"}
+{"Time":"2026-03-07T15:18:05.944934-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/three"}
+{"Time":"2026-03-07T15:18:05.944938-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/three","Output":"=== RUN   TestIsPrime/three\n"}
+{"Time":"2026-03-07T15:18:05.944941-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/three","Output":"=== PAUSE TestIsPrime/three\n"}
+{"Time":"2026-03-07T15:18:05.944944-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/three"}
+{"Time":"2026-03-07T15:18:05.944947-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/four"}
+{"Time":"2026-03-07T15:18:05.94495-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/four","Output":"=== RUN   TestIsPrime/four\n"}
+{"Time":"2026-03-07T15:18:05.944954-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/four","Output":"=== PAUSE TestIsPrime/four\n"}
+{"Time":"2026-03-07T15:18:05.944957-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/four"}
+{"Time":"2026-03-07T15:18:05.944961-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_prime"}
+{"Time":"2026-03-07T15:18:05.944964-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_prime","Output":"=== RUN   TestIsPrime/large_prime\n"}
+{"Time":"2026-03-07T15:18:05.944968-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_prime","Output":"=== PAUSE TestIsPrime/large_prime\n"}
+{"Time":"2026-03-07T15:18:05.944971-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_prime"}
+{"Time":"2026-03-07T15:18:05.944975-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_composite"}
+{"Time":"2026-03-07T15:18:05.944978-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_composite","Output":"=== RUN   TestIsPrime/large_composite\n"}
+{"Time":"2026-03-07T15:18:05.944982-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_composite","Output":"=== PAUSE TestIsPrime/large_composite\n"}
+{"Time":"2026-03-07T15:18:05.944985-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_composite"}
+{"Time":"2026-03-07T15:18:05.944989-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/negative"}
+{"Time":"2026-03-07T15:18:05.944997-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/negative","Output":"=== CONT  TestIsPrime/negative\n"}
+{"Time":"2026-03-07T15:18:05.945002-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/negative","Output":"--- PASS: TestIsPrime/negative (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945005-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/negative","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945008-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_composite"}
+{"Time":"2026-03-07T15:18:05.945011-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_composite","Output":"=== CONT  TestIsPrime/large_composite\n"}
+{"Time":"2026-03-07T15:18:05.945015-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_composite","Output":"--- PASS: TestIsPrime/large_composite (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945019-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_composite","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945022-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/two"}
+{"Time":"2026-03-07T15:18:05.945025-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/two","Output":"=== CONT  TestIsPrime/two\n"}
+{"Time":"2026-03-07T15:18:05.945029-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/two","Output":"--- PASS: TestIsPrime/two (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945033-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/two","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945036-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/one"}
+{"Time":"2026-03-07T15:18:05.945039-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/one","Output":"=== CONT  TestIsPrime/one\n"}
+{"Time":"2026-03-07T15:18:05.945042-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/one","Output":"--- PASS: TestIsPrime/one (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945046-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/one","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945049-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/zero"}
+{"Time":"2026-03-07T15:18:05.945052-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/zero","Output":"=== CONT  TestIsPrime/zero\n"}
+{"Time":"2026-03-07T15:18:05.945056-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/zero","Output":"--- PASS: TestIsPrime/zero (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945063-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/zero","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945066-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_prime"}
+{"Time":"2026-03-07T15:18:05.945069-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_prime","Output":"=== CONT  TestIsPrime/large_prime\n"}
+{"Time":"2026-03-07T15:18:05.945073-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_prime","Output":"--- PASS: TestIsPrime/large_prime (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945076-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/large_prime","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945079-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/four"}
+{"Time":"2026-03-07T15:18:05.945082-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/four","Output":"=== CONT  TestIsPrime/four\n"}
+{"Time":"2026-03-07T15:18:05.945086-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/four","Output":"--- PASS: TestIsPrime/four (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945089-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/four","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945092-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/three"}
+{"Time":"2026-03-07T15:18:05.945095-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/three","Output":"=== CONT  TestIsPrime/three\n"}
+{"Time":"2026-03-07T15:18:05.945099-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/three","Output":"--- PASS: TestIsPrime/three (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945108-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime/three","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945112-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime","Output":"--- PASS: TestIsPrime (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945116-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrime","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945119-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestAdd"}
+{"Time":"2026-03-07T15:18:05.945122-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestAdd","Output":"=== CONT  TestAdd\n"}
+{"Time":"2026-03-07T15:18:05.945127-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestAdd","Output":"--- PASS: TestAdd (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.94513-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestAdd","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945133-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow"}
+{"Time":"2026-03-07T15:18:05.945136-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow","Output":"=== CONT  TestIsPrimeSlow\n"}
+{"Time":"2026-03-07T15:18:05.945139-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestMultiply"}
+{"Time":"2026-03-07T15:18:05.945142-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestMultiply","Output":"=== CONT  TestMultiply\n"}
+{"Time":"2026-03-07T15:18:05.945145-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestMultiply","Output":"--- PASS: TestMultiply (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945149-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestMultiply","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945152-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide"}
+{"Time":"2026-03-07T15:18:05.945155-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide","Output":"=== CONT  TestDivide\n"}
+{"Time":"2026-03-07T15:18:05.945158-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow","Output":"    mathutil_test.go:80: Starting slow prime checks...\n"}
+{"Time":"2026-03-07T15:18:05.945169-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/basic"}
+{"Time":"2026-03-07T15:18:05.945172-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/basic","Output":"=== RUN   TestDivide/basic\n"}
+{"Time":"2026-03-07T15:18:05.945176-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/basic","Output":"=== PAUSE TestDivide/basic\n"}
+{"Time":"2026-03-07T15:18:05.945178-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/basic"}
+{"Time":"2026-03-07T15:18:05.945182-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/integer_truncation"}
+{"Time":"2026-03-07T15:18:05.945185-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/integer_truncation","Output":"=== RUN   TestDivide/integer_truncation\n"}
+{"Time":"2026-03-07T15:18:05.945191-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/integer_truncation","Output":"=== PAUSE TestDivide/integer_truncation\n"}
+{"Time":"2026-03-07T15:18:05.945194-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/integer_truncation"}
+{"Time":"2026-03-07T15:18:05.945197-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/negative"}
+{"Time":"2026-03-07T15:18:05.9452-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/negative","Output":"=== RUN   TestDivide/negative\n"}
+{"Time":"2026-03-07T15:18:05.945203-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/small_primes"}
+{"Time":"2026-03-07T15:18:05.945206-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/small_primes","Output":"=== RUN   TestIsPrimeSlow/small_primes\n"}
+{"Time":"2026-03-07T15:18:05.94521-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/negative","Output":"=== PAUSE TestDivide/negative\n"}
+{"Time":"2026-03-07T15:18:05.945212-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/negative"}
+{"Time":"2026-03-07T15:18:05.945216-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/basic"}
+{"Time":"2026-03-07T15:18:05.945219-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/basic","Output":"=== CONT  TestDivide/basic\n"}
+{"Time":"2026-03-07T15:18:05.945222-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/basic","Output":"--- PASS: TestDivide/basic (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945226-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/basic","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945228-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/negative"}
+{"Time":"2026-03-07T15:18:05.945231-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/negative","Output":"=== CONT  TestDivide/negative\n"}
+{"Time":"2026-03-07T15:18:05.945235-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/negative","Output":"--- PASS: TestDivide/negative (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945238-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/negative","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945241-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestSubtract"}
+{"Time":"2026-03-07T15:18:05.945244-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestSubtract","Output":"=== CONT  TestSubtract\n"}
+{"Time":"2026-03-07T15:18:05.945247-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestSubtract","Output":"--- PASS: TestSubtract (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945251-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestSubtract","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945254-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/integer_truncation"}
+{"Time":"2026-03-07T15:18:05.945257-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/integer_truncation","Output":"=== CONT  TestDivide/integer_truncation\n"}
+{"Time":"2026-03-07T15:18:05.94526-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/integer_truncation","Output":"--- PASS: TestDivide/integer_truncation (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.945264-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide/integer_truncation","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945266-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide","Output":"--- PASS: TestDivide (0.00s)\n"}
+{"Time":"2026-03-07T15:18:05.94527-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestDivide","Elapsed":0}
+{"Time":"2026-03-07T15:18:05.945272-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/small_primes","Output":"=== PAUSE TestIsPrimeSlow/small_primes\n"}
+{"Time":"2026-03-07T15:18:05.945275-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/small_primes"}
+{"Time":"2026-03-07T15:18:05.945325-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/large_primes"}
+{"Time":"2026-03-07T15:18:05.945328-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/large_primes","Output":"=== RUN   TestIsPrimeSlow/large_primes\n"}
+{"Time":"2026-03-07T15:18:05.945332-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/large_primes","Output":"=== PAUSE TestIsPrimeSlow/large_primes\n"}
+{"Time":"2026-03-07T15:18:05.945335-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/large_primes"}
+{"Time":"2026-03-07T15:18:05.945338-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites"}
+{"Time":"2026-03-07T15:18:05.94534-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"=== RUN   TestIsPrimeSlow/composites\n"}
+{"Time":"2026-03-07T15:18:05.945344-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"=== PAUSE TestIsPrimeSlow/composites\n"}
+{"Time":"2026-03-07T15:18:05.945347-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites"}
+{"Time":"2026-03-07T15:18:05.94535-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/small_primes"}
+{"Time":"2026-03-07T15:18:05.945353-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/small_primes","Output":"=== CONT  TestIsPrimeSlow/small_primes\n"}
+{"Time":"2026-03-07T15:18:05.945356-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/small_primes","Output":"    mathutil_test.go:86:   checking 2...\n"}
+{"Time":"2026-03-07T15:18:05.945359-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites"}
+{"Time":"2026-03-07T15:18:05.945362-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"=== CONT  TestIsPrimeSlow/composites\n"}
+{"Time":"2026-03-07T15:18:05.945365-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"    mathutil_test.go:113:   verifying 4 is composite...\n"}
+{"Time":"2026-03-07T15:18:05.945368-06:00","Action":"cont","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/large_primes"}
+{"Time":"2026-03-07T15:18:05.945371-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/large_primes","Output":"=== CONT  TestIsPrimeSlow/large_primes\n"}
+{"Time":"2026-03-07T15:18:05.945375-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/large_primes","Output":"    mathutil_test.go:100:   verifying 97 is prime...\n"}
+{"Time":"2026-03-07T15:18:05.975208-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"    auth_test.go:151:   attempt 2/8: failed auth (expected)\n"}
+{"Time":"2026-03-07T15:18:05.97712-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"    stringutil_test.go:163:   reversing word 2/7: \"banana\"...\n"}
+{"Time":"2026-03-07T15:18:05.980924-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestSafeRecursion","Output":"    panicker_test.go:36: safe depth OK\n"}
+{"Time":"2026-03-07T15:18:05.980961-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestSafeRecursion","Output":"--- PASS: TestSafeRecursion (0.20s)\n"}
+{"Time":"2026-03-07T15:18:05.980987-06:00","Action":"pass","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestSafeRecursion","Elapsed":0.2}
+{"Time":"2026-03-07T15:18:05.981-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic"}
+{"Time":"2026-03-07T15:18:05.981002-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"=== RUN   TestProcessItemsPanic\n"}
+{"Time":"2026-03-07T15:18:05.981012-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"    panicker_test.go:40: processing first batch of valid items...\n"}
+{"Time":"2026-03-07T15:18:06.054976-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"    cache_test.go:69:   key-b: present\n"}
+{"Time":"2026-03-07T15:18:06.142059-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/validator","Test":"TestRequired"}
+{"Time":"2026-03-07T15:18:06.142077-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestRequired","Output":"=== RUN   TestRequired\n"}
+{"Time":"2026-03-07T15:18:06.142091-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestRequired","Output":"=== PAUSE TestRequired\n"}
+{"Time":"2026-03-07T15:18:06.142093-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/validator","Test":"TestRequired"}
+{"Time":"2026-03-07T15:18:06.142097-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMinLength"}
+{"Time":"2026-03-07T15:18:06.142099-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMinLength","Output":"=== RUN   TestMinLength\n"}
+{"Time":"2026-03-07T15:18:06.1421-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMinLength","Output":"=== PAUSE TestMinLength\n"}
+{"Time":"2026-03-07T15:18:06.142113-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMinLength"}
+{"Time":"2026-03-07T15:18:06.142115-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMaxLength"}
+{"Time":"2026-03-07T15:18:06.142116-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMaxLength","Output":"=== RUN   TestMaxLength\n"}
+{"Time":"2026-03-07T15:18:06.142118-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMaxLength","Output":"=== PAUSE TestMaxLength\n"}
+{"Time":"2026-03-07T15:18:06.142119-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMaxLength"}
+{"Time":"2026-03-07T15:18:06.142122-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMatchesPattern"}
+{"Time":"2026-03-07T15:18:06.142124-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMatchesPattern","Output":"=== RUN   TestMatchesPattern\n"}
+{"Time":"2026-03-07T15:18:06.142125-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMatchesPattern","Output":"=== PAUSE TestMatchesPattern\n"}
+{"Time":"2026-03-07T15:18:06.142126-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/validator","Test":"TestMatchesPattern"}
+{"Time":"2026-03-07T15:18:06.142127-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/validator","Test":"TestValidate"}
+{"Time":"2026-03-07T15:18:06.142129-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestValidate","Output":"=== RUN   TestValidate\n"}
+{"Time":"2026-03-07T15:18:06.142156-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestValidate","Output":"=== PAUSE TestValidate\n"}
+{"Time":"2026-03-07T15:18:06.14216-06:00","Action":"pause","Package":"github.com/ansel1/tang/sample/validator","Test":"TestValidate"}
+{"Time":"2026-03-07T15:18:06.142173-06:00","Action":"run","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation"}
+{"Time":"2026-03-07T15:18:06.142176-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"=== RUN   TestSlowValidation\n"}
+{"Time":"2026-03-07T15:18:06.142378-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"    validator_test.go:192: Running validation pipeline with simulated I/O delays...\n"}
+{"Time":"2026-03-07T15:18:06.179149-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"panic: test timed out after 1s\n"}
+{"Time":"2026-03-07T15:18:06.179192-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\trunning tests:\n"}
+{"Time":"2026-03-07T15:18:06.179199-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t\tTestSlowReverse (1s)\n"}
+{"Time":"2026-03-07T15:18:06.179203-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.179208-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"goroutine 41 [running]:\n"}
+{"Time":"2026-03-07T15:18:06.179227-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.(*M).startAlarm.func1()\n"}
+{"Time":"2026-03-07T15:18:06.179232-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2802 +0x2c4\n"}
+{"Time":"2026-03-07T15:18:06.179235-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"created by time.goFunc\n"}
+{"Time":"2026-03-07T15:18:06.179239-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/time/sleep.go:215 +0x38\n"}
+{"Time":"2026-03-07T15:18:06.179243-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.179248-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"goroutine 1 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.179252-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.(*T).Run(0x79deba5e2008, {0x102e43df0?, 0x79deba598b18?}, 0x102f9c1c8)\n"}
+{"Time":"2026-03-07T15:18:06.179255-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2109 +0x3bc\n"}
+{"Time":"2026-03-07T15:18:06.179259-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.runTests.func1(0x79deba5e2008)\n"}
+{"Time":"2026-03-07T15:18:06.179263-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2585 +0x38\n"}
+{"Time":"2026-03-07T15:18:06.179273-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.tRunner(0x79deba5e2008, 0x79deba598c48)\n"}
+{"Time":"2026-03-07T15:18:06.179279-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.179339-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.runTests({0x102e48011, 0x1d}, {0x102e4b3b3, 0x28}, 0x79deba59e060, {0x102fc21c0, 0xa, 0xa}, {0x808080802f787d2b?, 0x102e43e1d?, ...})\n"}
+{"Time":"2026-03-07T15:18:06.179352-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2583 +0x3f0\n"}
+{"Time":"2026-03-07T15:18:06.179356-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.(*M).Run(0x79deba59c1e0)\n"}
+{"Time":"2026-03-07T15:18:06.179358-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2443 +0x578\n"}
+{"Time":"2026-03-07T15:18:06.17936-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"main.main()\n"}
+{"Time":"2026-03-07T15:18:06.179369-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t_testmain.go:64 +0x80\n"}
+{"Time":"2026-03-07T15:18:06.179421-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.179424-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"goroutine 35 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.179425-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.(*T).Parallel(0x79deba5e2248)\n"}
+{"Time":"2026-03-07T15:18:06.179427-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.179484-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"github.com/ansel1/tang/sample/stringutil.TestReverse(0x79deba5e2248)\n"}
+{"Time":"2026-03-07T15:18:06.179487-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/Users/regan/dev/tang/sample/stringutil/stringutil_test.go:10 +0x20\n"}
+{"Time":"2026-03-07T15:18:06.179543-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.tRunner(0x79deba5e2248, 0x102f9c1b0)\n"}
+{"Time":"2026-03-07T15:18:06.179549-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.179551-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.179553-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.179554-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.179558-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"goroutine 36 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.17956-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.(*T).Parallel(0x79deba5e2488)\n"}
+{"Time":"2026-03-07T15:18:06.179562-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.179565-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"github.com/ansel1/tang/sample/stringutil.TestPalindromeStress(0x79deba5e2488)\n"}
+{"Time":"2026-03-07T15:18:06.179566-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/Users/regan/dev/tang/sample/stringutil/stringutil_test.go:48 +0x20\n"}
+{"Time":"2026-03-07T15:18:06.179568-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.tRunner(0x79deba5e2488, 0x102f9c1a8)\n"}
+{"Time":"2026-03-07T15:18:06.17957-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.179571-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.179572-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.179574-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.179575-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"goroutine 37 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.179577-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.(*T).Parallel(0x79deba5e26c8)\n"}
+{"Time":"2026-03-07T15:18:06.179578-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.179612-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"github.com/ansel1/tang/sample/stringutil.TestPalindrome(0x79deba5e26c8)\n"}
+{"Time":"2026-03-07T15:18:06.179632-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/Users/regan/dev/tang/sample/stringutil/stringutil_test.go:79 +0x28\n"}
+{"Time":"2026-03-07T15:18:06.179651-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.tRunner(0x79deba5e26c8, 0x102f9c1a0)\n"}
+{"Time":"2026-03-07T15:18:06.179653-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.179657-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.179664-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.179667-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.179674-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"goroutine 38 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.179676-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.(*T).Parallel(0x79deba5e2908)\n"}
+{"Time":"2026-03-07T15:18:06.179677-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.179678-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"github.com/ansel1/tang/sample/stringutil.TestWordCount(0x79deba5e2908)\n"}
+{"Time":"2026-03-07T15:18:06.17968-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/Users/regan/dev/tang/sample/stringutil/stringutil_test.go:103 +0x28\n"}
+{"Time":"2026-03-07T15:18:06.179681-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.tRunner(0x79deba5e2908, 0x102f9c1d8)\n"}
+{"Time":"2026-03-07T15:18:06.179682-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.179683-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.179687-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.179688-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.179689-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"goroutine 39 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.179691-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.(*T).Parallel(0x79deba5e2b48)\n"}
+{"Time":"2026-03-07T15:18:06.179692-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.179694-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"github.com/ansel1/tang/sample/stringutil.TestTruncate(0x79deba5e2b48)\n"}
+{"Time":"2026-03-07T15:18:06.179695-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/Users/regan/dev/tang/sample/stringutil/stringutil_test.go:123 +0x20\n"}
+{"Time":"2026-03-07T15:18:06.179697-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.tRunner(0x79deba5e2b48, 0x102f9c1d0)\n"}
+{"Time":"2026-03-07T15:18:06.179698-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.179699-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.179701-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.179702-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.179703-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"goroutine 40 [sleep]:\n"}
+{"Time":"2026-03-07T15:18:06.179705-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"time.Sleep(0x2faf0800)\n"}
+{"Time":"2026-03-07T15:18:06.179717-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/time.go:363 +0x150\n"}
+{"Time":"2026-03-07T15:18:06.179719-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"github.com/ansel1/tang/sample/stringutil.TestSlowReverse(0x79deba5e2d88)\n"}
+{"Time":"2026-03-07T15:18:06.17972-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/Users/regan/dev/tang/sample/stringutil/stringutil_test.go:164 +0x150\n"}
+{"Time":"2026-03-07T15:18:06.179722-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"testing.tRunner(0x79deba5e2d88, 0x102f9c1c8)\n"}
+{"Time":"2026-03-07T15:18:06.179723-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.179724-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.179726-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Test":"TestSlowReverse","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.180267-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/stringutil","Output":"FAIL\tgithub.com/ansel1/tang/sample/stringutil\t1.498s\n"}
+{"Time":"2026-03-07T15:18:06.180275-06:00","Action":"fail","Package":"github.com/ansel1/tang/sample/stringutil","Elapsed":1.498}
+{"Time":"2026-03-07T15:18:06.281403-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"    panicker_test.go:43: first batch OK, now processing batch with empty item...\n"}
+{"Time":"2026-03-07T15:18:06.345156-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"    mathutil_test.go:113:   verifying 6 is composite...\n"}
+{"Time":"2026-03-07T15:18:06.355111-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"    cache_test.go:69:   key-c: present\n"}
+{"Time":"2026-03-07T15:18:06.376255-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"    auth_test.go:151:   attempt 3/8: failed auth (expected)\n"}
+{"Time":"2026-03-07T15:18:06.381794-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"panic: test timed out after 1s\n"}
+{"Time":"2026-03-07T15:18:06.38182-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\trunning tests:\n"}
+{"Time":"2026-03-07T15:18:06.381822-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t\tTestProcessItemsPanic (0s)\n"}
+{"Time":"2026-03-07T15:18:06.381823-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.381825-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"goroutine 25 [running]:\n"}
+{"Time":"2026-03-07T15:18:06.381828-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"testing.(*M).startAlarm.func1()\n"}
+{"Time":"2026-03-07T15:18:06.38183-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2802 +0x2c4\n"}
+{"Time":"2026-03-07T15:18:06.381839-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"created by time.goFunc\n"}
+{"Time":"2026-03-07T15:18:06.381861-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/time/sleep.go:215 +0x38\n"}
+{"Time":"2026-03-07T15:18:06.381863-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.381871-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"goroutine 1 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.381885-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"testing.(*T).Run(0x5c55825e4008, {0x1010e7396?, 0x5c55825a4b18?}, 0x101237f10)\n"}
+{"Time":"2026-03-07T15:18:06.381897-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2109 +0x3bc\n"}
+{"Time":"2026-03-07T15:18:06.381905-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"testing.runTests.func1(0x5c55825e4008)\n"}
+{"Time":"2026-03-07T15:18:06.381915-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2585 +0x38\n"}
+{"Time":"2026-03-07T15:18:06.381926-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"testing.tRunner(0x5c55825e4008, 0x5c55825a4c48)\n"}
+{"Time":"2026-03-07T15:18:06.381928-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.381948-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"testing.runTests({0x1010e97ba, 0x1d}, {0x1010ec468, 0x26}, 0x5c55825aa060, {0x10125df60, 0x7, 0x7}, {0x808000676b41522c?, 0x1010e5687?, ...})\n"}
+{"Time":"2026-03-07T15:18:06.381961-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2583 +0x3f0\n"}
+{"Time":"2026-03-07T15:18:06.381966-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"testing.(*M).Run(0x5c55825a8140)\n"}
+{"Time":"2026-03-07T15:18:06.381997-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2443 +0x578\n"}
+{"Time":"2026-03-07T15:18:06.382009-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"main.main()\n"}
+{"Time":"2026-03-07T15:18:06.382012-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t_testmain.go:58 +0x80\n"}
+{"Time":"2026-03-07T15:18:06.382014-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.382016-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"goroutine 24 [sleep]:\n"}
+{"Time":"2026-03-07T15:18:06.382019-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"time.Sleep(0x11e1a300)\n"}
+{"Time":"2026-03-07T15:18:06.382021-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/time.go:363 +0x150\n"}
+{"Time":"2026-03-07T15:18:06.382039-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x5c55825e4908)\n"}
+{"Time":"2026-03-07T15:18:06.382045-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/Users/regan/dev/tang/sample/panicker/panicker_test.go:44 +0xb4\n"}
+{"Time":"2026-03-07T15:18:06.382047-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"testing.tRunner(0x5c55825e4908, 0x101237f10)\n"}
+{"Time":"2026-03-07T15:18:06.382077-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.382083-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.382085-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Test":"TestProcessItemsPanic","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.382552-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/panicker","Output":"FAIL\tgithub.com/ansel1/tang/sample/panicker\t1.700s\n"}
+{"Time":"2026-03-07T15:18:06.382558-06:00","Action":"fail","Package":"github.com/ansel1/tang/sample/panicker","Elapsed":1.7}
+{"Time":"2026-03-07T15:18:06.44594-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/small_primes","Output":"    mathutil_test.go:86:   checking 3...\n"}
+{"Time":"2026-03-07T15:18:06.546132-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/large_primes","Output":"    mathutil_test.go:100:   verifying 101 is prime...\n"}
+{"Time":"2026-03-07T15:18:06.57662-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"panic: test timed out after 1s\n"}
+{"Time":"2026-03-07T15:18:06.576662-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\trunning tests:\n"}
+{"Time":"2026-03-07T15:18:06.576687-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t\tTestRateLimiting (1s)\n"}
+{"Time":"2026-03-07T15:18:06.576691-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.576699-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"goroutine 24 [running]:\n"}
+{"Time":"2026-03-07T15:18:06.576703-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.(*M).startAlarm.func1()\n"}
+{"Time":"2026-03-07T15:18:06.576707-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2802 +0x2c4\n"}
+{"Time":"2026-03-07T15:18:06.576715-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"created by time.goFunc\n"}
+{"Time":"2026-03-07T15:18:06.576718-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/time/sleep.go:215 +0x38\n"}
+{"Time":"2026-03-07T15:18:06.576722-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.576725-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"goroutine 1 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.576729-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.(*T).Run(0x28b5078e4008, {0x1030cf749?, 0x28b50789ab18?}, 0x103224510)\n"}
+{"Time":"2026-03-07T15:18:06.576734-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2109 +0x3bc\n"}
+{"Time":"2026-03-07T15:18:06.576739-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.runTests.func1(0x28b5078e4008)\n"}
+{"Time":"2026-03-07T15:18:06.576742-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2585 +0x38\n"}
+{"Time":"2026-03-07T15:18:06.576746-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.tRunner(0x28b5078e4008, 0x28b50789ac48)\n"}
+{"Time":"2026-03-07T15:18:06.576751-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.576755-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.runTests({0x1030d34cb, 0x1d}, {0x1030d5023, 0x22}, 0x28b5078a0060, {0x103249f40, 0x6, 0x6}, {0x8080180678545667?, 0x1030cf32e?, ...})\n"}
+{"Time":"2026-03-07T15:18:06.576762-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2583 +0x3f0\n"}
+{"Time":"2026-03-07T15:18:06.576765-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.(*M).Run(0x28b50789e140)\n"}
+{"Time":"2026-03-07T15:18:06.576769-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2443 +0x578\n"}
+{"Time":"2026-03-07T15:18:06.576779-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"main.main()\n"}
+{"Time":"2026-03-07T15:18:06.576783-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t_testmain.go:56 +0x80\n"}
+{"Time":"2026-03-07T15:18:06.576786-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.576789-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"goroutine 19 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.576801-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.(*T).Parallel(0x28b5078e4248)\n"}
+{"Time":"2026-03-07T15:18:06.576805-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.576809-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"github.com/ansel1/tang/sample/auth.TestRegister(0x28b5078e4248)\n"}
+{"Time":"2026-03-07T15:18:06.576812-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/Users/regan/dev/tang/sample/auth/auth_test.go:10 +0x20\n"}
+{"Time":"2026-03-07T15:18:06.576816-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.tRunner(0x28b5078e4248, 0x103224518)\n"}
+{"Time":"2026-03-07T15:18:06.576827-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.576831-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.576834-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.576837-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.576841-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"goroutine 20 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.576845-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.(*T).Parallel(0x28b5078e4488)\n"}
+{"Time":"2026-03-07T15:18:06.576848-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.576852-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"github.com/ansel1/tang/sample/auth.TestAuthenticate(0x28b5078e4488)\n"}
+{"Time":"2026-03-07T15:18:06.576864-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/Users/regan/dev/tang/sample/auth/auth_test.go:31 +0x20\n"}
+{"Time":"2026-03-07T15:18:06.576867-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.tRunner(0x28b5078e4488, 0x1032244f8)\n"}
+{"Time":"2026-03-07T15:18:06.576871-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.576874-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.576877-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.57688-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.576884-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"goroutine 21 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.576887-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.(*T).Parallel(0x28b5078e46c8)\n"}
+{"Time":"2026-03-07T15:18:06.57689-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.576894-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"github.com/ansel1/tang/sample/auth.TestValidatePassword(0x28b5078e46c8)\n"}
+{"Time":"2026-03-07T15:18:06.576899-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/Users/regan/dev/tang/sample/auth/auth_test.go:74 +0x20\n"}
+{"Time":"2026-03-07T15:18:06.576903-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.tRunner(0x28b5078e46c8, 0x103224520)\n"}
+{"Time":"2026-03-07T15:18:06.576906-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.576911-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.576914-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.576917-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.57692-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"goroutine 23 [sleep]:\n"}
+{"Time":"2026-03-07T15:18:06.576923-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"time.Sleep(0x17d78400)\n"}
+{"Time":"2026-03-07T15:18:06.576929-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/time.go:363 +0x150\n"}
+{"Time":"2026-03-07T15:18:06.576933-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"github.com/ansel1/tang/sample/auth.TestRateLimiting(0x28b5078e4b48)\n"}
+{"Time":"2026-03-07T15:18:06.576936-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/Users/regan/dev/tang/sample/auth/auth_test.go:152 +0x1f0\n"}
+{"Time":"2026-03-07T15:18:06.576939-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"testing.tRunner(0x28b5078e4b48, 0x103224510)\n"}
+{"Time":"2026-03-07T15:18:06.576943-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.576946-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.576949-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Test":"TestRateLimiting","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.577464-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/auth","Output":"FAIL\tgithub.com/ansel1/tang/sample/auth\t1.895s\n"}
+{"Time":"2026-03-07T15:18:06.57748-06:00","Action":"fail","Package":"github.com/ansel1/tang/sample/auth","Elapsed":1.895}
+{"Time":"2026-03-07T15:18:06.656006-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"    cache_test.go:73: Waiting for TTL to expire...\n"}
+{"Time":"2026-03-07T15:18:06.746292-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"    mathutil_test.go:113:   verifying 8 is composite...\n"}
+{"Time":"2026-03-07T15:18:06.758138-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"panic: test timed out after 1s\n"}
+{"Time":"2026-03-07T15:18:06.758171-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\trunning tests:\n"}
+{"Time":"2026-03-07T15:18:06.758175-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t\tTestExpiration (1s)\n"}
+{"Time":"2026-03-07T15:18:06.758179-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.758182-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"goroutine 38 [running]:\n"}
+{"Time":"2026-03-07T15:18:06.758185-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.(*M).startAlarm.func1()\n"}
+{"Time":"2026-03-07T15:18:06.758189-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2802 +0x2c4\n"}
+{"Time":"2026-03-07T15:18:06.758192-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"created by time.goFunc\n"}
+{"Time":"2026-03-07T15:18:06.758195-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/time/sleep.go:215 +0x38\n"}
+{"Time":"2026-03-07T15:18:06.758198-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.758201-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"goroutine 1 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.758204-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.(*T).Run(0x5d331d062008, {0x1008f2f53?, 0x5d331d016b18?}, 0x100a486e8)\n"}
+{"Time":"2026-03-07T15:18:06.758208-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2109 +0x3bc\n"}
+{"Time":"2026-03-07T15:18:06.758211-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.runTests.func1(0x5d331d062008)\n"}
+{"Time":"2026-03-07T15:18:06.758214-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2585 +0x38\n"}
+{"Time":"2026-03-07T15:18:06.758217-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.tRunner(0x5d331d062008, 0x5d331d016c48)\n"}
+{"Time":"2026-03-07T15:18:06.758221-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.758224-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.runTests({0x1008f74ca, 0x1d}, {0x1008f9426, 0x23}, 0x5d331d01c060, {0x100a6dec0, 0x6, 0x6}, {0x8080808080397410?, 0x1008f33d1?, ...})\n"}
+{"Time":"2026-03-07T15:18:06.75826-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2583 +0x3f0\n"}
+{"Time":"2026-03-07T15:18:06.758264-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.(*M).Run(0x5d331d01a140)\n"}
+{"Time":"2026-03-07T15:18:06.758267-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2443 +0x578\n"}
+{"Time":"2026-03-07T15:18:06.75827-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"main.main()\n"}
+{"Time":"2026-03-07T15:18:06.758273-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t_testmain.go:56 +0x80\n"}
+{"Time":"2026-03-07T15:18:06.758276-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.758279-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"goroutine 35 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.758282-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.(*T).Parallel(0x5d331d062248)\n"}
+{"Time":"2026-03-07T15:18:06.758285-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.758288-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"github.com/ansel1/tang/sample/cache.TestNew(0x5d331d062248)\n"}
+{"Time":"2026-03-07T15:18:06.758291-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/Users/regan/dev/tang/sample/cache/cache_test.go:10 +0x20\n"}
+{"Time":"2026-03-07T15:18:06.758294-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.tRunner(0x5d331d062248, 0x100a486f0)\n"}
+{"Time":"2026-03-07T15:18:06.758297-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.7583-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.758303-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.758306-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.758309-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"goroutine 36 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.758312-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.(*T).Parallel(0x5d331d062488)\n"}
+{"Time":"2026-03-07T15:18:06.758317-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:06.75832-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"github.com/ansel1/tang/sample/cache.TestSetAndGet(0x5d331d062488)\n"}
+{"Time":"2026-03-07T15:18:06.75836-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/Users/regan/dev/tang/sample/cache/cache_test.go:21 +0x20\n"}
+{"Time":"2026-03-07T15:18:06.758364-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.tRunner(0x5d331d062488, 0x100a48700)\n"}
+{"Time":"2026-03-07T15:18:06.758367-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.75837-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.758373-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.758376-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.758379-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"goroutine 37 [sleep]:\n"}
+{"Time":"2026-03-07T15:18:06.758382-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"time.Sleep(0x59682f00)\n"}
+{"Time":"2026-03-07T15:18:06.758385-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/time.go:363 +0x150\n"}
+{"Time":"2026-03-07T15:18:06.758388-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"github.com/ansel1/tang/sample/cache.TestExpiration(0x5d331d0626c8)\n"}
+{"Time":"2026-03-07T15:18:06.758391-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/Users/regan/dev/tang/sample/cache/cache_test.go:74 +0x240\n"}
+{"Time":"2026-03-07T15:18:06.758394-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"testing.tRunner(0x5d331d0626c8, 0x100a486e8)\n"}
+{"Time":"2026-03-07T15:18:06.758397-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.7584-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.758402-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Test":"TestExpiration","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.759088-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/cache","Output":"FAIL\tgithub.com/ansel1/tang/sample/cache\t2.077s\n"}
+{"Time":"2026-03-07T15:18:06.759109-06:00","Action":"fail","Package":"github.com/ansel1/tang/sample/cache","Elapsed":2.077}
+{"Time":"2026-03-07T15:18:06.947433-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"panic: test timed out after 1s\n"}
+{"Time":"2026-03-07T15:18:06.947491-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\trunning tests:\n"}
+{"Time":"2026-03-07T15:18:06.947496-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t\tTestIsPrimeSlow/composites (1s)\n"}
+{"Time":"2026-03-07T15:18:06.9475-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t\tTestIsPrimeSlow/large_primes (1s)\n"}
+{"Time":"2026-03-07T15:18:06.947503-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t\tTestIsPrimeSlow/small_primes (1s)\n"}
+{"Time":"2026-03-07T15:18:06.947506-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.94751-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"goroutine 65 [running]:\n"}
+{"Time":"2026-03-07T15:18:06.947513-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.(*M).startAlarm.func1()\n"}
+{"Time":"2026-03-07T15:18:06.947519-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2802 +0x2c4\n"}
+{"Time":"2026-03-07T15:18:06.947843-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"created by time.goFunc\n"}
+{"Time":"2026-03-07T15:18:06.94785-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/time/sleep.go:215 +0x38\n"}
+{"Time":"2026-03-07T15:18:06.947853-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.947856-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"goroutine 1 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.947859-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.tRunner.func1()\n"}
+{"Time":"2026-03-07T15:18:06.947864-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1993 +0x3c8\n"}
+{"Time":"2026-03-07T15:18:06.947867-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.tRunner(0x587aa00a6008, 0x587a9fff2c48)\n"}
+{"Time":"2026-03-07T15:18:06.947871-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2042 +0x100\n"}
+{"Time":"2026-03-07T15:18:06.947874-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.runTests({0x104411be9, 0x1d}, {0x104414830, 0x26}, 0x587a9ff74078, {0x104589f60, 0x7, 0x7}, {0x8080801c3451361c?, 0x10440db2e?, ...})\n"}
+{"Time":"2026-03-07T15:18:06.947889-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2583 +0x3f0\n"}
+{"Time":"2026-03-07T15:18:06.947893-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.(*M).Run(0x587a9fff61e0)\n"}
+{"Time":"2026-03-07T15:18:06.947896-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2443 +0x578\n"}
+{"Time":"2026-03-07T15:18:06.947899-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"main.main()\n"}
+{"Time":"2026-03-07T15:18:06.947902-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t_testmain.go:58 +0x80\n"}
+{"Time":"2026-03-07T15:18:06.947905-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.947908-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"goroutine 49 [sleep]:\n"}
+{"Time":"2026-03-07T15:18:06.947911-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"time.Sleep(0x1dcd6500)\n"}
+{"Time":"2026-03-07T15:18:06.947914-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/time.go:363 +0x150\n"}
+{"Time":"2026-03-07T15:18:06.947917-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"github.com/ansel1/tang/sample/mathutil.TestIsPrimeSlow.func1(0x587aa011e008)\n"}
+{"Time":"2026-03-07T15:18:06.94792-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/Users/regan/dev/tang/sample/mathutil/mathutil_test.go:87 +0xb4\n"}
+{"Time":"2026-03-07T15:18:06.947923-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.tRunner(0x587aa011e008, 0x104564308)\n"}
+{"Time":"2026-03-07T15:18:06.947926-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.947929-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"created by testing.(*T).Run in goroutine 17\n"}
+{"Time":"2026-03-07T15:18:06.947932-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.947935-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.947938-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"goroutine 17 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:06.94794-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.tRunner.func1()\n"}
+{"Time":"2026-03-07T15:18:06.947943-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1993 +0x3c8\n"}
+{"Time":"2026-03-07T15:18:06.947946-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.tRunner(0x587aa0026008, 0x104564258)\n"}
+{"Time":"2026-03-07T15:18:06.947949-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2042 +0x100\n"}
+{"Time":"2026-03-07T15:18:06.947952-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:06.947955-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.947958-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.947961-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"goroutine 50 [sleep]:\n"}
+{"Time":"2026-03-07T15:18:06.947964-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"time.Sleep(0x23c34600)\n"}
+{"Time":"2026-03-07T15:18:06.947967-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/time.go:363 +0x150\n"}
+{"Time":"2026-03-07T15:18:06.94797-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"github.com/ansel1/tang/sample/mathutil.TestIsPrimeSlow.func2(0x587aa011e248)\n"}
+{"Time":"2026-03-07T15:18:06.947973-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/Users/regan/dev/tang/sample/mathutil/mathutil_test.go:101 +0xb4\n"}
+{"Time":"2026-03-07T15:18:06.947976-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.tRunner(0x587aa011e248, 0x104564310)\n"}
+{"Time":"2026-03-07T15:18:06.948761-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.948767-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"created by testing.(*T).Run in goroutine 17\n"}
+{"Time":"2026-03-07T15:18:06.94877-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.948774-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\n"}
+{"Time":"2026-03-07T15:18:06.948777-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"goroutine 51 [sleep]:\n"}
+{"Time":"2026-03-07T15:18:06.948785-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"time.Sleep(0x17d78400)\n"}
+{"Time":"2026-03-07T15:18:06.948788-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/time.go:363 +0x150\n"}
+{"Time":"2026-03-07T15:18:06.948791-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"github.com/ansel1/tang/sample/mathutil.TestIsPrimeSlow.func3(0x587aa011e488)\n"}
+{"Time":"2026-03-07T15:18:06.948795-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/Users/regan/dev/tang/sample/mathutil/mathutil_test.go:114 +0xbc\n"}
+{"Time":"2026-03-07T15:18:06.948798-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"testing.tRunner(0x587aa011e488, 0x104564318)\n"}
+{"Time":"2026-03-07T15:18:06.948801-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:06.948804-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"created by testing.(*T).Run in goroutine 17\n"}
+{"Time":"2026-03-07T15:18:06.948807-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Test":"TestIsPrimeSlow/composites","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:06.949056-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/mathutil","Output":"FAIL\tgithub.com/ansel1/tang/sample/mathutil\t2.266s\n"}
+{"Time":"2026-03-07T15:18:06.949071-06:00","Action":"fail","Package":"github.com/ansel1/tang/sample/mathutil","Elapsed":2.267}
+{"Time":"2026-03-07T15:18:07.143003-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"    validator_test.go:215:   [1/10] validate(\"alice@example.com\"): PASS (0 errors)\n"}
+{"Time":"2026-03-07T15:18:07.146963-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"panic: test timed out after 1s\n"}
+{"Time":"2026-03-07T15:18:07.146985-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\trunning tests:\n"}
+{"Time":"2026-03-07T15:18:07.146989-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t\tTestSlowValidation (1s)\n"}
+{"Time":"2026-03-07T15:18:07.146992-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\n"}
+{"Time":"2026-03-07T15:18:07.146996-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"goroutine 9 [running]:\n"}
+{"Time":"2026-03-07T15:18:07.146999-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.(*M).startAlarm.func1()\n"}
+{"Time":"2026-03-07T15:18:07.147002-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2802 +0x2c4\n"}
+{"Time":"2026-03-07T15:18:07.147105-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"created by time.goFunc\n"}
+{"Time":"2026-03-07T15:18:07.14711-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/time/sleep.go:215 +0x38\n"}
+{"Time":"2026-03-07T15:18:07.147114-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\n"}
+{"Time":"2026-03-07T15:18:07.147117-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"goroutine 1 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:07.14712-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.(*T).Run(0x73248e2e008, {0x104981e4b?, 0x73248d96b18?}, 0x104ad87e8)\n"}
+{"Time":"2026-03-07T15:18:07.147123-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2109 +0x3bc\n"}
+{"Time":"2026-03-07T15:18:07.147127-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.runTests.func1(0x73248e2e008)\n"}
+{"Time":"2026-03-07T15:18:07.14713-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2585 +0x38\n"}
+{"Time":"2026-03-07T15:18:07.147134-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.tRunner(0x73248e2e008, 0x73248d96c48)\n"}
+{"Time":"2026-03-07T15:18:07.147137-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:07.147141-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.runTests({0x10498519f, 0x1d}, {0x1049882b3, 0x27}, 0x73248cae018, {0x104afe020, 0x8, 0x8}, {0x808080806a250536?, 0x104980f94?, ...})\n"}
+{"Time":"2026-03-07T15:18:07.147145-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2583 +0x3f0\n"}
+{"Time":"2026-03-07T15:18:07.147148-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.(*M).Run(0x73248e28140)\n"}
+{"Time":"2026-03-07T15:18:07.147151-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2443 +0x578\n"}
+{"Time":"2026-03-07T15:18:07.147154-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"main.main()\n"}
+{"Time":"2026-03-07T15:18:07.147157-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t_testmain.go:60 +0x80\n"}
+{"Time":"2026-03-07T15:18:07.14716-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\n"}
+{"Time":"2026-03-07T15:18:07.147162-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"goroutine 3 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:07.147166-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.(*T).Parallel(0x73248e2e248)\n"}
+{"Time":"2026-03-07T15:18:07.147169-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:07.147172-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"github.com/ansel1/tang/sample/validator.TestRequired(0x73248e2e248)\n"}
+{"Time":"2026-03-07T15:18:07.147175-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/Users/regan/dev/tang/sample/validator/validator_test.go:9 +0x20\n"}
+{"Time":"2026-03-07T15:18:07.147178-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.tRunner(0x73248e2e248, 0x104ad87d8)\n"}
+{"Time":"2026-03-07T15:18:07.147181-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:07.147184-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:07.147188-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:07.14719-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\n"}
+{"Time":"2026-03-07T15:18:07.147193-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"goroutine 4 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:07.147196-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.(*T).Parallel(0x73248e2e488)\n"}
+{"Time":"2026-03-07T15:18:07.147199-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:07.14722-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"github.com/ansel1/tang/sample/validator.TestMinLength(0x73248e2e488)\n"}
+{"Time":"2026-03-07T15:18:07.147223-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/Users/regan/dev/tang/sample/validator/validator_test.go:34 +0x20\n"}
+{"Time":"2026-03-07T15:18:07.147227-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.tRunner(0x73248e2e488, 0x104ad87d0)\n"}
+{"Time":"2026-03-07T15:18:07.14723-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:07.147233-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:07.147236-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:07.147239-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\n"}
+{"Time":"2026-03-07T15:18:07.147241-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"goroutine 5 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:07.147244-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.(*T).Parallel(0x73248e2e6c8)\n"}
+{"Time":"2026-03-07T15:18:07.147247-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:07.14725-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"github.com/ansel1/tang/sample/validator.TestMaxLength(0x73248e2e6c8)\n"}
+{"Time":"2026-03-07T15:18:07.147253-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/Users/regan/dev/tang/sample/validator/validator_test.go:60 +0x20\n"}
+{"Time":"2026-03-07T15:18:07.147256-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.tRunner(0x73248e2e6c8, 0x104ad87c8)\n"}
+{"Time":"2026-03-07T15:18:07.147259-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:07.147262-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:07.147265-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:07.147268-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\n"}
+{"Time":"2026-03-07T15:18:07.147271-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"goroutine 6 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:07.147274-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.(*T).Parallel(0x73248e2e908)\n"}
+{"Time":"2026-03-07T15:18:07.147276-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:07.147279-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"github.com/ansel1/tang/sample/validator.TestMatchesPattern(0x73248e2e908)\n"}
+{"Time":"2026-03-07T15:18:07.147283-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/Users/regan/dev/tang/sample/validator/validator_test.go:79 +0x20\n"}
+{"Time":"2026-03-07T15:18:07.147286-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.tRunner(0x73248e2e908, 0x104ad87c0)\n"}
+{"Time":"2026-03-07T15:18:07.147289-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:07.147292-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:07.147295-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:07.147298-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\n"}
+{"Time":"2026-03-07T15:18:07.147301-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"goroutine 7 [chan receive]:\n"}
+{"Time":"2026-03-07T15:18:07.147304-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.(*T).Parallel(0x73248e2eb48)\n"}
+{"Time":"2026-03-07T15:18:07.147307-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1803 +0x194\n"}
+{"Time":"2026-03-07T15:18:07.14731-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"github.com/ansel1/tang/sample/validator.TestValidate(0x73248e2eb48)\n"}
+{"Time":"2026-03-07T15:18:07.147313-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/Users/regan/dev/tang/sample/validator/validator_test.go:161 +0x20\n"}
+{"Time":"2026-03-07T15:18:07.147317-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.tRunner(0x73248e2eb48, 0x104ad87f0)\n"}
+{"Time":"2026-03-07T15:18:07.14732-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:07.147323-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:07.147326-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:07.147329-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\n"}
+{"Time":"2026-03-07T15:18:07.147332-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"goroutine 8 [sleep]:\n"}
+{"Time":"2026-03-07T15:18:07.147335-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"time.Sleep(0x3b9aca00)\n"}
+{"Time":"2026-03-07T15:18:07.147339-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/time.go:363 +0x150\n"}
+{"Time":"2026-03-07T15:18:07.147342-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"github.com/ansel1/tang/sample/validator.TestSlowValidation(0x73248e2ed88)\n"}
+{"Time":"2026-03-07T15:18:07.147348-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/Users/regan/dev/tang/sample/validator/validator_test.go:209 +0x134\n"}
+{"Time":"2026-03-07T15:18:07.147358-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"testing.tRunner(0x73248e2ed88, 0x104ad87e8)\n"}
+{"Time":"2026-03-07T15:18:07.147361-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4\n"}
+{"Time":"2026-03-07T15:18:07.147364-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-03-07T15:18:07.147368-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Test":"TestSlowValidation","Output":"\t/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8\n"}
+{"Time":"2026-03-07T15:18:07.148093-06:00","Action":"output","Package":"github.com/ansel1/tang/sample/validator","Output":"FAIL\tgithub.com/ansel1/tang/sample/validator\t2.465s\n"}
+{"Time":"2026-03-07T15:18:07.148111-06:00","Action":"fail","Package":"github.com/ansel1/tang/sample/validator","Elapsed":2.466}

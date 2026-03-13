@@ -11,20 +11,21 @@ import (
 	"github.com/ansel1/tang/results"
 )
 
-// SimpleOutput writes simple text output for -notty mode
-// It accumulates output and displays summary at completion using shared collector
 type SimpleOutput struct {
-	writer    io.Writer
-	output    []string
-	collector *results.Collector
+	writer         io.Writer
+	output         []string
+	collector      *results.Collector
+	slowThreshold  time.Duration
+	summaryOptions format.SummaryOptions
 }
 
-// NewSimpleOutput creates a simple output writer
-func NewSimpleOutput(w io.Writer, collector *results.Collector) *SimpleOutput {
+func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold time.Duration, summaryOptions format.SummaryOptions) *SimpleOutput {
 	return &SimpleOutput{
-		writer:    w,
-		output:    make([]string, 0),
-		collector: collector,
+		writer:         w,
+		output:         make([]string, 0),
+		collector:      collector,
+		slowThreshold:  slowThreshold,
+		summaryOptions: summaryOptions,
 	}
 }
 
@@ -75,17 +76,15 @@ func (s *SimpleOutput) writeOutput() error {
 		state := s.collector.State()
 		if len(state.Runs) > 0 {
 			run := state.Runs[len(state.Runs)-1]
-			// Compute summary with 10 second slow test threshold
-			summary = format.ComputeSummary(run, 10*time.Second)
+			summary = format.ComputeSummary(run, s.slowThreshold)
 		}
 
 		if summary != nil {
-			// Format summary using default terminal width (80 columns)
-			formatter := format.NewSummaryFormatter(80)
-			summaryText := formatter.Format(summary)
+			summaryText := format.NewSummaryFormatter(80, s.summaryOptions).Format(summary)
 
-			// Print summary
-			_, _ = fmt.Fprintln(s.writer)
+			if len(s.output) > 0 || summary.HasTestDetailsWithOptions(s.summaryOptions) {
+				_, _ = fmt.Fprintln(s.writer)
+			}
 			_, _ = fmt.Fprintln(s.writer, summaryText)
 		}
 	}

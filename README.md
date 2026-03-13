@@ -39,10 +39,9 @@ To see help and available options, like highlighting slow tests:
 | `-outfile` | `""` | Save all input to the specified file |
 | `-jsonfile` | | `""` | Output the raw json output to a file |
 | `-junitfile` | | `""` | Output junit xml output to a file |
-| `-include-passed` | `false` | Include passed tests in summary |
+| `-include-skipped` | `false` | Include skipped tests in summary |
 | `-include-slow` | `false` | Include slow tests in summary |
-| `-slow-threshold` | `1s` | Set slow test threshold |
-| `-include-skipped` | `true` | Include skipped tests in summary |
+| `-slow-threshold` | `10s` | Duration threshold for slow test detection |
 | `-notty` | `false` | Don't open a tty (not typically needed) |
 | `-replay` | `false` | Use with -f, replay events with pauses to simulate original test run |
 | `-rate` | `1` | Use with -replay, set rate to replay<br>Defaults to 1 (original speed), 0.5 = double speed, 0 = no pauses |

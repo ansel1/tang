@@ -1,34 +1,26 @@
 package format
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
-	"os"
-
-	"charm.land/lipgloss/v2"
 	"github.com/ansel1/tang/results"
-	"github.com/mattn/go-isatty"
 )
 
-// formatDuration formats a duration according to the summary display rules.
-//
-// This function implements the HH:MM:SS.mmm format consistently.
-//
-// Parameters:
-//   - d: Duration to format
-//
-// Returns:
-//   - Formatted duration string
+// formatDuration formats a duration using Go's native String() with up to 3
+// fractional digits on the smallest unit (truncated, not rounded).
 func formatDuration(d time.Duration) string {
-	// Format as HH:MM:SS.mmm
-	hours := int(d.Hours())
-	minutes := int(d.Minutes()) % 60
-	seconds := int(d.Seconds()) % 60
-	milliseconds := int(d.Milliseconds()) % 1000
-
-	return fmt.Sprintf("%02d:%02d:%02d.%03d", hours, minutes, seconds, milliseconds)
+	if d <= 0 {
+		return "0s"
+	}
+	switch {
+	case d >= time.Second:
+		return d.Truncate(time.Millisecond).String()
+	case d >= time.Millisecond:
+		return d.Truncate(time.Microsecond).String()
+	default:
+		return d.Truncate(time.Nanosecond).String()
+	}
 }
 
 // Symbol constants for test results
@@ -40,9 +32,14 @@ const (
 
 // Indentation constants
 const (
-	IndentLevel1 = "  "   // 2 spaces
-	IndentLevel2 = "    " // 4 spaces
+	IndentLevel1 = "  " // 2 spaces
+	IndentLevel2 = "  " // 2 spaces
 )
+
+func testIndent(testName string) string {
+	depth := strings.Count(testName, "/")
+	return strings.Repeat(IndentLevel2, depth+1)
+}
 
 // expandTabs replaces tab characters with spaces.
 func expandTabs(s string, tabWidth int) string {
@@ -91,6 +88,35 @@ type Summary struct {
 	FastestPackage   *results.PackageResult
 	SlowestPackage   *results.PackageResult
 	MostTestsPackage *results.PackageResult
+}
+
+// SummaryOptions controls which optional detail sections appear in the
+// formatted summary output. Failures and build failures are always shown.
+type SummaryOptions struct {
+	IncludeSkipped bool // Show individual skipped test details
+	IncludeSlow    bool // Show individual slow test details
+}
+
+// HasTestDetails reports whether the summary contains test-level detail
+// messages (failures, skipped tests, slow tests, or build failures) that
+// will be rendered above the package summary table.
+func (s *Summary) HasTestDetails() bool {
+	return s.HasTestDetailsWithOptions(SummaryOptions{IncludeSkipped: true, IncludeSlow: true})
+}
+
+// HasTestDetailsWithOptions is like HasTestDetails but respects the given options
+// for which optional sections to consider.
+func (s *Summary) HasTestDetailsWithOptions(opts SummaryOptions) bool {
+	if len(s.Failures) > 0 || len(s.BuildFailures) > 0 {
+		return true
+	}
+	if opts.IncludeSkipped && len(s.Skipped) > 0 {
+		return true
+	}
+	if opts.IncludeSlow && len(s.SlowTests) > 0 {
+		return true
+	}
+	return false
 }
 
 // ComputeSummary calculates summary statistics from a Run.
@@ -191,400 +217,4 @@ func sortSlowTests(tests []*results.TestResult) {
 			}
 		}
 	}
-}
-
-// SummaryFormatter formats a Summary for display.
-type SummaryFormatter struct {
-	width        int
-	useColors    bool
-	passStyle    lipgloss.Style
-	failStyle    lipgloss.Style
-	skipStyle    lipgloss.Style
-	neutralStyle lipgloss.Style
-}
-
-// NewSummaryFormatter creates a new summary formatter.
-//
-// Colors are automatically enabled if stdout is a TTY.
-//
-// Parameters:
-//   - width: Terminal width for alignment (use 80 if unknown)
-//
-// Returns:
-//   - Pointer to new SummaryFormatter
-func NewSummaryFormatter(width int) *SummaryFormatter {
-	if width <= 0 {
-		width = 80
-	}
-	// Detect if stdout is a TTY
-	useColors := isatty.IsTerminal(os.Stdout.Fd())
-
-	return &SummaryFormatter{
-		width:        width,
-		useColors:    useColors,
-		passStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("2")), // green
-		failStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
-		skipStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
-		neutralStyle: lipgloss.NewStyle(),
-	}
-}
-
-// Format renders a complete summary as a formatted string.
-func (sf *SummaryFormatter) Format(summary *Summary) string {
-	var result string
-
-	// 1. Build errors (if any)
-	if len(summary.BuildFailures) > 0 {
-		result += sf.formatBuildErrors(summary)
-		result += "\n"
-	}
-
-	// 2. Failures (if any)
-	if len(summary.Failures) > 0 {
-		result += sf.formatFailures(summary.Failures)
-		result += "\n"
-	}
-
-	// 3. Skipped tests (if any)
-	if len(summary.Skipped) > 0 {
-		result += sf.formatSkipped(summary.Skipped)
-		result += "\n"
-	}
-
-	// 4. Slow tests (if any)
-	if len(summary.SlowTests) > 0 {
-		result += sf.formatSlowTests(summary.SlowTests)
-		result += "\n"
-	}
-
-	// 5. Package section
-	result += sf.formatPackageSection(summary.Packages)
-	result += "\n"
-
-	// 6. Overall results
-	result += sf.formatOverallResults(summary)
-	result += "\n"
-
-	return result
-}
-
-// formatSection formats a summary section with a header and footer.
-func (sf *SummaryFormatter) formatSection(title string, bodyFunc func(*strings.Builder)) string {
-	var sb strings.Builder
-	sb.WriteString(renderSectionHeader(title))
-	bodyFunc(&sb)
-	return sb.String()
-}
-
-// formatPackageSection formats the package results section.
-func (sf *SummaryFormatter) formatPackageSection(packages []*results.PackageResult) string {
-	if len(packages) == 0 {
-		return ""
-	}
-
-	return sf.formatSection("PACKAGES", func(sb *strings.Builder) {
-		// Calculate column widths for alignment
-		maxOutputLen := 0
-		maxPassedLen := 0
-		maxFailedLen := 0
-		maxSkippedLen := 0
-		maxElapsedLen := 0
-
-		for _, pkg := range packages {
-			var output string
-			if pkg.Status == results.StatusInterrupted {
-				// Add padding to align with "ok\t" prefix of completed packages
-				output = "  \t" + pkg.Name + " [interrupted]"
-			} else if pkg.Output != "" {
-				output = pkg.Output
-			} else {
-				output = pkg.Name
-			}
-			output = expandTabs(output, 8)
-
-			if len(output) > maxOutputLen {
-				maxOutputLen = len(output)
-			}
-
-			passedStr := fmt.Sprintf("%d", pkg.Counts.Passed)
-			if len(passedStr) > maxPassedLen {
-				maxPassedLen = len(passedStr)
-			}
-
-			failedStr := fmt.Sprintf("%d", pkg.Counts.Failed)
-			if len(failedStr) > maxFailedLen {
-				maxFailedLen = len(failedStr)
-			}
-
-			skippedStr := fmt.Sprintf("%d", pkg.Counts.Skipped)
-			if len(skippedStr) > maxSkippedLen {
-				maxSkippedLen = len(skippedStr)
-			}
-
-			elapsedStr := formatDuration(pkg.Elapsed)
-			if len(elapsedStr) > maxElapsedLen {
-				maxElapsedLen = len(elapsedStr)
-			}
-		}
-
-		// Format each package
-		for _, pkg := range packages {
-			symbol := SymbolPass
-			symbolStyle := sf.passStyle
-			switch pkg.Status {
-			case results.StatusFailed:
-				symbol = SymbolFail
-				symbolStyle = sf.failStyle
-			case results.StatusSkipped:
-				symbol = SymbolSkip
-				symbolStyle = sf.skipStyle
-			case results.StatusInterrupted:
-				// For interrupted packages:
-				// - Use Fail icon if there were failures
-				// - Use Skip icon if no tests were run (no pass/fail/skip)
-				// - Use Pass icon otherwise (partial success)
-				if pkg.Counts.Failed > 0 {
-					symbol = SymbolFail
-					symbolStyle = sf.failStyle
-				} else if pkg.Counts.Passed == 0 && pkg.Counts.Failed == 0 {
-					symbol = SymbolSkip
-					symbolStyle = sf.skipStyle
-				} else {
-					symbol = SymbolPass
-					symbolStyle = sf.passStyle
-				}
-			}
-
-			var output string
-			if pkg.Status == results.StatusInterrupted {
-				// Add padding to align with "ok\t" prefix of completed packages
-				output = "  \t" + pkg.Name + " [interrupted]"
-			} else if pkg.Output != "" {
-				output = pkg.Output
-			} else {
-				output = pkg.Name
-			}
-			output = expandTabs(output, 8)
-
-			// Format counts with right-aligned numbers
-			counts := ""
-			if pkg.Counts.Passed > 0 || pkg.Counts.Failed > 0 || pkg.Counts.Skipped > 0 {
-				passedStr := fmt.Sprintf("%s %*d", SymbolPass, maxPassedLen, pkg.Counts.Passed)
-				if pkg.Counts.Passed > 0 {
-					passedStr = sf.passStyle.Render(passedStr)
-				} else {
-					passedStr = sf.neutralStyle.Render(passedStr)
-				}
-
-				failedStr := fmt.Sprintf("%s %*d", SymbolFail, maxFailedLen, pkg.Counts.Failed)
-				if pkg.Counts.Failed > 0 {
-					failedStr = sf.failStyle.Render(failedStr)
-				} else {
-					failedStr = sf.neutralStyle.Render(failedStr)
-				}
-
-				skippedStr := fmt.Sprintf("%s %*d", SymbolSkip, maxSkippedLen, pkg.Counts.Skipped)
-				if pkg.Counts.Skipped > 0 {
-					skippedStr = sf.skipStyle.Render(skippedStr)
-				} else {
-					skippedStr = sf.neutralStyle.Render(skippedStr)
-				}
-
-				counts = fmt.Sprintf("%s  %s  %s", passedStr, failedStr, skippedStr)
-			}
-
-			// Format line with alignment
-			if counts != "" {
-				fmt.Fprintf(sb, "%s %-*s  %s  %*s\n",
-					symbolStyle.Render(symbol),
-					maxOutputLen, output,
-					counts,
-					maxElapsedLen, formatDuration(pkg.Elapsed))
-			} else {
-				countsWidth := 3 + 7 + maxPassedLen + maxFailedLen + maxSkippedLen
-				emptyCounts := fmt.Sprintf("%*s", countsWidth, "")
-
-				fmt.Fprintf(sb, "%s %-*s  %s  %*s\n",
-					symbolStyle.Render(symbol),
-					maxOutputLen, output,
-					emptyCounts,
-					maxElapsedLen, formatDuration(pkg.Elapsed))
-			}
-		}
-	})
-}
-
-// formatOverallResults formats the overall statistics section.
-func (sf *SummaryFormatter) formatOverallResults(summary *Summary) string {
-	return sf.formatSection("OVERALL RESULTS", func(sb *strings.Builder) {
-		// Calculate percentages
-		passPercent := 0.0
-		failPercent := 0.0
-		skipPercent := 0.0
-		if summary.TotalTests > 0 {
-			passPercent = float64(summary.PassedTests) / float64(summary.TotalTests) * 100
-			failPercent = float64(summary.FailedTests) / float64(summary.TotalTests) * 100
-			skipPercent = float64(summary.SkippedTests) / float64(summary.TotalTests) * 100
-		}
-
-		// Format icons with colors if TTY
-		passIcon := SymbolPass
-		failIcon := SymbolFail
-		skipIcon := SymbolSkip
-		if sf.useColors {
-			passIcon = sf.passStyle.Render(SymbolPass)
-			failIcon = sf.failStyle.Render(SymbolFail)
-			skipIcon = sf.skipStyle.Render(SymbolSkip)
-		}
-
-		fmt.Fprintf(sb, "Total tests:    %d\n", summary.TotalTests)
-		fmt.Fprintf(sb, "Passed:         %d %s (%.1f%%)\n", summary.PassedTests, passIcon, passPercent)
-		fmt.Fprintf(sb, "Failed:         %d %s (%.1f%%)\n", summary.FailedTests, failIcon, failPercent)
-		fmt.Fprintf(sb, "Skipped:        %d %s (%.1f%%)\n", summary.SkippedTests, skipIcon, skipPercent)
-		fmt.Fprintf(sb, "Total time:     %s\n", formatDuration(summary.TotalTime))
-		fmt.Fprintf(sb, "Packages:       %d\n", summary.PackageCount)
-	})
-}
-
-// formatBuildErrors formats the build errors section.
-func (sf *SummaryFormatter) formatBuildErrors(summary *Summary) string {
-	if len(summary.BuildFailures) == 0 {
-		return ""
-	}
-
-	return sf.formatSection("ERRORS", func(sb *strings.Builder) {
-		for i, pkg := range summary.BuildFailures {
-			if i > 0 {
-				sb.WriteString("\n")
-			}
-			sb.WriteString(pkg.Name + " [build failed]\n")
-
-			// Get build error output for this package
-			if summary.Run != nil && pkg.FailedBuild != "" {
-				buildErrors := summary.Run.GetBuildErrors(pkg.FailedBuild)
-				for _, be := range buildErrors {
-					if be.Action == "build-output" && be.Output != "" {
-						// Split output into lines and indent each one
-						lines := strings.Split(strings.TrimRight(be.Output, "\n"), "\n")
-						for _, line := range lines {
-							if line != "" {
-								sb.WriteString(IndentLevel1 + ensureReset(line) + "\n")
-							}
-						}
-					}
-				}
-			}
-		}
-	})
-}
-
-// formatFailures formats the failures section.
-func (sf *SummaryFormatter) formatFailures(failures []*results.TestResult) string {
-	if len(failures) == 0 {
-		return ""
-	}
-
-	return sf.formatSection("FAILURES", func(sb *strings.Builder) {
-		// Group failures by package
-		packageMap := make(map[string][]*results.TestResult)
-		packageOrder := make([]string, 0)
-		for _, failure := range failures {
-			if _, exists := packageMap[failure.Package]; !exists {
-				packageOrder = append(packageOrder, failure.Package)
-			}
-			packageMap[failure.Package] = append(packageMap[failure.Package], failure)
-		}
-
-		// Format each package's failures
-		for i, pkg := range packageOrder {
-			if i > 0 {
-				sb.WriteString("\n")
-			}
-			sb.WriteString(pkg + "\n")
-
-			for _, failure := range packageMap[pkg] {
-				sb.WriteString(IndentLevel1 + failure.Name + "\n")
-
-				// Truncate output to 10 lines
-				outputLines := failure.Output
-				if len(outputLines) > 10 {
-					outputLines = outputLines[:10]
-				}
-
-				for _, line := range outputLines {
-					sb.WriteString(IndentLevel2 + ensureReset(line) + "\n")
-				}
-			}
-		}
-	})
-}
-
-// formatSkipped formats the skipped tests section.
-func (sf *SummaryFormatter) formatSkipped(skipped []*results.TestResult) string {
-	if len(skipped) == 0 {
-		return ""
-	}
-
-	return sf.formatSection("SKIPPED", func(sb *strings.Builder) {
-		// Group skipped tests by package
-		packageMap := make(map[string][]*results.TestResult)
-		packageOrder := make([]string, 0)
-		for _, skip := range skipped {
-			if _, exists := packageMap[skip.Package]; !exists {
-				packageOrder = append(packageOrder, skip.Package)
-			}
-			packageMap[skip.Package] = append(packageMap[skip.Package], skip)
-		}
-
-		// Format each package's skipped tests
-		for i, pkg := range packageOrder {
-			if i > 0 {
-				sb.WriteString("\n")
-			}
-			sb.WriteString(pkg + "\n")
-
-			for _, skip := range packageMap[pkg] {
-				sb.WriteString(IndentLevel1 + skip.Name + "\n")
-
-				// Truncate output to 3 lines
-				outputLines := skip.Output
-				if len(outputLines) > 3 {
-					outputLines = outputLines[:3]
-				}
-
-				for _, line := range outputLines {
-					sb.WriteString(IndentLevel2 + ensureReset(line) + "\n")
-				}
-			}
-		}
-	})
-}
-
-// formatSlowTests formats the slow tests section.
-func (sf *SummaryFormatter) formatSlowTests(slowTests []*results.TestResult) string {
-	if len(slowTests) == 0 {
-		return ""
-	}
-
-	return sf.formatSection("SLOW TESTS (>10s)", func(sb *strings.Builder) {
-		// Calculate column widths for alignment
-		maxNameLen := 0
-		for _, test := range slowTests {
-			if len(test.Name) > maxNameLen {
-				maxNameLen = len(test.Name)
-			}
-		}
-
-		// Format each slow test
-		for _, test := range slowTests {
-			fmt.Fprintf(sb, "%-*s  %s\n",
-				maxNameLen, test.Name,
-				formatDuration(test.Elapsed))
-			fmt.Fprintf(sb, "  %s\n", test.Package)
-		}
-	})
-}
-
-func renderSectionHeader(header string) string {
-	return header + "\n" + strings.Repeat("-", len(header)) + "\n"
 }

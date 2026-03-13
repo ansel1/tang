@@ -161,7 +161,7 @@ func TestHierarchicalRendering(t *testing.T) {
 		contains string
 	}{
 		{"Package name", "github.com/test/pkg1"},
-		{"Pass count", "✓ 1"},
+		{"Pass count", "✓1"},
 		{"Separator line", "--------"},
 	}
 
@@ -231,8 +231,7 @@ func TestRunningPackagesShowTests(t *testing.T) {
 		{"Package name", "github.com/test/pkg1"},
 		{"Test name", "TestBar"},
 		{"Test output", "bar_test.go:20"},
-		{"Running indicator", "RUNNING:"},
-		{"Running count", "1 running"},
+		{"Running indicator", "RUNNING"},
 	}
 
 	for _, test := range tests {
@@ -333,23 +332,17 @@ func TestBoldRunningEntities(t *testing.T) {
 
 	output := m.String()
 
-	// Define ANSI bold code
-	const bold = "\x1b[1m"
+	const brightWhiteBold = "\x1b[1;97m"
 
-	// Check for bolded elements
-	// 1. Package name should be bolded
-	if !strings.Contains(output, bold+"github.com/test/running-pkg") {
-		t.Errorf("Expected running package name to be bolded.\nGot:\n%s", output)
+	if !strings.Contains(output, brightWhiteBold+"github.com/test/running-pkg") {
+		t.Errorf("Expected running package name to be bright white bold.\nGot:\n%s", output)
 	}
 
-	// 2. Test name should be bolded
-	if !strings.Contains(output, bold+"  === RUN   TestRunning") {
-		t.Errorf("Expected running test summary to be bolded.\nGot:\n%s", output)
+	if !strings.Contains(output, brightWhiteBold+"  === RUN   TestRunning") {
+		t.Errorf("Expected running test summary to be bright white bold.\nGot:\n%s", output)
 	}
 
-	// 3. Summary line should be bolded (RUNNING status)
-	// The summary format is "RUNNING: X passed, ..."
-	if !strings.Contains(output, bold+"RUNNING:") {
-		t.Errorf("Expected summary line to be bolded.\nGot:\n%s", output)
+	if !strings.Contains(output, brightWhiteBold+"RUNNING") {
+		t.Errorf("Expected summary line to be bright white bold.\nGot:\n%s", output)
 	}
 }

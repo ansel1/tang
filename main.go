@@ -33,6 +33,9 @@ func run() int {
 	notty := flag.Bool("notty", false, "Don't use TUI, output to stdout")
 	replay := flag.Bool("replay", false, "Replay events with timing from original test run (requires -f)")
 	rate := flag.Float64("rate", 1.0, "Replay rate multiplier (0=instant, 1=original speed, 0.5=2x speed)")
+	slowThreshold := flag.Duration("slow-threshold", 10*time.Second, "Duration threshold for slow test detection")
+	includeSkipped := flag.Bool("include-skipped", false, "Include skipped tests in summary")
+	includeSlow := flag.Bool("include-slow", false, "Include slow tests in summary")
 	flag.Parse()
 
 	// Validate flag combinations
@@ -151,9 +154,14 @@ func run() int {
 	// 2. -f is used without -replay (reading from file without replay)
 	skipTUI := *notty || (*infile != "" && !*replay)
 
+	summaryOpts := format.SummaryOptions{
+		IncludeSkipped: *includeSkipped,
+		IncludeSlow:    *includeSlow,
+	}
+
 	if skipTUI {
 		// Simple output mode (no TUI)
-		simple := output.NewSimpleOutput(os.Stdout, collector)
+		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts)
 		if err := simple.ProcessEvents(engineEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			return 1
@@ -171,23 +179,22 @@ func run() int {
 		var eventCount int
 
 		printSummary := func() {
-			// finish the current run, in case it was interrupted
 			collector.Finish()
 
 			lastRun := collector.State().MostRecentRun()
 			if lastRun != nil {
-				// Reprint non-test output
 				for _, line := range lastRun.NonTestOutput {
 					fmt.Print(line)
 				}
-				fmt.Print("\n")
-				formatter := format.NewSummaryFormatter(80) // 80 is fallback width, should ideally be dynamic
-				summary := format.ComputeSummary(lastRun, 10*time.Second)
+				summary := format.ComputeSummary(lastRun, *slowThreshold)
 				if summary != nil {
-					fmt.Println(formatter.Format(summary))
+					summaryText := format.NewSummaryFormatter(80, summaryOpts).Format(summary)
+					if len(lastRun.NonTestOutput) > 0 || summary.HasTestDetailsWithOptions(summaryOpts) {
+						fmt.Print("\n")
+					}
+					fmt.Println(summaryText)
 				}
 			}
-
 		}
 
 		// Consume events
@@ -203,6 +210,7 @@ func run() int {
 				if collector.State().CurrentRun != nil {
 					// Run started! Start TUI.
 					m := tui.NewModel(*replay, *rate, collector)
+					m.SlowThreshold = *slowThreshold
 					p = tea.NewProgram(m)
 					pDone = make(chan struct{})
 
@@ -238,8 +246,8 @@ func run() int {
 				collector.Unlock()
 
 				if currentRun == nil {
-					// Run finished! Stop TUI.
-					p.Quit()
+					// Run finished! Quit TUI with an empty final render.
+					p.Send(tui.QuitMsg{})
 					<-pDone
 					p = nil
 					pDone = nil
@@ -264,7 +272,7 @@ func run() int {
 
 		// Ensure TUI is closed if loop finishes
 		if p != nil {
-			p.Quit()
+			p.Send(tui.QuitMsg{})
 			<-pDone
 		}
 

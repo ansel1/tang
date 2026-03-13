@@ -13,7 +13,6 @@ import (
 func TestFormatBuildErrors(t *testing.T) {
 	formatter := NewSummaryFormatter(80)
 
-	// Create a run with build events
 	run := results.NewRun(1)
 	run.BuildEvents = []parser.BuildEvent{
 		{
@@ -37,7 +36,6 @@ func TestFormatBuildErrors(t *testing.T) {
 		},
 	}
 
-	// Create a package with a build failure
 	pkg1 := &results.PackageResult{
 		Name:        "github.com/user/project/broken",
 		Status:      results.StatusFailed,
@@ -45,13 +43,16 @@ func TestFormatBuildErrors(t *testing.T) {
 		Elapsed:     0,
 	}
 
-	// Create a normal failing package (test failure, not build failure)
 	pkg2 := &results.PackageResult{
 		Name:    "github.com/user/project/working",
 		Status:  results.StatusFailed,
 		Elapsed: 2 * time.Second,
 	}
 	pkg2.Counts.Failed = 1
+
+	run.Packages["github.com/user/project/broken"] = pkg1
+	run.Packages["github.com/user/project/working"] = pkg2
+	run.PackageOrder = []string{"github.com/user/project/broken", "github.com/user/project/working"}
 
 	summary := &Summary{
 		Packages:      []*results.PackageResult{pkg1, pkg2},
@@ -65,30 +66,17 @@ func TestFormatBuildErrors(t *testing.T) {
 
 	output := formatter.Format(summary)
 
-	// Verify ERRORS section is present
-	if !strings.Contains(output, "ERRORS") {
-		t.Error("Expected ERRORS section")
-	}
-	if !strings.Contains(output, "github.com/user/project/broken [build failed]") {
-		t.Error("Expected package with build failure in ERRORS section")
-	}
-
-	// Verify build error output is included
 	if !strings.Contains(output, "syntax error: unexpected name") {
-		t.Error("Expected build error message in ERRORS section")
+		t.Error("Expected build error message")
 	}
 	if !strings.Contains(output, "undefined: someFunc") {
-		t.Error("Expected second build error message in ERRORS section")
+		t.Error("Expected second build error message")
 	}
-
-	// Verify ERRORS section comes before PACKAGES section
-	errorsIdx := strings.Index(output, "ERRORS")
-	packagesIdx := strings.Index(output, "PACKAGES")
-	if errorsIdx == -1 || packagesIdx == -1 {
-		t.Error("Expected both ERRORS and PACKAGES sections")
+	if !strings.Contains(output, "github.com/user/project/broken") {
+		t.Error("Expected broken package name")
 	}
-	if errorsIdx > packagesIdx {
-		t.Error("Expected ERRORS section to come before PACKAGES section")
+	if !strings.Contains(output, "FAIL") {
+		t.Error("Expected FAIL status for broken package")
 	}
 }
 

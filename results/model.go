@@ -85,9 +85,10 @@ type PackageResult struct {
 		Skipped int // Number of skipped tests
 		Running int // Number of running tests
 	}
-	Output      string   // Final output line (e.g., coverage information)
-	TestOrder   []string // Chronological order of test starts
-	FailedBuild string   // ImportPath of failed build (if any)
+	Output       string   // Final output line (e.g., coverage information)
+	TestOrder    []string // Chronological order of test starts
+	FailedBuild  string   // ImportPath of failed build (if any)
+	PanicTestKey string   // "package/test" key of the test carrying the timeout panic output
 }
 
 // TestResult represents the result of a single test.
@@ -100,6 +101,7 @@ type TestResult struct {
 	Elapsed       time.Duration
 	Output        []string // Failure/skip messages
 	SummaryLine   string   // The "===" or "---" line
+	TimedOut      bool     // True if the test was interrupted by a timeout panic
 }
 
 func (t *TestResult) Running() bool {
