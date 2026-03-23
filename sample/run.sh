@@ -49,17 +49,17 @@ ALL_PKGS="./..."
 case "$MODE" in
     all)
         echo "=== Running all packages (includes build failure) ==="
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" "${TANG_EXTRA[@]}"
+        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
         ;;
 
     notty)
         echo "=== Running all packages in plain-text mode ==="
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -notty "${TANG_EXTRA[@]}"
+        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -notty ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
         ;;
 
     save)
         echo "=== Running tests and saving output to sample.out ==="
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -outfile sample.out "${TANG_EXTRA[@]}"
+        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -outfile sample.out ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
         echo ""
         echo "Saved to sample.out — replay with: ./run.sh replay"
         ;;
@@ -70,7 +70,7 @@ case "$MODE" in
             exit 1
         fi
         echo "=== Replaying saved test output ==="
-        "$TANG" -f sample.out -replay -rate 0.5 "${TANG_EXTRA[@]}"
+        "$TANG" -f sample.out -replay -rate 0.5 ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
         ;;
 
     multi)
@@ -79,17 +79,17 @@ case "$MODE" in
             sleep 1
             echo "=== Running passing packages again ==="
             go test -json -count=1 $GOOD_PKGS 2>&1
-        ) | "$TANG" "${TANG_EXTRA[@]}"
+        ) | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
         ;;
 
     passing)
         echo "=== Running only passing packages ==="
-        go test -count=1 -json $GOOD_PKGS 2>&1 | "$TANG" "${TANG_EXTRA[@]}"
+        go test -count=1 -json $GOOD_PKGS 2>&1 | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
         ;;
 
     junit)
         echo "=== Running tests with JUnit XML output ==="
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -junitout results.xml -notty "${TANG_EXTRA[@]}"
+        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -junitout results.xml -notty ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
         echo ""
         echo "JUnit XML written to results.xml"
         ;;
@@ -120,17 +120,17 @@ case "$MODE" in
                 -outfile "$DIR/tang_outfile.out" \
                 -jsonfile "$DIR/tang_jsonfile.out" \
                 -junitout "$DIR/tang_junitfile.xml" \
-                "${TANG_EXTRA[@]}" \
+                ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} \
             >"$DIR/tang_notty.out" || true
 
         echo "  tang_notty_verbose.out"
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -notty -v "${TANG_EXTRA[@]}" >"$DIR/tang_notty_verbose.out" || true
+        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -notty -v ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} >"$DIR/tang_notty_verbose.out" || true
 
         echo "  tang.out"
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" "${TANG_EXTRA[@]}" >"$DIR/tang.out" || true
+        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} >"$DIR/tang.out" || true
 
         echo "  tang_verbose.out"
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -v "${TANG_EXTRA[@]}" >"$DIR/tang_verbose.out" || true
+        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -v ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} >"$DIR/tang_verbose.out" || true
 
         echo ""
         echo "Artifacts written to $DIR/:"
