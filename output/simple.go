@@ -21,17 +21,23 @@ type SimpleOutput struct {
 	verbose        bool
 
 	// Per-event state (initialized by Init, used by ProcessEvent)
-	writers        map[string]*packageWriter
-	pkgSummaryLine map[string]string
-	lastActiveTest map[string]string
-	pendingResults map[string]map[string][]pendingResult
-	focusedPkg     string
-	completedQueue []string
+	writers                   map[string]*packageWriter
+	pkgSummaryLine            map[string]string
+	lastActiveTest            map[string]string
+	pendingResults            map[string]map[string][]pendingResult
+	pendingNonVerboseFailures map[string]map[string][]pendingNonVerboseFailure
+	focusedPkg                string
+	completedQueue            []string
 }
 
 type pendingResult struct {
 	test string
 	line string
+}
+
+type pendingNonVerboseFailure struct {
+	test  string
+	lines []string
 }
 
 // packageWriter buffers output for a single package. When direct is non-nil
@@ -100,6 +106,7 @@ func (s *SimpleOutput) Init() {
 	s.pkgSummaryLine = make(map[string]string)
 	s.lastActiveTest = make(map[string]string)
 	s.pendingResults = make(map[string]map[string][]pendingResult)
+	s.pendingNonVerboseFailures = make(map[string]map[string][]pendingNonVerboseFailure)
 	s.focusedPkg = ""
 	s.completedQueue = nil
 }
@@ -253,6 +260,8 @@ func (s *SimpleOutput) flushPackage(
 
 // handleNonVerboseTestFailure formats and writes a single test's failure
 // output through the packageWriter when the test's "fail" event arrives.
+// Subtest failures are buffered and emitted under their parent test to
+// match the ordering of go test output (parent first, then subtests).
 func (s *SimpleOutput) handleNonVerboseTestFailure(
 	te parser.TestEvent,
 	writers map[string]*packageWriter,
@@ -268,15 +277,56 @@ func (s *SimpleOutput) handleNonVerboseTestFailure(
 		return
 	}
 
-	w := getWriter(writers, te.Package)
+	// Format the output lines for this test
 	depth := strings.Count(te.Test, "/")
 	indent := strings.Repeat("    ", depth)
-
+	var lines []string
 	if tr.SummaryLine != "" {
-		w.appendLine(fmt.Sprintf("%s%s\n", indent, tr.SummaryLine))
+		lines = append(lines, fmt.Sprintf("%s%s\n", indent, tr.SummaryLine))
 	}
 	for _, line := range tr.Output {
-		w.appendLine(fmt.Sprintf("%s%s\n", indent, line))
+		lines = append(lines, fmt.Sprintf("%s%s\n", indent, line))
+	}
+
+	if strings.Contains(te.Test, "/") {
+		// Subtest: buffer under immediate parent for grouped emission
+		parent := parentTest(te.Test)
+		if s.pendingNonVerboseFailures[te.Package] == nil {
+			s.pendingNonVerboseFailures[te.Package] = make(map[string][]pendingNonVerboseFailure)
+		}
+		s.pendingNonVerboseFailures[te.Package][parent] = append(
+			s.pendingNonVerboseFailures[te.Package][parent],
+			pendingNonVerboseFailure{test: te.Test, lines: lines},
+		)
+	} else {
+		// Top-level test: emit now, then emit buffered children
+		w := getWriter(writers, te.Package)
+		for _, line := range lines {
+			w.appendLine(line)
+		}
+		s.emitNonVerboseChildren(writers, te.Package, te.Test)
+	}
+}
+
+// emitNonVerboseChildren recursively emits buffered subtest failures
+// under their parent, ensuring parent-first ordering.
+func (s *SimpleOutput) emitNonVerboseChildren(
+	writers map[string]*packageWriter,
+	pkg string,
+	parentTestName string,
+) {
+	pending := s.pendingNonVerboseFailures[pkg]
+	if pending == nil {
+		return
+	}
+	children := pending[parentTestName]
+	delete(pending, parentTestName)
+	w := getWriter(writers, pkg)
+	for _, child := range children {
+		for _, line := range child.lines {
+			w.appendLine(line)
+		}
+		s.emitNonVerboseChildren(writers, pkg, child.test)
 	}
 }
 
