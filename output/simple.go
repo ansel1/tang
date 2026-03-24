@@ -19,6 +19,14 @@ type SimpleOutput struct {
 	slowThreshold  time.Duration
 	summaryOptions format.SummaryOptions
 	verbose        bool
+
+	// Per-event state (initialized by Init, used by ProcessEvent)
+	writers        map[string]*packageWriter
+	pkgSummaryLine map[string]string
+	lastActiveTest map[string]string
+	pendingResults map[string]map[string][]pendingResult
+	focusedPkg     string
+	completedQueue []string
 }
 
 type pendingResult struct {
@@ -85,6 +93,97 @@ func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold ti
 	}
 }
 
+// Init initializes the per-event processing state. Must be called before
+// ProcessEvent. It is called automatically by ProcessEvents.
+func (s *SimpleOutput) Init() {
+	s.writers = make(map[string]*packageWriter)
+	s.pkgSummaryLine = make(map[string]string)
+	s.lastActiveTest = make(map[string]string)
+	s.pendingResults = make(map[string]map[string][]pendingResult)
+	s.focusedPkg = ""
+	s.completedQueue = nil
+}
+
+// ProcessEvent handles a single engine event. It does NOT call
+// collector.Push — the caller is responsible for that. This allows
+// ProcessEvent to be used in TUI mode where the main loop already
+// pushes events to the collector.
+func (s *SimpleOutput) ProcessEvent(evt engine.Event) {
+	switch evt.Type {
+	case engine.EventRawLine:
+		_, _ = fmt.Fprint(s.writer, string(evt.RawLine))
+
+	case engine.EventBuild:
+		if evt.BuildEvent.Action == "build-output" && evt.BuildEvent.Output != "" {
+			_, _ = fmt.Fprint(s.writer, evt.BuildEvent.Output)
+		}
+
+	case engine.EventTest:
+		te := evt.TestEvent
+		if te.Test != "" {
+			if s.verbose {
+				if te.Action == "output" && te.Output != "" {
+					s.handleVerboseTestOutput(te, s.writers, s.lastActiveTest, s.pendingResults)
+				}
+			} else if te.Action == "fail" {
+				s.handleNonVerboseTestFailure(te, s.writers)
+			}
+		} else {
+			completedPkg := s.handlePackageLevelEvent(te, s.writers, s.pkgSummaryLine)
+			if completedPkg != "" {
+				s.completedQueue = append(s.completedQueue, completedPkg)
+			}
+		}
+	}
+
+	// Pick initial focus: choose the package with most buffered output
+	if s.focusedPkg == "" {
+		s.focusedPkg = pickFocus(s.writers)
+		if s.focusedPkg != "" {
+			s.writers[s.focusedPkg].flush(s.writer)
+			s.writers[s.focusedPkg].direct = s.writer
+		}
+	}
+
+	// Check if focused package completed
+	if s.focusedPkg != "" {
+		if idx := slices.Index(s.completedQueue, s.focusedPkg); idx >= 0 {
+			// Write focused package's summary line
+			if line, ok := s.pkgSummaryLine[s.focusedPkg]; ok {
+				_, _ = fmt.Fprint(s.writer, line)
+				delete(s.pkgSummaryLine, s.focusedPkg)
+			}
+			delete(s.writers, s.focusedPkg)
+
+			// Remove focused pkg from queue
+			s.completedQueue = slices.Delete(s.completedQueue, idx, idx+1)
+
+			// Flush all other completed packages (dump their buffers)
+			for _, pkg := range s.completedQueue {
+				s.flushPackage(pkg, s.writers, s.pkgSummaryLine)
+			}
+			s.completedQueue = s.completedQueue[:0]
+
+			// Pick new focus
+			s.focusedPkg = pickFocus(s.writers)
+			if s.focusedPkg != "" {
+				s.writers[s.focusedPkg].flush(s.writer)
+				s.writers[s.focusedPkg].direct = s.writer
+			}
+		}
+	}
+}
+
+// Flush emits any remaining buffered package output. Call this after all
+// events have been processed (e.g., when the event stream ends or the
+// run finishes). It does NOT write the summary.
+func (s *SimpleOutput) Flush() {
+	for _, pkg := range s.completedQueue {
+		s.flushPackage(pkg, s.writers, s.pkgSummaryLine)
+	}
+	s.completedQueue = s.completedQueue[:0]
+}
+
 // ProcessEvents consumes engine events and writes output progressively.
 //
 // One package at a time is "focused": its output streams incrementally to
@@ -96,90 +195,14 @@ func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold ti
 // In verbose mode, all test output is streamed for the focused package.
 // In non-verbose mode, test failure output is streamed as each test fails.
 func (s *SimpleOutput) ProcessEvents(events <-chan engine.Event) error {
-	writers := make(map[string]*packageWriter)
-	pkgSummaryLine := make(map[string]string)
-
-	// State for verbose mode: reconstruct go test -v formatting from JSON events
-	lastActiveTest := make(map[string]string)                    // pkg -> last test that produced visible output
-	pendingResults := make(map[string]map[string][]pendingResult) // pkg -> parent test -> buffered child results
-
-	// Streaming state: one focused package streams incrementally, others buffer
-	var focusedPkg string
-	var completedQueue []string
+	s.Init()
 
 	for evt := range events {
 		s.collector.Push(evt)
-
-		switch evt.Type {
-		case engine.EventRawLine:
-			_, _ = fmt.Fprint(s.writer, string(evt.RawLine))
-
-		case engine.EventBuild:
-			if evt.BuildEvent.Action == "build-output" && evt.BuildEvent.Output != "" {
-				_, _ = fmt.Fprint(s.writer, evt.BuildEvent.Output)
-			}
-
-		case engine.EventTest:
-			te := evt.TestEvent
-			if te.Test != "" {
-				if s.verbose {
-					if te.Action == "output" && te.Output != "" {
-						s.handleVerboseTestOutput(te, writers, lastActiveTest, pendingResults)
-					}
-				} else if te.Action == "fail" {
-					s.handleNonVerboseTestFailure(te, writers)
-				}
-			} else {
-				completedPkg := s.handlePackageLevelEvent(te, writers, pkgSummaryLine)
-				if completedPkg != "" {
-					completedQueue = append(completedQueue, completedPkg)
-				}
-			}
-		}
-
-		// Pick initial focus: choose the package with most buffered output
-		if focusedPkg == "" {
-			focusedPkg = pickFocus(writers)
-			if focusedPkg != "" {
-				writers[focusedPkg].flush(s.writer)
-				writers[focusedPkg].direct = s.writer
-			}
-		}
-
-		// Check if focused package completed
-		if focusedPkg != "" {
-			if idx := slices.Index(completedQueue, focusedPkg); idx >= 0 {
-				// Write focused package's summary line
-				if line, ok := pkgSummaryLine[focusedPkg]; ok {
-					_, _ = fmt.Fprint(s.writer, line)
-					delete(pkgSummaryLine, focusedPkg)
-				}
-				delete(writers, focusedPkg)
-
-				// Remove focused pkg from queue
-				completedQueue = slices.Delete(completedQueue, idx, idx+1)
-
-				// Flush all other completed packages (dump their buffers)
-				for _, pkg := range completedQueue {
-					s.flushPackage(pkg, writers, pkgSummaryLine)
-				}
-				completedQueue = completedQueue[:0]
-
-				// Pick new focus
-				focusedPkg = pickFocus(writers)
-				if focusedPkg != "" {
-					writers[focusedPkg].flush(s.writer)
-					writers[focusedPkg].direct = s.writer
-				}
-			}
-		}
+		s.ProcessEvent(evt)
 	}
 
-	// Flush any remaining completed packages (e.g., stream interrupted)
-	for _, pkg := range completedQueue {
-		s.flushPackage(pkg, writers, pkgSummaryLine)
-	}
-
+	s.Flush()
 	return s.writeSummary()
 }
 

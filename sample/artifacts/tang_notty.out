@@ -1,37 +1,37 @@
 # github.com/ansel1/tang/sample/broken
 broken/broken.go:7:1: syntax error: unexpected }, expected expression
-FAIL	github.com/ansel1/tang/sample/broken [build failed]
-?   	github.com/ansel1/tang/sample/models	[no test files]
 --- FAIL: TestProcessItemsPanic (0.60s)
     panicker_test.go:40: processing first batch of valid items...
     panicker_test.go:43: first batch OK, now processing batch with empty item...
 panic: empty item at index 1 [recovered, repanicked]
 
-goroutine 24 [running]:
-testing.tRunner.func1.2({0x101051a60, 0x41c2d10283b0})
+goroutine 4 [running]:
+testing.tRunner.func1.2({0x102591a60, 0x7495037202d0})
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1974 +0x1a0
 testing.tRunner.func1()
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1977 +0x318
-panic({0x101051a60?, 0x41c2d10283b0?})
+panic({0x102591a60?, 0x7495037202d0?})
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/panic.go:860 +0x12c
-github.com/ansel1/tang/sample/panicker.ProcessItems({0x41c2d1038ef8?, 0x3, 0x3d?})
+github.com/ansel1/tang/sample/panicker.ProcessItems({0x749503717ef8?, 0x3, 0x3d?})
 	/Users/regan/dev/tang/sample/panicker/panicker.go:12 +0x20c
-github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x41c2d10766c8)
+github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x74950367e248)
 	/Users/regan/dev/tang/sample/panicker/panicker_test.go:45 +0xf0
-testing.tRunner(0x41c2d10766c8, 0x101083f10)
+testing.tRunner(0x74950367e248, 0x1025c3f10)
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4
 created by testing.(*T).Run in goroutine 1
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8
-FAIL	github.com/ansel1/tang/sample/panicker	2.331s
-ok  	github.com/ansel1/tang/sample/mathutil	5.257s
---- FAIL: TestValidatePassword (0.00s)
+FAIL	github.com/ansel1/tang/sample/panicker	2.032s
+FAIL	github.com/ansel1/tang/sample/broken [build failed]
+?   	github.com/ansel1/tang/sample/models	[no test files]
     --- FAIL: TestValidatePassword/missing_special_FAILS (0.00s)
         auth_test.go:130: Issues found: [must contain a special character]
         auth_test.go:133: expected 0 issues but got 1: [must contain a special character]
-FAIL	github.com/ansel1/tang/sample/auth	8.083s
-ok  	github.com/ansel1/tang/sample/cache	12.002s
-ok  	github.com/ansel1/tang/sample/stringutil	14.709s
-ok  	github.com/ansel1/tang/sample/validator	16.872s
+--- FAIL: TestValidatePassword (0.00s)
+FAIL	github.com/ansel1/tang/sample/auth	7.915s
+ok  	github.com/ansel1/tang/sample/mathutil	3.961s
+ok  	github.com/ansel1/tang/sample/cache	11.891s
+ok  	github.com/ansel1/tang/sample/stringutil	14.287s
+ok  	github.com/ansel1/tang/sample/validator	16.693s
 
 === github.com/ansel1/tang/sample/broken
   [31m# github.com/ansel1/tang/sample/broken[0m[m
@@ -49,30 +49,30 @@ ok  	github.com/ansel1/tang/sample/validator	16.872s
       panicker_test.go:43: first batch OK, now processing batch with empty item...[0m
       panic: empty item at index 1 [recovered, repanicked][0m
       [0m
-      goroutine 24 [running]:[0m
-      testing.tRunner.func1.2({0x101051a60, 0x41c2d10283b0})[0m
+      goroutine 4 [running]:[0m
+      testing.tRunner.func1.2({0x102591a60, 0x7495037202d0})[0m
       /opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1974 +0x1a0[0m
       testing.tRunner.func1()[0m
       /opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1977 +0x318[0m
-      panic({0x101051a60?, 0x41c2d10283b0?})[0m
+      panic({0x102591a60?, 0x7495037202d0?})[0m
       /opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/panic.go:860 +0x12c[0m
-      github.com/ansel1/tang/sample/panicker.ProcessItems({0x41c2d1038ef8?, 0x3, 0x3d?})[0m
+      github.com/ansel1/tang/sample/panicker.ProcessItems({0x749503717ef8?, 0x3, 0x3d?})[0m
       /Users/regan/dev/tang/sample/panicker/panicker.go:12 +0x20c[0m
-      github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x41c2d10766c8)[0m
+      github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x74950367e248)[0m
       /Users/regan/dev/tang/sample/panicker/panicker_test.go:45 +0xf0[0m
-      testing.tRunner(0x41c2d10766c8, 0x101083f10)[0m
+      testing.tRunner(0x74950367e248, 0x1025c3f10)[0m
       /opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4[0m
       created by testing.(*T).Run in goroutine 1[0m
       /opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8[0m
 
-[1;31mFAIL[m    [31mgithub.com/ansel1/tang/sample/auth 8.083s           [m  [32m✓ 17[m [31m✗2[m [33m∅1[m = 20   8.084s
+[1;31mFAIL[m    [31mgithub.com/ansel1/tang/sample/auth 7.915s           [m  [32m✓ 17[m [31m✗2[m [33m∅1[m = 20   7.915s
 [1;31mFAIL[m    [31mgithub.com/ansel1/tang/sample/broken [build failed] [m                 
-[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/cache 12.002s         [m  [32m✓ 12[m ✗0 ∅0 = 12  12.002s
-[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/mathutil 5.257s       [m  [32m✓ 38[m ✗0 ∅0 = 38   5.258s
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/cache 11.891s         [m  [32m✓ 12[m ✗0 ∅0 = 12  11.892s
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/mathutil 3.961s       [m  [32m✓ 38[m ✗0 ∅0 = 38   3.961s
 [1;33m?   [m    [33mgithub.com/ansel1/tang/sample/models [no test files][m                 
-[1;31mFAIL[m    [31mgithub.com/ansel1/tang/sample/panicker 2.331s       [m  [32m✓  3[m [31m✗1[m ∅0 =  4   2.331s
-[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/stringutil 14.709s    [m  [32m✓ 26[m ✗0 [33m∅2[m = 28  14.709s
-[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/validator 16.872s     [m  [32m✓ 33[m ✗0 [33m∅1[m = 34  16.872s
+[1;31mFAIL[m    [31mgithub.com/ansel1/tang/sample/panicker 2.032s       [m  [32m✓  3[m [31m✗1[m ∅0 =  4   2.032s
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/stringutil 14.287s    [m  [32m✓ 26[m ✗0 [33m∅2[m = 28  14.287s
+[1;32mok  [m    [32mgithub.com/ansel1/tang/sample/validator 16.693s     [m  [32m✓ 33[m ✗0 [33m∅1[m = 34  16.693s
 --------------------------------------------------------------------------------------
-(8 packages)                                                  [32m✓129[m [31m✗3[m [33m∅4[m =136  16.876s
+(8 packages)                                                  [32m✓129[m [31m✗3[m [33m∅4[m =136  16.701s
 

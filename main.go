@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io"
@@ -179,8 +180,19 @@ func run() int {
 		var pDone chan struct{}
 		var eventCount int
 
+		// Buffer go test output to print after TUI exits
+		var outputBuf bytes.Buffer
+		simpleOut := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose)
+		simpleOut.Init()
+
 		printSummary := func() {
 			collector.Finish()
+
+			// Print buffered go test output
+			simpleOut.Flush()
+			if outputBuf.Len() > 0 {
+				fmt.Print(outputBuf.String())
+			}
 
 			lastRun := collector.State().MostRecentRun()
 			if lastRun != nil {
@@ -202,6 +214,7 @@ func run() int {
 	EventLoop:
 		for evt := range engineEvents {
 			collector.Push(evt)
+			simpleOut.ProcessEvent(evt)
 
 			if p == nil {
 				// TUI is NOT running
@@ -253,7 +266,7 @@ func run() int {
 					p = nil
 					pDone = nil
 
-					// Print Summary for the finished run
+					// Print buffered output and summary for the finished run
 					printSummary()
 
 					// If the run finished because of a raw line, print it now
