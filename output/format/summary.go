@@ -146,21 +146,26 @@ func ComputeSummary(run *results.Run, slowThreshold time.Duration) *Summary {
 	}
 	summary.Packages = packages
 
-	// Calculate overall test statistics
+	// Calculate overall test statistics from per-package counts.
+	// This correctly counts all executions (e.g., when -count=N causes
+	// tests to run multiple times), unlike run.TestResults which only
+	// holds one entry per unique test name.
+	for _, pkg := range packages {
+		summary.PassedTests += pkg.Counts.Passed
+		summary.FailedTests += pkg.Counts.Failed
+		summary.SkippedTests += pkg.Counts.Skipped
+	}
+	summary.TotalTests = summary.PassedTests + summary.FailedTests + summary.SkippedTests
+
+	// Collect failure details, skipped tests, and slow tests from the
+	// unique test results map (detail display only needs one entry per test).
 	for _, testResult := range run.TestResults {
-		summary.TotalTests++
 		switch testResult.Status {
-		case results.StatusPassed:
-			summary.PassedTests++
 		case results.StatusFailed:
-			summary.FailedTests++
 			summary.Failures = append(summary.Failures, testResult)
 		case results.StatusSkipped:
-			summary.SkippedTests++
 			summary.Skipped = append(summary.Skipped, testResult)
 		}
-
-		// Detect slow tests
 		if testResult.Elapsed >= slowThreshold {
 			summary.SlowTests = append(summary.SlowTests, testResult)
 		}

@@ -214,7 +214,9 @@ func run() int {
 	EventLoop:
 		for evt := range engineEvents {
 			collector.Push(evt)
-			simpleOut.ProcessEvent(evt)
+			if evt.Type != engine.EventRawLine {
+				simpleOut.ProcessEvent(evt)
+			}
 
 			if p == nil {
 				// TUI is NOT running
@@ -237,7 +239,7 @@ func run() int {
 				} else {
 					// No run active. Print raw lines directly.
 					if evt.Type == engine.EventRawLine {
-						fmt.Print(string(evt.RawLine))
+						fmt.Println(string(evt.RawLine))
 					}
 				}
 			} else {
@@ -269,9 +271,13 @@ func run() int {
 					// Print buffered output and summary for the finished run
 					printSummary()
 
+					// Reset for next run
+					outputBuf.Reset()
+					simpleOut.Init()
+
 					// If the run finished because of a raw line, print it now
 					if evt.Type == engine.EventRawLine {
-						fmt.Print(string(evt.RawLine))
+						fmt.Println(string(evt.RawLine))
 					}
 				} else {
 					// Run still running.

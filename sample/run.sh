@@ -81,6 +81,15 @@ case "$MODE" in
             go test -json -count=1 $GOOD_PKGS 2>&1
         ) | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
         ;;
+    watch)
+        echo "=== Running a simulation of watch mode ==="
+        (
+            while true; do
+                go test -json -count=1 ./mathutil 2>&1
+                sleep 0.5
+            done
+        ) | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
+        ;;
 
     passing)
         echo "=== Running only passing packages ==="
