@@ -31,13 +31,13 @@ TANG="$TANG_ROOT/bin/tang"
 TANG_EXTRA=()
 SCRIPT_ARGS=()
 while [[ $# -gt 0 ]]; do
-    if [[ "$1" == "--" ]]; then
-        shift
-        TANG_EXTRA=("$@")
-        break
-    fi
-    SCRIPT_ARGS+=("$1")
-    shift
+	if [[ "$1" == "--" ]]; then
+		shift
+		TANG_EXTRA=("$@")
+		break
+	fi
+	SCRIPT_ARGS+=("$1")
+	shift
 done
 MODE="${SCRIPT_ARGS[0]:-all}"
 
@@ -47,107 +47,107 @@ GOOD_PKGS="./mathutil/... ./stringutil/... ./cache/... ./validator/..."
 ALL_PKGS="./..."
 
 case "$MODE" in
-    all)
-        echo "=== Running all packages (includes build failure) ==="
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
-        ;;
+all)
+	echo "=== Running all packages (includes build failure) ==="
+	go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
+	;;
 
-    notty)
-        echo "=== Running all packages in plain-text mode ==="
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -notty ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
-        ;;
+notty)
+	echo "=== Running all packages in plain-text mode ==="
+	go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -notty ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
+	;;
 
-    save)
-        echo "=== Running tests and saving output to sample.out ==="
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -outfile sample.out ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
-        echo ""
-        echo "Saved to sample.out — replay with: ./run.sh replay"
-        ;;
+save)
+	echo "=== Running tests and saving output to sample.out ==="
+	go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -outfile sample.out ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
+	echo ""
+	echo "Saved to sample.out — replay with: ./run.sh replay"
+	;;
 
-    replay)
-        if [[ ! -f sample.out ]]; then
-            echo "No sample.out found. Run './run.sh save' first."
-            exit 1
-        fi
-        echo "=== Replaying saved test output ==="
-        "$TANG" -f sample.out -replay -rate 0.5 ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
-        ;;
+replay)
+	if [[ ! -f sample.out ]]; then
+		echo "No sample.out found. Run './run.sh save' first."
+		exit 1
+	fi
+	echo "=== Replaying saved test output ==="
+	"$TANG" -f sample.out -replay -rate 0.5 ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
+	;;
 
-    multi)
-        (
-            go test -json -count=2 $GOOD_PKGS 2>&1
-            sleep 1
-            echo "=== Running passing packages again ==="
-            go test -json -count=1 $GOOD_PKGS 2>&1
-        ) | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
-        ;;
-    watch)
-        echo "=== Running a simulation of watch mode ==="
-        (
-            while true; do
-                go test -json -count=1 ./mathutil 2>&1
-                sleep 0.5
-            done
-        ) | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
-        ;;
+multi)
+	(
+		go test -json -count=2 $GOOD_PKGS 2>&1
+		sleep 1
+		echo "=== Running passing packages again ==="
+		go test -json -count=1 $GOOD_PKGS 2>&1
+	) | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
+	;;
+watch)
+	echo "=== Running a simulation of watch mode ==="
+	(
+		while true; do
+			go test -json -count=1 ./mathutil 2>&1
+			sleep 0.5
+		done
+	) | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
+	;;
 
-    passing)
-        echo "=== Running only passing packages ==="
-        go test -count=1 -json $GOOD_PKGS 2>&1 | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
-        ;;
+passing)
+	echo "=== Running only passing packages ==="
+	go test -count=1 -json $GOOD_PKGS 2>&1 | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
+	;;
 
-    junit)
-        echo "=== Running tests with JUnit XML output ==="
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -junitout results.xml -notty ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
-        echo ""
-        echo "JUnit XML written to results.xml"
-        ;;
+junit)
+	echo "=== Running tests with JUnit XML output ==="
+	go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -junitfile results.xml -notty ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"}
+	echo ""
+	echo "JUnit XML written to results.xml"
+	;;
 
-    raw)
-        echo "=== Raw go test -json output (no tang) for comparison ==="
-        go test -count=1 -json $ALL_PKGS 2>&1 || true
-        ;;
+raw)
+	echo "=== Raw go test -json output (no tang) for comparison ==="
+	go test -count=1 -json $ALL_PKGS 2>&1 || true
+	;;
 
-    artifacts)
-        DIR="artifacts"
-        rm -rf "$DIR"
-        mkdir -p "$DIR"
-        echo "=== Generating test artifacts in $DIR/ ==="
+artifacts)
+	DIR="artifacts"
+	rm -rf "$DIR"
+	mkdir -p "$DIR"
+	echo "=== Generating test artifacts in $DIR/ ==="
 
-        echo "  gotest_json.out"
-        go test -count=1 -json $ALL_PKGS >"$DIR/gotest_json.out" 2>&1 || true
+	echo "  gotest_json.out"
+	go test -count=1 -json $ALL_PKGS >"$DIR/gotest_json.out" 2>&1 || true
 
-        echo "  gotest.out"
-        go test -count=1 $ALL_PKGS >"$DIR/gotest.out" 2>&1 || true
+	echo "  gotest.out"
+	go test -count=1 $ALL_PKGS >"$DIR/gotest.out" 2>&1 || true
 
-        echo "  gotest_verbose.out"
-        go test -count=1 -v $ALL_PKGS >"$DIR/gotest_verbose.out" 2>&1 || true
+	echo "  gotest_verbose.out"
+	go test -count=1 -v $ALL_PKGS >"$DIR/gotest_verbose.out" 2>&1 || true
 
-        echo "  tang_outfile.out, tang_jsonfile.out, tang_junitfile.xml, tang_notty.out"
-        go test -count=1 -json $ALL_PKGS 2>&1 \
-            | "$TANG" -notty \
-                -outfile "$DIR/tang_outfile.out" \
-                -jsonfile "$DIR/tang_jsonfile.out" \
-                -junitout "$DIR/tang_junitfile.xml" \
-                ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} \
-            >"$DIR/tang_notty.out" || true
+	echo "  tang_outfile.out, tang_jsonfile.out, tang_junitfile.xml, tang_notty.out"
+	go test -count=1 -json $ALL_PKGS 2>&1 |
+		"$TANG" -notty \
+			-outfile "$DIR/tang_outfile.out" \
+			-jsonfile "$DIR/tang_jsonfile.out" \
+			-junitfile "$DIR/tang_junitfile.xml" \
+			${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} \
+			>"$DIR/tang_notty.out" || true
 
-        echo "  tang_notty_verbose.out"
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -notty -v ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} >"$DIR/tang_notty_verbose.out" || true
+	echo "  tang_notty_verbose.out"
+	go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -notty -v ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} >"$DIR/tang_notty_verbose.out" || true
 
-        echo "  tang.out"
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} >"$DIR/tang.out" || true
+	echo "  tang.out"
+	go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} >"$DIR/tang.out" || true
 
-        echo "  tang_verbose.out"
-        go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -v ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} >"$DIR/tang_verbose.out" || true
+	echo "  tang_verbose.out"
+	go test -count=1 -json $ALL_PKGS 2>&1 | "$TANG" -v ${TANG_EXTRA[@]+"${TANG_EXTRA[@]}"} >"$DIR/tang_verbose.out" || true
 
-        echo ""
-        echo "Artifacts written to $DIR/:"
-        ls -1 "$DIR/"
-        ;;
+	echo ""
+	echo "Artifacts written to $DIR/:"
+	ls -1 "$DIR/"
+	;;
 
-    *)
-        echo "Usage: $0 {all|notty|save|replay|multi|passing|junit|raw|artifacts}"
-        exit 1
-        ;;
+*)
+	echo "Usage: $0 {all|notty|save|replay|multi|passing|junit|raw|artifacts}"
+	exit 1
+	;;
 esac

@@ -30,7 +30,7 @@ func run() int {
 	infile := flag.String("f", "", "Read from file instead of stdin")
 	outfile := flag.String("outfile", "", "Save all input to the specified file")
 	jsonfile := flag.String("jsonfile", "", "Save JSON events to the specified file")
-	junitfile := flag.String("junitout", "", "Save cumulative test results to the specified JUnit XML file")
+	junitfile := flag.String("junitfile", "", "Save cumulative test results to the specified JUnit XML file")
 	notty := flag.Bool("notty", false, "Don't use TUI, output to stdout")
 	verbose := flag.Bool("v", false, "Verbose output (show all test output in -notty mode)")
 	replay := flag.Bool("replay", false, "Replay events with timing from original test run (requires -f)")

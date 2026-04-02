@@ -5,32 +5,32 @@ broken/broken.go:7:1: syntax error: unexpected }, expected expression
         auth_test.go:130: Issues found: [must contain a special character]
         auth_test.go:133: expected 0 issues but got 1: [must contain a special character]
 FAIL
-FAIL	github.com/ansel1/tang/sample/auth	8.498s
+FAIL	github.com/ansel1/tang/sample/auth	8.047s
 FAIL	github.com/ansel1/tang/sample/broken [build failed]
-ok  	github.com/ansel1/tang/sample/cache	12.332s
-ok  	github.com/ansel1/tang/sample/mathutil	3.802s
+ok  	github.com/ansel1/tang/sample/cache	12.324s
+ok  	github.com/ansel1/tang/sample/mathutil	4.869s
 ?   	github.com/ansel1/tang/sample/models	[no test files]
 --- FAIL: TestProcessItemsPanic (0.60s)
     panicker_test.go:40: processing first batch of valid items...
     panicker_test.go:43: first batch OK, now processing batch with empty item...
 panic: empty item at index 1 [recovered, repanicked]
 
-goroutine 23 [running]:
-testing.tRunner.func1.2({0x102859a60, 0x398ab4064080})
+goroutine 18 [running]:
+testing.tRunner.func1.2({0x104d19a60, 0x2a46b178a0f0})
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1974 +0x1a0
 testing.tRunner.func1()
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1977 +0x318
-panic({0x102859a60?, 0x398ab4064080?})
+panic({0x104d19a60?, 0x2a46b178a0f0?})
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/panic.go:860 +0x12c
-github.com/ansel1/tang/sample/panicker.ProcessItems({0x398ab40beef8?, 0x3, 0x3d?})
+github.com/ansel1/tang/sample/panicker.ProcessItems({0x2a46b1649ef8?, 0x3, 0x3d?})
 	/Users/regan/dev/tang/sample/panicker/panicker.go:12 +0x20c
-github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x398ab4150908)
+github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x2a46b1798248)
 	/Users/regan/dev/tang/sample/panicker/panicker_test.go:45 +0xf0
-testing.tRunner(0x398ab4150908, 0x10288bf10)
+testing.tRunner(0x2a46b1798248, 0x104d4bf10)
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4
 created by testing.(*T).Run in goroutine 1
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8
-FAIL	github.com/ansel1/tang/sample/panicker	1.698s
-ok  	github.com/ansel1/tang/sample/stringutil	13.954s
-ok  	github.com/ansel1/tang/sample/validator	16.365s
+FAIL	github.com/ansel1/tang/sample/panicker	1.878s
+ok  	github.com/ansel1/tang/sample/stringutil	15.183s
+ok  	github.com/ansel1/tang/sample/validator	17.576s
 FAIL

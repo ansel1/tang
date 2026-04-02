@@ -25,112 +25,112 @@ broken/broken.go:7:1: syntax error: unexpected }, expected expression
 === RUN   TestBruteForceProtection
 === PAUSE TestBruteForceProtection
 === CONT  TestRegister
+=== CONT  TestBruteForceProtection
 === RUN   TestRegister/success
 === PAUSE TestRegister/success
+=== NAME  TestBruteForceProtection
+    auth_test.go:163: Starting brute force protection tests...
 === RUN   TestRegister/weak_password
 === PAUSE TestRegister/weak_password
 === CONT  TestRegister/success
-=== CONT  TestBruteForceProtection
-=== CONT  TestAuthenticate
-=== NAME  TestBruteForceProtection
-    auth_test.go:163: Starting brute force protection tests...
-=== RUN   TestAuthenticate/valid_credentials
 === RUN   TestBruteForceProtection/dictionary_attack
-=== PAUSE TestBruteForceProtection/dictionary_attack
-=== RUN   TestBruteForceProtection/credential_stuffing
-=== PAUSE TestAuthenticate/valid_credentials
-=== PAUSE TestBruteForceProtection/credential_stuffing
-=== RUN   TestBruteForceProtection/timing_analysis
-=== CONT  TestValidatePassword
-=== RUN   TestValidatePassword/strong_password
-=== RUN   TestAuthenticate/wrong_password
-=== PAUSE TestValidatePassword/strong_password
-=== PAUSE TestAuthenticate/wrong_password
-=== RUN   TestValidatePassword/too_short
-=== RUN   TestAuthenticate/unknown_user
-=== PAUSE TestValidatePassword/too_short
-=== PAUSE TestAuthenticate/unknown_user
-=== RUN   TestValidatePassword/missing_uppercase
 === CONT  TestRegister/weak_password
+=== PAUSE TestBruteForceProtection/dictionary_attack
 --- PASS: TestRegister (0.00s)
     --- PASS: TestRegister/success (0.00s)
     --- PASS: TestRegister/weak_password (0.00s)
-=== RUN   TestAuthenticate/locked_account
+=== CONT  TestValidatePassword
+=== RUN   TestBruteForceProtection/credential_stuffing
+=== RUN   TestValidatePassword/strong_password
+=== CONT  TestAuthenticate
+=== RUN   TestAuthenticate/valid_credentials
+=== PAUSE TestBruteForceProtection/credential_stuffing
+=== PAUSE TestValidatePassword/strong_password
+=== PAUSE TestAuthenticate/valid_credentials
+=== RUN   TestBruteForceProtection/timing_analysis
+=== RUN   TestValidatePassword/too_short
+=== PAUSE TestValidatePassword/too_short
+=== RUN   TestValidatePassword/missing_uppercase
+=== PAUSE TestValidatePassword/missing_uppercase
+=== RUN   TestAuthenticate/wrong_password
+=== PAUSE TestAuthenticate/wrong_password
+=== RUN   TestAuthenticate/unknown_user
+=== RUN   TestValidatePassword/missing_digit
+=== PAUSE TestValidatePassword/missing_digit
+=== RUN   TestValidatePassword/missing_special_FAILS
 === PAUSE TestBruteForceProtection/timing_analysis
 === CONT  TestBruteForceProtection/dictionary_attack
-=== PAUSE TestValidatePassword/missing_uppercase
-=== RUN   TestValidatePassword/missing_digit
-=== PAUSE TestAuthenticate/locked_account
-=== PAUSE TestValidatePassword/missing_digit
-=== CONT  TestAuthenticate/unknown_user
-=== RUN   TestValidatePassword/missing_special_FAILS
-=== CONT  TestAuthenticate/wrong_password
 === PAUSE TestValidatePassword/missing_special_FAILS
-=== CONT  TestBruteForceProtection/credential_stuffing
 === CONT  TestValidatePassword/strong_password
-=== CONT  TestValidatePassword/missing_digit
-=== CONT  TestBruteForceProtection/timing_analysis
-=== CONT  TestAuthenticate/valid_credentials
 === CONT  TestValidatePassword/missing_special_FAILS
-=== CONT  TestValidatePassword/missing_uppercase
+=== CONT  TestValidatePassword/missing_digit
+=== PAUSE TestAuthenticate/unknown_user
 === CONT  TestValidatePassword/too_short
+=== RUN   TestAuthenticate/locked_account
+=== PAUSE TestAuthenticate/locked_account
+=== CONT  TestBruteForceProtection/timing_analysis
+=== CONT  TestAuthenticate/unknown_user
+=== CONT  TestValidatePassword/missing_uppercase
 === NAME  TestValidatePassword/missing_special_FAILS
     auth_test.go:130: Issues found: [must contain a special character]
     auth_test.go:133: expected 0 issues but got 1: [must contain a special character]
+=== CONT  TestAuthenticate/valid_credentials
 --- FAIL: TestValidatePassword (0.00s)
     --- PASS: TestValidatePassword/strong_password (0.00s)
     --- PASS: TestValidatePassword/missing_digit (0.00s)
-    --- PASS: TestValidatePassword/missing_uppercase (0.00s)
     --- PASS: TestValidatePassword/too_short (0.00s)
+    --- PASS: TestValidatePassword/missing_uppercase (0.00s)
     --- FAIL: TestValidatePassword/missing_special_FAILS (0.00s)
-=== NAME  TestBruteForceProtection/timing_analysis
-    auth_test.go:211:   measuring auth timing for valid vs invalid users...
 === CONT  TestAuthenticate/locked_account
+=== CONT  TestAuthenticate/wrong_password
 --- PASS: TestAuthenticate (0.00s)
     --- PASS: TestAuthenticate/unknown_user (0.00s)
-    --- PASS: TestAuthenticate/wrong_password (0.00s)
     --- PASS: TestAuthenticate/valid_credentials (0.00s)
     --- PASS: TestAuthenticate/locked_account (0.00s)
+    --- PASS: TestAuthenticate/wrong_password (0.00s)
+=== NAME  TestBruteForceProtection/timing_analysis
+    auth_test.go:211:   measuring auth timing for valid vs invalid users...
+=== CONT  TestBruteForceProtection/credential_stuffing
+    auth_test.go:201:   stuffing attempt 1/7: alice/leaked1 → blocked
 === NAME  TestBruteForceProtection/dictionary_attack
     auth_test.go:177:   dictionary attempt 1/8: "password" → invalid credentials
-=== NAME  TestBruteForceProtection/credential_stuffing
-    auth_test.go:201:   stuffing attempt 1/7: alice/leaked1 → blocked
 === NAME  TestBruteForceProtection/timing_analysis
-    auth_test.go:221:   timing check 1/6: 1.666µs
+    auth_test.go:221:   timing check 1/6: 1.167µs
 === NAME  TestBruteForceProtection/dictionary_attack
     auth_test.go:177:   dictionary attempt 2/8: "123456" → invalid credentials
 === NAME  TestBruteForceProtection/credential_stuffing
     auth_test.go:201:   stuffing attempt 2/7: bob/leaked2 → blocked
 === NAME  TestBruteForceProtection/timing_analysis
-    auth_test.go:221:   timing check 2/6: 1.75µs
+    auth_test.go:221:   timing check 2/6: 1µs
 === NAME  TestBruteForceProtection/credential_stuffing
     auth_test.go:201:   stuffing attempt 3/7: alice/leaked3 → blocked
 === NAME  TestBruteForceProtection/dictionary_attack
     auth_test.go:177:   dictionary attempt 3/8: "qwerty" → invalid credentials
 === NAME  TestBruteForceProtection/timing_analysis
-    auth_test.go:221:   timing check 3/6: 1.583µs
-=== NAME  TestBruteForceProtection/dictionary_attack
-    auth_test.go:177:   dictionary attempt 4/8: "letmein" → invalid credentials
+    auth_test.go:221:   timing check 3/6: 1.291µs
 === NAME  TestBruteForceProtection/credential_stuffing
     auth_test.go:201:   stuffing attempt 4/7: bob/leaked4 → blocked
+=== NAME  TestBruteForceProtection/dictionary_attack
+    auth_test.go:177:   dictionary attempt 4/8: "letmein" → invalid credentials
 === NAME  TestBruteForceProtection/timing_analysis
-    auth_test.go:221:   timing check 4/6: 1.583µs
-=== NAME  TestBruteForceProtection/credential_stuffing
-    auth_test.go:201:   stuffing attempt 5/7: alice/leaked5 → blocked
+    auth_test.go:221:   timing check 4/6: 1.375µs
 === NAME  TestBruteForceProtection/dictionary_attack
     auth_test.go:177:   dictionary attempt 5/8: "admin" → invalid credentials
-=== NAME  TestBruteForceProtection/timing_analysis
-    auth_test.go:221:   timing check 5/6: 1.583µs
+=== NAME  TestBruteForceProtection/credential_stuffing
+    auth_test.go:201:   stuffing attempt 5/7: alice/leaked5 → blocked
 === NAME  TestBruteForceProtection/dictionary_attack
     auth_test.go:177:   dictionary attempt 6/8: "welcome" → invalid credentials
 === NAME  TestBruteForceProtection/credential_stuffing
     auth_test.go:201:   stuffing attempt 6/7: bob/leaked6 → blocked
+=== NAME  TestBruteForceProtection/timing_analysis
+    auth_test.go:221:   timing check 5/6: 250ns
+=== NAME  TestBruteForceProtection/credential_stuffing
     auth_test.go:201:   stuffing attempt 7/7: alice/alicePass1! → SUCCESS
     auth_test.go:203:   credential stuffing simulation complete
 === NAME  TestBruteForceProtection/dictionary_attack
     auth_test.go:177:   dictionary attempt 7/8: "monkey" → invalid credentials
 === NAME  TestBruteForceProtection/timing_analysis
-    auth_test.go:221:   timing check 6/6: 1.542µs
+    auth_test.go:221:   timing check 6/6: 958ns
     auth_test.go:223:   timing analysis complete
 === NAME  TestBruteForceProtection/dictionary_attack
     auth_test.go:177:   dictionary attempt 8/8: "dragon" → invalid credentials
@@ -140,7 +140,7 @@ broken/broken.go:7:1: syntax error: unexpected }, expected expression
     --- PASS: TestBruteForceProtection/timing_analysis (3.61s)
     --- PASS: TestBruteForceProtection/dictionary_attack (4.01s)
 FAIL
-FAIL	github.com/ansel1/tang/sample/auth	8.085s
+FAIL	github.com/ansel1/tang/sample/auth	8.032s
 FAIL	github.com/ansel1/tang/sample/broken [build failed]
 === RUN   TestNew
 === PAUSE TestNew
@@ -189,32 +189,32 @@ FAIL	github.com/ansel1/tang/sample/broken [build failed]
 --- PASS: TestCacheWarming (5.61s)
 === CONT  TestNew
 --- PASS: TestNew (0.00s)
-=== CONT  TestConcurrentAccess
 === CONT  TestSetAndGet
+=== CONT  TestConcurrentAccess
+=== RUN   TestSetAndGet/store_and_retrieve
 === NAME  TestConcurrentAccess
     cache_test.go:114: Starting concurrent access tests...
-=== RUN   TestSetAndGet/store_and_retrieve
 === PAUSE TestSetAndGet/store_and_retrieve
 === RUN   TestConcurrentAccess/writers_only
 === RUN   TestSetAndGet/missing_key
-=== PAUSE TestConcurrentAccess/writers_only
 === PAUSE TestSetAndGet/missing_key
-=== RUN   TestSetAndGet/overwrite
+=== PAUSE TestConcurrentAccess/writers_only
 === RUN   TestConcurrentAccess/readers_only
+=== RUN   TestSetAndGet/overwrite
 === PAUSE TestConcurrentAccess/readers_only
+=== PAUSE TestSetAndGet/overwrite
 === RUN   TestConcurrentAccess/mixed_read_write
 === PAUSE TestConcurrentAccess/mixed_read_write
-=== PAUSE TestSetAndGet/overwrite
-=== CONT  TestConcurrentAccess/readers_only
-=== CONT  TestSetAndGet/store_and_retrieve
 === CONT  TestConcurrentAccess/writers_only
+=== CONT  TestSetAndGet/store_and_retrieve
+=== CONT  TestConcurrentAccess/mixed_read_write
 === CONT  TestSetAndGet/overwrite
 === CONT  TestSetAndGet/missing_key
 --- PASS: TestSetAndGet (0.00s)
     --- PASS: TestSetAndGet/store_and_retrieve (0.00s)
     --- PASS: TestSetAndGet/overwrite (0.00s)
     --- PASS: TestSetAndGet/missing_key (0.00s)
-=== CONT  TestConcurrentAccess/mixed_read_write
+=== CONT  TestConcurrentAccess/readers_only
 === NAME  TestConcurrentAccess/writers_only
     cache_test.go:133:   writers complete, cache has 250 entries
 === NAME  TestConcurrentAccess/mixed_read_write
@@ -224,9 +224,9 @@ FAIL	github.com/ansel1/tang/sample/broken [build failed]
 --- PASS: TestConcurrentAccess (0.00s)
     --- PASS: TestConcurrentAccess/writers_only (0.52s)
     --- PASS: TestConcurrentAccess/mixed_read_write (0.52s)
-    --- PASS: TestConcurrentAccess/readers_only (0.55s)
+    --- PASS: TestConcurrentAccess/readers_only (0.54s)
 PASS
-ok  	github.com/ansel1/tang/sample/cache	12.183s
+ok  	github.com/ansel1/tang/sample/cache	11.996s
 === RUN   TestAdd
 === PAUSE TestAdd
 === RUN   TestSubtract
@@ -247,16 +247,16 @@ ok  	github.com/ansel1/tang/sample/cache	12.183s
 === RUN   TestFibonacci/larger
 === PAUSE TestFibonacci/larger
 === CONT  TestFibonacci/zero
-=== CONT  TestFibonacci/larger
-=== CONT  TestFibonacci/medium
 === CONT  TestFibonacci/small
 === CONT  TestFibonacci/one
+=== CONT  TestFibonacci/medium
+=== CONT  TestFibonacci/larger
 --- PASS: TestFibonacci (0.00s)
     --- PASS: TestFibonacci/zero (0.00s)
-    --- PASS: TestFibonacci/larger (0.00s)
-    --- PASS: TestFibonacci/medium (0.00s)
     --- PASS: TestFibonacci/small (0.00s)
     --- PASS: TestFibonacci/one (0.00s)
+    --- PASS: TestFibonacci/medium (0.00s)
+    --- PASS: TestFibonacci/larger (0.00s)
 === RUN   TestIsPrimeSlow
 === PAUSE TestIsPrimeSlow
 === RUN   TestFibonacciSequential
@@ -313,56 +313,56 @@ ok  	github.com/ansel1/tang/sample/cache	12.183s
 === PAUSE TestIsPrime/large_composite
 === CONT  TestIsPrime/negative
 === CONT  TestIsPrime/large_composite
+=== CONT  TestIsPrime/two
+=== CONT  TestIsPrime/zero
 === CONT  TestIsPrime/large_prime
 === CONT  TestIsPrime/four
 === CONT  TestIsPrime/three
-=== CONT  TestIsPrime/two
 === CONT  TestIsPrime/one
-=== CONT  TestIsPrime/zero
 --- PASS: TestIsPrime (0.00s)
     --- PASS: TestIsPrime/negative (0.00s)
     --- PASS: TestIsPrime/large_composite (0.00s)
-    --- PASS: TestIsPrime/large_prime (0.00s)
-    --- PASS: TestIsPrime/four (0.00s)
-    --- PASS: TestIsPrime/three (0.00s)
     --- PASS: TestIsPrime/two (0.00s)
-    --- PASS: TestIsPrime/one (0.00s)
     --- PASS: TestIsPrime/zero (0.00s)
+    --- PASS: TestIsPrime/four (0.00s)
+    --- PASS: TestIsPrime/large_prime (0.00s)
+    --- PASS: TestIsPrime/three (0.00s)
+    --- PASS: TestIsPrime/one (0.00s)
 === CONT  TestAdd
 --- PASS: TestAdd (0.00s)
 === CONT  TestIsPrimeSlow
     mathutil_test.go:81: Starting slow prime checks...
-=== RUN   TestIsPrimeSlow/small_primes
-=== PAUSE TestIsPrimeSlow/small_primes
-=== RUN   TestIsPrimeSlow/large_primes
-=== PAUSE TestIsPrimeSlow/large_primes
-=== RUN   TestIsPrimeSlow/composites
-=== PAUSE TestIsPrimeSlow/composites
-=== CONT  TestIsPrimeSlow/small_primes
-    mathutil_test.go:87:   checking 2...
-=== CONT  TestDivide
-=== CONT  TestSubtract
---- PASS: TestSubtract (0.00s)
-=== RUN   TestDivide/basic
-=== PAUSE TestDivide/basic
-=== CONT  TestIsPrimeSlow/composites
-    mathutil_test.go:114:   verifying 4 is composite...
-=== CONT  TestIsPrimeSlow/large_primes
-=== RUN   TestDivide/integer_truncation
-=== PAUSE TestDivide/integer_truncation
-=== RUN   TestDivide/negative
-=== NAME  TestIsPrimeSlow/large_primes
-    mathutil_test.go:101:   verifying 97 is prime...
-=== PAUSE TestDivide/negative
-=== CONT  TestDivide/basic
 === CONT  TestMultiply
 --- PASS: TestMultiply (0.00s)
+=== CONT  TestDivide
+=== RUN   TestIsPrimeSlow/small_primes
+=== CONT  TestSubtract
+=== RUN   TestDivide/basic
+--- PASS: TestSubtract (0.00s)
+=== PAUSE TestDivide/basic
+=== RUN   TestDivide/integer_truncation
+=== PAUSE TestDivide/integer_truncation
+=== PAUSE TestIsPrimeSlow/small_primes
+=== RUN   TestDivide/negative
+=== PAUSE TestDivide/negative
+=== CONT  TestDivide/basic
 === CONT  TestDivide/negative
 === CONT  TestDivide/integer_truncation
 --- PASS: TestDivide (0.00s)
     --- PASS: TestDivide/basic (0.00s)
     --- PASS: TestDivide/negative (0.00s)
     --- PASS: TestDivide/integer_truncation (0.00s)
+=== RUN   TestIsPrimeSlow/large_primes
+=== PAUSE TestIsPrimeSlow/large_primes
+=== RUN   TestIsPrimeSlow/composites
+=== PAUSE TestIsPrimeSlow/composites
+=== CONT  TestIsPrimeSlow/small_primes
+=== CONT  TestIsPrimeSlow/composites
+    mathutil_test.go:114:   verifying 4 is composite...
+=== NAME  TestIsPrimeSlow/small_primes
+    mathutil_test.go:87:   checking 2...
+=== CONT  TestIsPrimeSlow/large_primes
+    mathutil_test.go:101:   verifying 97 is prime...
 === NAME  TestIsPrimeSlow/composites
     mathutil_test.go:114:   verifying 6 is composite...
 === NAME  TestIsPrimeSlow/small_primes
@@ -383,10 +383,10 @@ ok  	github.com/ansel1/tang/sample/cache	12.183s
     mathutil_test.go:114:   verifying 10 is composite...
 === NAME  TestIsPrimeSlow/large_primes
     mathutil_test.go:101:   verifying 107 is prime...
-=== NAME  TestIsPrimeSlow/small_primes
-    mathutil_test.go:87:   checking 11...
 === NAME  TestIsPrimeSlow/composites
     mathutil_test.go:114:   verifying 12 is composite...
+=== NAME  TestIsPrimeSlow/small_primes
+    mathutil_test.go:87:   checking 11...
 === NAME  TestIsPrimeSlow/large_primes
     mathutil_test.go:101:   verifying 109 is prime...
 === NAME  TestIsPrimeSlow/composites
@@ -406,7 +406,7 @@ ok  	github.com/ansel1/tang/sample/cache	12.183s
     --- PASS: TestIsPrimeSlow/small_primes (3.01s)
     --- PASS: TestIsPrimeSlow/large_primes (3.61s)
 PASS
-ok  	github.com/ansel1/tang/sample/mathutil	4.119s
+ok  	github.com/ansel1/tang/sample/mathutil	4.755s
 ?   	github.com/ansel1/tang/sample/models	[no test files]
 === RUN   TestProcessItemsValid
     panicker_test.go:9: processing valid items...
@@ -426,22 +426,22 @@ ok  	github.com/ansel1/tang/sample/mathutil	4.119s
 --- FAIL: TestProcessItemsPanic (0.60s)
 panic: empty item at index 1 [recovered, repanicked]
 
-goroutine 9 [running]:
-testing.tRunner.func1.2({0x1045a1a60, 0x794c4ab963c0})
+goroutine 17 [running]:
+testing.tRunner.func1.2({0x100729a60, 0x4079d55080d0})
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1974 +0x1a0
 testing.tRunner.func1()
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:1977 +0x318
-panic({0x1045a1a60?, 0x794c4ab963c0?})
+panic({0x100729a60?, 0x4079d55080d0?})
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/runtime/panic.go:860 +0x12c
-github.com/ansel1/tang/sample/panicker.ProcessItems({0x794c4abfdef8?, 0x3, 0x3d?})
+github.com/ansel1/tang/sample/panicker.ProcessItems({0x4079d5489ef8?, 0x3, 0x3d?})
 	/Users/regan/dev/tang/sample/panicker/panicker.go:12 +0x20c
-github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x794c4acb06c8)
+github.com/ansel1/tang/sample/panicker.TestProcessItemsPanic(0x4079d551c008)
 	/Users/regan/dev/tang/sample/panicker/panicker_test.go:45 +0xf0
-testing.tRunner(0x794c4acb06c8, 0x1045d3f10)
+testing.tRunner(0x4079d551c008, 0x10075bf10)
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2036 +0xc4
 created by testing.(*T).Run in goroutine 1
 	/opt/homebrew/Cellar/go/1.26.1/libexec/src/testing/testing.go:2101 +0x3a8
-FAIL	github.com/ansel1/tang/sample/panicker	1.411s
+FAIL	github.com/ansel1/tang/sample/panicker	2.076s
 === RUN   TestReverse
 === PAUSE TestReverse
 === RUN   TestPalindromeStress
@@ -480,7 +480,11 @@ FAIL	github.com/ansel1/tang/sample/panicker	1.411s
     stringutil_test.go:250:   paragraph 6: 5 words — "Simplicity is the ultimate sop..."
 --- PASS: TestWordCountSlow (4.21s)
 === CONT  TestReverse
+=== CONT  TestWordCount
+    stringutil_test.go:104: Testing word count with various inputs
+--- PASS: TestWordCount (0.00s)
 === RUN   TestReverse/simple
+=== CONT  TestReverseBatch
 === PAUSE TestReverse/simple
 === RUN   TestReverse/empty
 === PAUSE TestReverse/empty
@@ -489,17 +493,12 @@ FAIL	github.com/ansel1/tang/sample/panicker	1.411s
 === RUN   TestReverse/single_char
 === PAUSE TestReverse/single_char
 === CONT  TestReverse/simple
-=== CONT  TestReverseBatch
+=== NAME  TestReverseBatch
     stringutil_test.go:178: Starting batch reverse tests...
 === RUN   TestReverseBatch/short_words
-=== PAUSE TestReverseBatch/short_words
-=== RUN   TestReverseBatch/long_words
-=== PAUSE TestReverseBatch/long_words
-=== RUN   TestReverseBatch/sentences
-=== PAUSE TestReverseBatch/sentences
-=== CONT  TestReverseBatch/short_words
 === CONT  TestTruncate
 === RUN   TestTruncate/no_truncation
+=== CONT  TestPalindromeStress
 === PAUSE TestTruncate/no_truncation
 === RUN   TestTruncate/exact_length
 === PAUSE TestTruncate/exact_length
@@ -507,47 +506,51 @@ FAIL	github.com/ansel1/tang/sample/panicker	1.411s
 === PAUSE TestTruncate/truncated
 === RUN   TestTruncate/very_short_max
 === PAUSE TestTruncate/very_short_max
-=== CONT  TestTruncate/no_truncation
-=== CONT  TestWordCount
-    stringutil_test.go:104: Testing word count with various inputs
---- PASS: TestWordCount (0.00s)
 === CONT  TestPalindrome
 === RUN   TestPalindrome/racecar
+=== NAME  TestPalindromeStress
+    stringutil_test.go:49: Running palindrome stress tests with simulated I/O...
 === PAUSE TestPalindrome/racecar
+=== RUN   TestPalindromeStress/known_palindromes
 === RUN   TestPalindrome/hello
+=== CONT  TestReverse/single_char
+=== CONT  TestTruncate/truncated
+=== CONT  TestReverse/empty
+=== PAUSE TestReverseBatch/short_words
+=== CONT  TestTruncate/no_truncation
+=== RUN   TestReverseBatch/long_words
+=== PAUSE TestReverseBatch/long_words
+=== RUN   TestReverseBatch/sentences
+=== CONT  TestTruncate/exact_length
+=== PAUSE TestReverseBatch/sentences
+=== CONT  TestReverse/unicode
+=== PAUSE TestPalindromeStress/known_palindromes
 === PAUSE TestPalindrome/hello
+=== CONT  TestTruncate/very_short_max
+=== CONT  TestReverseBatch/short_words
+=== CONT  TestReverseBatch/long_words
 === RUN   TestPalindrome/mixed_case
+--- PASS: TestTruncate (0.00s)
+    --- PASS: TestTruncate/truncated (0.00s)
+    --- PASS: TestTruncate/no_truncation (0.00s)
+    --- PASS: TestTruncate/exact_length (0.00s)
+    --- PASS: TestTruncate/very_short_max (0.00s)
+--- PASS: TestReverse (0.00s)
+    --- PASS: TestReverse/simple (0.00s)
+    --- PASS: TestReverse/single_char (0.00s)
+    --- PASS: TestReverse/empty (0.00s)
+    --- PASS: TestReverse/unicode (0.00s)
+=== RUN   TestPalindromeStress/non_palindromes
+=== PAUSE TestPalindromeStress/non_palindromes
+=== CONT  TestPalindromeStress/known_palindromes
+=== CONT  TestReverseBatch/sentences
 === PAUSE TestPalindrome/mixed_case
 === RUN   TestPalindrome/single_char
+=== CONT  TestPalindromeStress/non_palindromes
 === PAUSE TestPalindrome/single_char
 === RUN   TestPalindrome/empty
 === PAUSE TestPalindrome/empty
 === CONT  TestPalindrome/racecar
-=== CONT  TestPalindromeStress
-    stringutil_test.go:49: Running palindrome stress tests with simulated I/O...
-=== RUN   TestPalindromeStress/known_palindromes
-=== PAUSE TestPalindromeStress/known_palindromes
-=== RUN   TestPalindromeStress/non_palindromes
-=== PAUSE TestPalindromeStress/non_palindromes
-=== CONT  TestPalindromeStress/known_palindromes
-=== CONT  TestReverse/single_char
-=== CONT  TestReverse/unicode
-=== CONT  TestReverse/empty
---- PASS: TestReverse (0.00s)
-    --- PASS: TestReverse/simple (0.00s)
-    --- PASS: TestReverse/single_char (0.00s)
-    --- PASS: TestReverse/unicode (0.00s)
-    --- PASS: TestReverse/empty (0.00s)
-=== CONT  TestReverseBatch/sentences
-=== CONT  TestReverseBatch/long_words
-=== CONT  TestTruncate/very_short_max
-=== CONT  TestTruncate/truncated
-=== CONT  TestTruncate/exact_length
---- PASS: TestTruncate (0.00s)
-    --- PASS: TestTruncate/no_truncation (0.00s)
-    --- PASS: TestTruncate/very_short_max (0.00s)
-    --- PASS: TestTruncate/truncated (0.00s)
-    --- PASS: TestTruncate/exact_length (0.00s)
 === CONT  TestPalindrome/empty
 === CONT  TestPalindrome/single_char
 === CONT  TestPalindrome/mixed_case
@@ -558,13 +561,12 @@ FAIL	github.com/ansel1/tang/sample/panicker	1.411s
     --- PASS: TestPalindrome/single_char (0.00s)
     --- PASS: TestPalindrome/mixed_case (0.00s)
     --- PASS: TestPalindrome/hello (0.00s)
-=== CONT  TestPalindromeStress/non_palindromes
 === NAME  TestPalindromeStress/known_palindromes
     stringutil_test.go:56:   checking "racecar"...
-=== NAME  TestReverseBatch/short_words
-    stringutil_test.go:189:   verified "go"
 === NAME  TestPalindromeStress/non_palindromes
     stringutil_test.go:69:   checking "hello"...
+=== NAME  TestReverseBatch/short_words
+    stringutil_test.go:189:   verified "go"
 === NAME  TestReverseBatch/long_words
     stringutil_test.go:202:   verified "extraordinary" (13 chars)
 === NAME  TestReverseBatch/sentences
@@ -577,39 +579,40 @@ FAIL	github.com/ansel1/tang/sample/panicker	1.411s
     stringutil_test.go:69:   checking "world"...
 === NAME  TestReverseBatch/long_words
     stringutil_test.go:202:   verified "consciousness" (13 chars)
+=== NAME  TestReverseBatch/short_words
+    stringutil_test.go:189:   verified "fun"
 === NAME  TestPalindromeStress/non_palindromes
     stringutil_test.go:69:   checking "golang"...
 === NAME  TestPalindromeStress/known_palindromes
     stringutil_test.go:56:   checking "level"...
-=== NAME  TestReverseBatch/short_words
-    stringutil_test.go:189:   verified "fun"
 === NAME  TestReverseBatch/sentences
     stringutil_test.go:217:   "jumps over the lazy dog" -> "god yzal eht revo spmuj"
-=== NAME  TestPalindromeStress/known_palindromes
-    stringutil_test.go:56:   checking "rotor"...
-=== NAME  TestReverseBatch/short_words
-    stringutil_test.go:189:   verified "and"
 === NAME  TestPalindromeStress/non_palindromes
     stringutil_test.go:69:   checking "testing"...
+=== NAME  TestReverseBatch/short_words
+    stringutil_test.go:189:   verified "and"
+=== NAME  TestPalindromeStress/known_palindromes
+    stringutil_test.go:56:   checking "rotor"...
 === NAME  TestReverseBatch/long_words
     stringutil_test.go:202:   verified "Mediterranean" (13 chars)
 === NAME  TestReverseBatch/sentences
     stringutil_test.go:217:   "hello world from go" -> "og morf dlrow olleh"
+=== NAME  TestPalindromeStress/known_palindromes
+    stringutil_test.go:56:   checking "civic"...
 === NAME  TestPalindromeStress/non_palindromes
     stringutil_test.go:69:   checking "sample"...
 === NAME  TestReverseBatch/short_words
     stringutil_test.go:189:   verified "fast"
-=== NAME  TestPalindromeStress/known_palindromes
-    stringutil_test.go:56:   checking "civic"...
 === NAME  TestReverseBatch/long_words
     stringutil_test.go:202:   verified "approximately" (13 chars)
-=== NAME  TestPalindromeStress/known_palindromes
-    stringutil_test.go:56:   checking "kayak"...
+=== NAME  TestPalindromeStress/non_palindromes
+    stringutil_test.go:69:   checking "runner"...
 === NAME  TestReverseBatch/short_words
     stringutil_test.go:189:   verified "cool"
 === NAME  TestPalindromeStress/non_palindromes
-    stringutil_test.go:69:   checking "runner"...
     stringutil_test.go:74:   non-palindromes verified
+=== NAME  TestPalindromeStress/known_palindromes
+    stringutil_test.go:56:   checking "kayak"...
 === NAME  TestReverseBatch/sentences
     stringutil_test.go:217:   "testing is important" -> "tnatropmi si gnitset"
 === NAME  TestReverseBatch/long_words
@@ -617,7 +620,7 @@ FAIL	github.com/ansel1/tang/sample/panicker	1.411s
 --- PASS: TestReverseBatch (0.00s)
     --- PASS: TestReverseBatch/short_words (3.01s)
     --- PASS: TestReverseBatch/sentences (3.20s)
-    --- PASS: TestReverseBatch/long_words (3.51s)
+    --- PASS: TestReverseBatch/long_words (3.50s)
 === NAME  TestPalindromeStress/known_palindromes
     stringutil_test.go:56:   checking "refer"...
     stringutil_test.go:61:   palindromes verified
@@ -625,7 +628,7 @@ FAIL	github.com/ansel1/tang/sample/panicker	1.411s
     --- PASS: TestPalindromeStress/non_palindromes (3.01s)
     --- PASS: TestPalindromeStress/known_palindromes (3.51s)
 PASS
-ok  	github.com/ansel1/tang/sample/stringutil	14.277s
+ok  	github.com/ansel1/tang/sample/stringutil	14.743s
 === RUN   TestRequired
 === PAUSE TestRequired
 === RUN   TestMinLength
@@ -656,146 +659,147 @@ ok  	github.com/ansel1/tang/sample/stringutil	14.277s
     validator_test.go:304: requires database connection
 --- SKIP: TestSkippedDatabaseValidation (0.00s)
 === CONT  TestRequired
-=== CONT  TestMatchesPattern
-=== CONT  TestFormValidation
-    validator_test.go:224: Validating form submissions...
-=== RUN   TestFormValidation/user_registration
-=== PAUSE TestFormValidation/user_registration
 === RUN   TestRequired/valid
-=== RUN   TestFormValidation/contact_form
 === PAUSE TestRequired/valid
 === RUN   TestRequired/empty
-=== PAUSE TestFormValidation/contact_form
-=== PAUSE TestRequired/empty
-=== RUN   TestFormValidation/settings_form
-=== RUN   TestRequired/whitespace_only
-=== PAUSE TestFormValidation/settings_form
-=== CONT  TestFormValidation/user_registration
+=== CONT  TestMatchesPattern
+=== CONT  TestFormValidation
 === RUN   TestMatchesPattern/email
+=== NAME  TestFormValidation
+    validator_test.go:224: Validating form submissions...
+=== CONT  TestMaxLength
+=== CONT  TestValidate
 === PAUSE TestMatchesPattern/email
 === RUN   TestMatchesPattern/phone
-=== PAUSE TestMatchesPattern/phone
-=== RUN   TestMatchesPattern/url
-=== PAUSE TestMatchesPattern/url
-=== CONT  TestMatchesPattern/email
-=== RUN   TestMatchesPattern/email/valid
-=== PAUSE TestMatchesPattern/email/valid
-=== RUN   TestMatchesPattern/email/invalid
-=== PAUSE TestMatchesPattern/email/invalid
-=== RUN   TestMatchesPattern/email/missing_domain
-=== CONT  TestFormValidation/settings_form
-=== PAUSE TestMatchesPattern/email/missing_domain
-=== CONT  TestMatchesPattern/email/valid
-=== CONT  TestValidate
-=== RUN   TestValidate/all_pass
-=== CONT  TestFormValidation/contact_form
-=== PAUSE TestValidate/all_pass
-=== RUN   TestValidate/multiple_failures
-=== PAUSE TestValidate/multiple_failures
-=== RUN   TestValidate/partial_failure
-=== PAUSE TestValidate/partial_failure
-=== CONT  TestMaxLength
-=== CONT  TestMatchesPattern/email/invalid
+=== RUN   TestFormValidation/user_registration
 === RUN   TestMaxLength/valid
-=== CONT  TestValidate/partial_failure
 === PAUSE TestMaxLength/valid
-=== CONT  TestValidate/all_pass
-=== RUN   TestMaxLength/too_long
-=== CONT  TestMatchesPattern/url
-=== PAUSE TestMaxLength/too_long
-=== CONT  TestMaxLength/valid
-=== CONT  TestValidate/multiple_failures
-=== RUN   TestMatchesPattern/url/valid_https
-=== PAUSE TestMatchesPattern/url/valid_https
-=== RUN   TestMatchesPattern/url/valid_http
-=== PAUSE TestMatchesPattern/url/valid_http
-=== RUN   TestMatchesPattern/url/missing_scheme
-=== PAUSE TestMatchesPattern/url/missing_scheme
-=== CONT  TestMatchesPattern/url/valid_https
-=== NAME  TestValidate/multiple_failures
-    validator_test.go:177: Validation errors (expected): [value is required must be at least 5 characters, got 0]
---- PASS: TestValidate (0.00s)
-    --- PASS: TestValidate/partial_failure (0.00s)
-    --- PASS: TestValidate/all_pass (0.00s)
-    --- PASS: TestValidate/multiple_failures (0.00s)
-=== CONT  TestMatchesPattern/url/valid_http
-=== CONT  TestMatchesPattern/email/missing_domain
-=== CONT  TestMatchesPattern/url/missing_scheme
-=== PAUSE TestRequired/whitespace_only
-=== CONT  TestRequired/valid
-=== CONT  TestRequired/whitespace_only
-=== CONT  TestRequired/empty
-=== CONT  TestMaxLength/too_long
---- PASS: TestRequired (0.00s)
-    --- PASS: TestRequired/valid (0.00s)
-    --- PASS: TestRequired/whitespace_only (0.00s)
-    --- PASS: TestRequired/empty (0.00s)
 === CONT  TestMinLength
+=== RUN   TestMinLength/valid
+=== PAUSE TestRequired/empty
+=== RUN   TestRequired/whitespace_only
+=== PAUSE TestRequired/whitespace_only
+=== RUN   TestValidate/all_pass
+=== PAUSE TestValidate/all_pass
+=== PAUSE TestMatchesPattern/phone
+=== PAUSE TestFormValidation/user_registration
+=== RUN   TestMaxLength/too_long
+=== PAUSE TestMaxLength/too_long
+=== RUN   TestFormValidation/contact_form
+=== PAUSE TestMinLength/valid
+=== CONT  TestMaxLength/valid
+=== CONT  TestMaxLength/too_long
 --- PASS: TestMaxLength (0.00s)
     --- PASS: TestMaxLength/valid (0.00s)
     --- PASS: TestMaxLength/too_long (0.00s)
-=== RUN   TestMinLength/valid
-=== PAUSE TestMinLength/valid
+=== CONT  TestRequired/whitespace_only
+=== CONT  TestRequired/empty
+=== RUN   TestMatchesPattern/url
+=== PAUSE TestMatchesPattern/url
+=== CONT  TestMatchesPattern/email
+=== CONT  TestMatchesPattern/url
+=== CONT  TestMatchesPattern/phone
+=== RUN   TestMatchesPattern/url/valid_https
+=== PAUSE TestMatchesPattern/url/valid_https
+=== RUN   TestValidate/multiple_failures
+=== RUN   TestMatchesPattern/url/valid_http
+=== PAUSE TestValidate/multiple_failures
+=== RUN   TestMatchesPattern/email/valid
+=== RUN   TestValidate/partial_failure
+=== PAUSE TestMatchesPattern/email/valid
+=== PAUSE TestValidate/partial_failure
+=== CONT  TestValidate/all_pass
+=== CONT  TestValidate/partial_failure
+=== PAUSE TestMatchesPattern/url/valid_http
+=== RUN   TestMatchesPattern/email/invalid
+=== CONT  TestValidate/multiple_failures
+=== PAUSE TestMatchesPattern/email/invalid
+=== PAUSE TestFormValidation/contact_form
+=== NAME  TestValidate/multiple_failures
+    validator_test.go:177: Validation errors (expected): [value is required must be at least 5 characters, got 0]
+=== RUN   TestFormValidation/settings_form
+--- PASS: TestValidate (0.00s)
+    --- PASS: TestValidate/all_pass (0.00s)
+    --- PASS: TestValidate/partial_failure (0.00s)
+    --- PASS: TestValidate/multiple_failures (0.00s)
 === RUN   TestMinLength/too_short
 === PAUSE TestMinLength/too_short
+=== RUN   TestMatchesPattern/url/missing_scheme
+=== PAUSE TestMatchesPattern/url/missing_scheme
+=== CONT  TestMatchesPattern/url/valid_https
+=== CONT  TestMatchesPattern/url/missing_scheme
+=== CONT  TestRequired/valid
+=== CONT  TestMatchesPattern/url/valid_http
+=== RUN   TestMatchesPattern/phone/valid_US
+=== RUN   TestMatchesPattern/email/missing_domain
+=== PAUSE TestMatchesPattern/email/missing_domain
+=== CONT  TestMatchesPattern/email/valid
 === RUN   TestMinLength/exact
+=== CONT  TestMatchesPattern/email/missing_domain
+=== CONT  TestMatchesPattern/email/invalid
+--- PASS: TestRequired (0.00s)
+    --- PASS: TestRequired/whitespace_only (0.00s)
+    --- PASS: TestRequired/empty (0.00s)
+    --- PASS: TestRequired/valid (0.00s)
+=== PAUSE TestMatchesPattern/phone/valid_US
+=== RUN   TestMatchesPattern/phone/too_short
+=== PAUSE TestMatchesPattern/phone/too_short
+=== PAUSE TestFormValidation/settings_form
+=== CONT  TestFormValidation/user_registration
+=== CONT  TestFormValidation/settings_form
+=== RUN   TestMatchesPattern/phone/letters
+=== CONT  TestFormValidation/contact_form
 === PAUSE TestMinLength/exact
 === CONT  TestMinLength/valid
-=== CONT  TestMatchesPattern/phone
+=== PAUSE TestMatchesPattern/phone/letters
+=== CONT  TestMatchesPattern/phone/valid_US
 === CONT  TestMinLength/exact
+=== CONT  TestMatchesPattern/phone/too_short
+=== CONT  TestMatchesPattern/phone/letters
 === CONT  TestMinLength/too_short
-=== RUN   TestMatchesPattern/phone/valid_US
 --- PASS: TestMinLength (0.00s)
     --- PASS: TestMinLength/valid (0.00s)
     --- PASS: TestMinLength/exact (0.00s)
     --- PASS: TestMinLength/too_short (0.00s)
-=== PAUSE TestMatchesPattern/phone/valid_US
-=== RUN   TestMatchesPattern/phone/too_short
-=== PAUSE TestMatchesPattern/phone/too_short
-=== RUN   TestMatchesPattern/phone/letters
-=== PAUSE TestMatchesPattern/phone/letters
-=== CONT  TestMatchesPattern/phone/valid_US
-=== CONT  TestMatchesPattern/phone/letters
-=== CONT  TestMatchesPattern/phone/too_short
 --- PASS: TestMatchesPattern (0.00s)
-    --- PASS: TestMatchesPattern/email (0.00s)
-        --- PASS: TestMatchesPattern/email/valid (0.00s)
-        --- PASS: TestMatchesPattern/email/invalid (0.00s)
-        --- PASS: TestMatchesPattern/email/missing_domain (0.00s)
     --- PASS: TestMatchesPattern/url (0.00s)
         --- PASS: TestMatchesPattern/url/valid_https (0.00s)
         --- PASS: TestMatchesPattern/url/valid_http (0.00s)
         --- PASS: TestMatchesPattern/url/missing_scheme (0.00s)
+    --- PASS: TestMatchesPattern/email (0.00s)
+        --- PASS: TestMatchesPattern/email/valid (0.00s)
+        --- PASS: TestMatchesPattern/email/missing_domain (0.00s)
+        --- PASS: TestMatchesPattern/email/invalid (0.00s)
     --- PASS: TestMatchesPattern/phone (0.00s)
         --- PASS: TestMatchesPattern/phone/valid_US (0.00s)
-        --- PASS: TestMatchesPattern/phone/letters (0.00s)
         --- PASS: TestMatchesPattern/phone/too_short (0.00s)
-=== NAME  TestFormValidation/settings_form
-    validator_test.go:293:   display_name = "Alice" → 0 errors
+        --- PASS: TestMatchesPattern/phone/letters (0.00s)
 === NAME  TestFormValidation/contact_form
     validator_test.go:267:   name = "" → 2 errors (expected 2)
+=== NAME  TestFormValidation/settings_form
+    validator_test.go:293:   display_name = "Alice" → 0 errors
 === NAME  TestFormValidation/user_registration
-    validator_test.go:241:   password = "SecureP4ss!" → 0 errors
-    validator_test.go:241:   name = "Alice Smith" → 0 errors
-=== NAME  TestFormValidation/contact_form
-    validator_test.go:267:   email = "not-email" → 1 errors (expected 1)
+    validator_test.go:241:   username = "alice" → 0 errors
+    validator_test.go:241:   email = "alice@example.com" → 0 errors
 === NAME  TestFormValidation/settings_form
     validator_test.go:293:   timezone = "America/New_York" → 0 errors
-=== NAME  TestFormValidation/user_registration
-    validator_test.go:241:   bio = "Go developer" → 0 errors
+=== NAME  TestFormValidation/contact_form
+    validator_test.go:267:   email = "not-email" → 1 errors (expected 1)
 === NAME  TestFormValidation/settings_form
     validator_test.go:293:   language = "en" → 0 errors
 === NAME  TestFormValidation/contact_form
     validator_test.go:267:   subject = "Hi" → 1 errors (expected 1)
 === NAME  TestFormValidation/user_registration
-    validator_test.go:241:   username = "alice" → 0 errors
+    validator_test.go:241:   password = "SecureP4ss!" → 0 errors
 === NAME  TestFormValidation/contact_form
     validator_test.go:267:   message = "Help me with my account please" → 0 errors (expected 0)
+=== NAME  TestFormValidation/user_registration
+    validator_test.go:241:   name = "Alice Smith" → 0 errors
 === NAME  TestFormValidation/settings_form
     validator_test.go:293:   theme = "dark" → 0 errors
     validator_test.go:293:   page_size = "25" → 0 errors
 === NAME  TestFormValidation/user_registration
-    validator_test.go:241:   email = "alice@example.com" → 0 errors
+    validator_test.go:241:   bio = "Go developer" → 0 errors
     validator_test.go:246:   user registration form: all fields valid
 === NAME  TestFormValidation/contact_form
     validator_test.go:267:   phone = "+12025551234" → 0 errors (expected 0)
@@ -806,7 +810,7 @@ ok  	github.com/ansel1/tang/sample/stringutil	14.277s
 --- PASS: TestFormValidation (0.00s)
     --- PASS: TestFormValidation/user_registration (5.00s)
     --- PASS: TestFormValidation/contact_form (5.00s)
-    --- PASS: TestFormValidation/settings_form (6.00s)
+    --- PASS: TestFormValidation/settings_form (6.01s)
 PASS
-ok  	github.com/ansel1/tang/sample/validator	16.679s
+ok  	github.com/ansel1/tang/sample/validator	17.721s
 FAIL
