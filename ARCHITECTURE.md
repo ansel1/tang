@@ -2,7 +2,7 @@
 
 ## Overview
 
-`tang` is a command-line tool for summarizing Go test results in real-time. It processes the JSON output from `go test -json` and presents it either through an interactive Terminal User Interface (TUI) or as simple text output. The tool uses a pipeline architecture where a single active consumer drives a passive state collector.
+`tang` is a command-line tool for summarizing Go test results in real-time. It processes the JSON output from `go test -json` and presents it either through an interactive live display or as simple text output. The tool uses a pipeline architecture where a single active consumer drives a passive state collector.
 
 **Key Design Principles:**
 - **Pipeline Processing**: Linear flow from Engine -> Event Stream -> Consumer -> Collector
@@ -49,7 +49,7 @@
       ┌────────────────────┐
       │                    │
 ┌─────▼────┐          ┌────▼─────┐
-│   TUI    │   OR     │  Simple  │
+│  Live    │   OR     │  Simple  │
 │ (Model)  │          │  Output  │
 └─────┬────┘          └────┬─────┘
       │                    │
@@ -157,11 +157,11 @@ This package contains the domain model and the logic to build it.
 - **Passive Design**: Puts control in the hands of the consumer (TUI/Simple), simplifying threading.
 - **Detailed State**: Tracks everything needed for the final summary and TUI display.
 
-### 3. TUI (`tui/model.go`)
+### 3. Live Display (`tui/model.go`)
 
 **Responsibility:** Interactive terminal interface using Bubbletea
 
-The TUI is an **active consumer** that:
+The live display is an **active consumer** that:
 - Runs the Bubbletea event loop.
 - Receives events from the engine channel (batched for performance).
 - Pushes events into the `results.Collector`.
@@ -169,7 +169,7 @@ The TUI is an **active consumer** that:
 
 **Key Design Decisions:**
 - **Batch Processing**: Groups engine events to reduce render cycles (`EngineEventBatchMsg`).
-- **Single Threaded Update**: The `Update()` method is the single writer to the collector.
+- **Single-Threaded Update**: The `Update()` method is the single writer to the collector.
 - **View Logic**: Renders the current run state from the collector.
 
 ### 4. Simple Output (`output/simple.go`)
@@ -183,14 +183,14 @@ The simple output is an alternative **active consumer** that:
 - Prints the summary at the end.
 
 **Design Decisions:**
-- **Shared Logic**: Uses the same `results.Collector` as the TUI.
-- **Polymorphism**: `main.go` chooses between TUI and Simple Output based on flags.
+- **Shared Logic**: Uses the same `results.Collector` as the live display.
+- **Polymorphism**: `main.go` chooses between live display and Simple Output based on flags.
 
 ### 5. Summary Formatter (`output/format/summary.go`)
 
 **Responsibility:** Generate the text summary
 
-- Shared by both TUI and Simple Output.
+- Shared by both live display and Simple Output.
 - Computes statistics (slow tests, pass/fail counts).
 - Formats the "OVERALL RESULTS" block.
 - Handles colorization (red/green/yellow) via Lipgloss.
@@ -202,7 +202,7 @@ The simple output is an alternative **active consumer** that:
 1. **Input**: Lines read from stdin or file.
 2. **Engine**: Parses lines -> `engine.Event` channel.
 3. **Main**: Wires the channel to the chosen consumer.
-    - **TUI Mode**: Channel -> `tui.Model` (via Bubbletea)
+    - **Live Mode**: Channel -> `tui.Model` (via Bubbletea)
     - **Simple Mode**: Channel -> `output.SimpleOutput`
 4. **Consumer**:
     - Receives Event.
@@ -216,10 +216,10 @@ The architecture relies on **confinement** rather than locking for the primary d
 
 - The `results.Collector` is **NOT thread-safe**.
 - It is designed to be owned by a single active consumer.
-- **TUI Mode**: The Bubbletea `Update` loop allows exclusive access to the collector.
+- **Live Mode**: The Bubbletea `Update` loop allows exclusive access to the collector.
 - **Simple Mode**: The `ProcessEvents` loop has exclusive access.
 
-*Note: The TUI does read from the collector in its `View()` method. In Bubbletea, `View` is technically concurrent with `Update`, but in practice, they are often coordinated. If strict concurrency safety is needed between TUI Update and View, a lock would be added to the Model, not the Collector.*
+*Note: The live display does read from the collector in its `View()` method. In Bubbletea, `View` is technically concurrent with `Update`, but in practice, they are often coordinated. If strict concurrency safety is needed between Update and View, a lock would be added to the Model, not the Collector.*
 
 ## Key Design Decisions
 
@@ -228,8 +228,8 @@ To support replaying past logs with realistic timing:
 - **ReplayReader**: A wrapper around `io.Reader` that simulates delays based on timestamp deltas.
 - **Timing Logic**: The `Collector` distinguishes between `EventTime` (log timestamp) and `WallStartTime` (replay wall clock) to show accurate "Elapsed" timers during replay.
 
-### 2. Event Batching in TUI
-The TUI batches events from the engine channel before sending them to the Bubbletea update loop. This prevents the UI from freezing when processing high-volume output (e.g., thousands of lines per second).
+### 2. Event Batching in Live Mode
+The live display batches events from the engine channel before sending them to the Bubbletea update loop. This prevents the UI from freezing when processing high-volume output (e.g., thousands of lines per second).
 
 ### 3. Multiple Test Runs
 The `results.Collector` can detect when a new test run starts (e.g., `go test -count=N`). It creates a new `Run` object in the state. The consumers are designed to display the "Current Run".

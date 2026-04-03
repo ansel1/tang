@@ -1,13 +1,16 @@
 TODO
 ----
 - [x] detect and report panics
-- [x] Play with the UX: make the tui feed more like the summary format
-- [x] add a `-v` flag.  In both tui and notty, outputs something closer to the original 
+- [x] Play with the UX: make the live feed more like the summary format
+- [x] add a `-v` flag.  In both live and notty, outputs something closer to the original 
       test verbose output, including all tests
 - [x] rename `--junitout` to `--junitfile`
+- [ ] add COLUMNS support if we don't already have it
 - [ ] add a `--no-color` flag
+- [ ] when eliding, have RUN and CONT taking higher precendence than PAUSE
+- [ ] don't count paused tests in the running count
 - [ ] clear up the help string
-- [ ] in the tui, try using the icons again in the left gutter for finished packages, so isntead of:
+- [ ] in live mode, try using the icons again in the left gutter for finished packages, so isntead of:
 
         ⠦ gitlab.protectv.local/ncryptify/solo.git                                                                                                                                                                                 ✓279 ✗0 ∅1 =280 3.4m
             --- PASS: TestGetLoginURI/good_URL_w/javascript-quote,_should_be_escaped (0.00s)                                                                                                                                                       0.0s
@@ -66,14 +69,14 @@ TODO
 
         tang test ./... -v
 
-**tui**
+**live**
 - [ ] 
 
 **optimizations**
 - [ ] The replay reader parses each line.  The same line gets parsed again later.  So we're double parsing.  Would be more efficient to implement the replay logic later in the data pipeline.  Also, the replay reader reads all the lines into memory.
 - [ ] If there's a line in the output which is json, but not a test/build event, I'm not sure what we'll do
 - [x] need to rethink the notty mode
-- [ ] ctrl-c doesn't work if the tui hasn't started yet
+- [ ] ctrl-c doesn't work if the live UI hasn't started yet
 - [ ] handle "action":"bench" events 
 - [ ] in Collector.handleBuildEvent(), why not just start a new run if needed?
   // The Action field is one of a fixed set of action descriptions:

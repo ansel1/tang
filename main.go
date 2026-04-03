@@ -31,7 +31,7 @@ func run() int {
 	outfile := flag.String("outfile", "", "Save all input to the specified file")
 	jsonfile := flag.String("jsonfile", "", "Save JSON events to the specified file")
 	junitfile := flag.String("junitfile", "", "Save cumulative test results to the specified JUnit XML file")
-	notty := flag.Bool("notty", false, "Don't use TUI, output to stdout")
+	notty := flag.Bool("notty", false, "Don't use live UI, output to stdout")
 	verbose := flag.Bool("v", false, "Verbose output (show all test output in -notty mode)")
 	replay := flag.Bool("replay", false, "Replay events with timing from original test run (requires -f)")
 	rate := flag.Float64("rate", 1.0, "Replay rate multiplier (0=instant, 1=original speed, 0.5=2x speed)")
@@ -134,8 +134,8 @@ func run() int {
 	go func() {
 		<-sigChan
 		writeJUnit()
-		// Re-trigger exit to ensure default behavior if not in TUI or if TUI hangs
-		// In TUI mode, bubbletea usually catches SIGINT first, but we need to ensure this output happens.
+		// Re-trigger exit to ensure default behavior if not in live mode or if it hangs
+		// In live mode, bubbletea usually catches SIGINT first, but we need to ensure this output happens.
 		// However, signal.Notify might intercept it from bubbletea if we aren't careful.
 		// Actually, bubbletea handles interrupts internally if not specified otherwise.
 		// But in this global handler, we want to ensure we write the file.
@@ -143,7 +143,7 @@ func run() int {
 		// If the user force kills, we might miss it.
 		// Let's rely on defer for normal exit, and this goroutine for signals.
 		// After writing, we should probably let the program terminate naturally or force it if it's stuck.
-		// But TUI also listens for signals. This might compete.
+		// But the live UI also listens for signals. This might compete.
 		//
 		// Correct approach: output generation is fast. We can do it and let default handler proceed or exit.
 		os.Exit(1)
@@ -151,18 +151,18 @@ func run() int {
 
 	var exitCode int
 
-	// Skip TUI if:
+	// Skip live mode if:
 	// 1. -notty flag is set, OR
 	// 2. -f is used without -replay (reading from file without replay)
-	skipTUI := *notty || (*infile != "" && !*replay)
+	skipLive := *notty || (*infile != "" && !*replay)
 
 	summaryOpts := format.SummaryOptions{
 		IncludeSkipped: *includeSkipped,
 		IncludeSlow:    *includeSlow,
 	}
 
-	if skipTUI {
-		// Simple output mode (no TUI)
+	if skipLive {
+		// Simple output mode (no live UI)
 		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts, *verbose)
 		if err := simple.ProcessEvents(engineEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
@@ -175,12 +175,12 @@ func run() int {
 			exitCode = 0
 		}
 	} else {
-		// TUI mode
+		// Live mode
 		var p *tea.Program
 		var pDone chan struct{}
 		var eventCount int
 
-		// Buffer go test output to print after TUI exits
+		// Buffer go test output to print after live UI exits
 		var outputBuf bytes.Buffer
 		simpleOut := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose)
 		simpleOut.Init()
@@ -219,12 +219,12 @@ func run() int {
 			}
 
 			if p == nil {
-				// TUI is NOT running
+				// Live UI is NOT running
 				// safe to access state without lock
 
 				// Check if run is active
 				if collector.State().CurrentRun != nil {
-					// Run started! Start TUI.
+					// Run started! Start live UI.
 					m := tui.NewModel(*replay, *rate, collector)
 					m.SlowThreshold = *slowThreshold
 					p = tea.NewProgram(m)
@@ -232,7 +232,7 @@ func run() int {
 
 					go func() {
 						if _, err := p.Run(); err != nil {
-							fmt.Fprintf(os.Stderr, "Error running TUI: %v\n", err)
+							fmt.Fprintf(os.Stderr, "Error running live UI: %v\n", err)
 						}
 						close(pDone)
 					}()
@@ -243,11 +243,11 @@ func run() int {
 					}
 				}
 			} else {
-				// TUI IS running
-				// Check if TUI exited unexpectedly (e.g. user pressed q)
+				// Live UI IS running
+				// Check if live UI exited unexpectedly (e.g. user pressed q)
 				select {
 				case <-pDone:
-					// TUI finished but run is still active (or we haven't processed the end event yet)
+					// Live UI finished but run is still active (or we haven't processed the end event yet)
 					// This implies user requested quit.
 					// We should exit the whole program.
 					printSummary()
@@ -262,7 +262,7 @@ func run() int {
 				collector.Unlock()
 
 				if currentRun == nil {
-					// Run finished! Quit TUI with an empty final render.
+					// Run finished! Quit live UI with an empty final render.
 					p.Send(tui.QuitMsg{})
 					<-pDone
 					p = nil
@@ -290,7 +290,7 @@ func run() int {
 			}
 		}
 
-		// Ensure TUI is closed if loop finishes
+		// Ensure live UI is closed if loop finishes
 		if p != nil {
 			p.Send(tui.QuitMsg{})
 			<-pDone

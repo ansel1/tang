@@ -360,7 +360,7 @@ func (c *Collector) Finish() {
 		endTime = time.Now()
 		if c.isReplay {
 			// Calculate simulated end time based on wall clock duration and replay rate
-			// This ensures that the summary matches the TUI's "perceived" time
+			// This ensures that the summary matches the live UI's "perceived" time
 			wallDuration := time.Since(run.WallStartTime)
 
 			// Apply rate (rate is inverse speed, e.g. 0.5 means 2x speed)
@@ -382,7 +382,7 @@ func (c *Collector) Finish() {
 			pkg.Status = StatusInterrupted
 
 			// Calculate elapsed time based on run duration and package start offset
-			// This ensures consistency with TUI even if ReplayReader doesn't sleep exactly as expected
+			// This ensures consistency with live UI even if ReplayReader doesn't sleep exactly as expected
 			wallRunDuration := time.Since(pkg.WallStartTime)
 			if c.isReplay && c.replayRate > 0 {
 				wallRunDuration = time.Duration(float64(wallRunDuration) / c.replayRate)

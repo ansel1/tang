@@ -3,7 +3,7 @@
 # run.sh — Demonstrates tang features by running the sample project's tests.
 #
 # Usage:
-#   ./run.sh              Run all tests through tang (TUI mode)
+#   ./run.sh              Run all tests through tang (live mode)
 #   ./run.sh notty        Run all tests through tang (plain text mode)
 #   ./run.sh save         Run tests and save output to a file for replay
 #   ./run.sh replay       Replay saved output through tang

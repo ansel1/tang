@@ -113,7 +113,7 @@ func (s *SimpleOutput) Init() {
 
 // ProcessEvent handles a single engine event. It does NOT call
 // collector.Push — the caller is responsible for that. This allows
-// ProcessEvent to be used in TUI mode where the main loop already
+// ProcessEvent to be used in live mode where the main loop already
 // pushes events to the collector.
 func (s *SimpleOutput) ProcessEvent(evt engine.Event) {
 	switch evt.Type {
