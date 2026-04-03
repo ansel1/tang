@@ -217,7 +217,7 @@ func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.Test
 
 	for _, line := range tr.Output {
 		sb.WriteString(logIndent)
-		sb.WriteString(ensureReset(strings.TrimLeft(line, " \t")))
+		sb.WriteString("  " + ensureReset(line))
 		sb.WriteString("\n")
 	}
 }
