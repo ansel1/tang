@@ -199,7 +199,6 @@ func isSubtest(name string) bool {
 
 func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.TestResult, label string, boldStyle, colorStyle lipgloss.Style) {
 	indent := testIndent(tr.Name)
-	logIndent := indent + "    "
 
 	annotation := fmt.Sprintf("(%.2fs)", tr.Elapsed.Seconds())
 	if tr.TimedOut && len(tr.Output) == 0 {
@@ -216,8 +215,8 @@ func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.Test
 	sb.WriteString("\n")
 
 	for _, line := range tr.Output {
-		sb.WriteString(logIndent)
-		sb.WriteString("  " + ensureReset(line))
+		sb.WriteString(indent)
+		sb.WriteString(ensureReset(line))
 		sb.WriteString("\n")
 	}
 }
@@ -248,7 +247,7 @@ func (f *SummaryFormatter) formatBuildIssue(sb *strings.Builder, pkg *results.Pa
 			lines := strings.Split(strings.TrimRight(be.Output, "\n"), "\n")
 			for _, line := range lines {
 				if line != "" {
-					sb.WriteString(IndentLevel2)
+					sb.WriteString(IndentLevel)
 					sb.WriteString(f.failStyle.Render(ensureReset(line)))
 					sb.WriteString("\n")
 				}

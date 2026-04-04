@@ -6,7 +6,7 @@ TODO
       test verbose output, including all tests
 - [x] rename `--junitout` to `--junitfile`
 - [x] add COLUMNS support if we don't already have it
-- [ ] still something wrong with indentation of log lines in the summary.  when running sample, they are indented too far, but not when running henry's tests
+- [x] still something wrong with indentation of log lines in the summary.  when running sample, they are indented too far, but not when running henry's tests
 - [ ] add a `--no-color` flag
 - [ ] when eliding, have RUN and CONT taking higher precendence than PAUSE
 - [ ] don't count paused tests in the running count
