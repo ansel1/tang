@@ -56,7 +56,7 @@ func sendEvents(events []engine.Event) <-chan engine.Event {
 func TestSimpleOutput_Verbose_PassingTest(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true, 80)
 
 	err := simple.ProcessEvents(sendEvents(passingPackageEvents("example.com/pkg")))
 	require.NoError(t, err)
@@ -71,7 +71,7 @@ func TestSimpleOutput_Verbose_PassingTest(t *testing.T) {
 func TestSimpleOutput_Verbose_FailedTest(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true, 80)
 
 	err := simple.ProcessEvents(sendEvents(failingPackageEvents("example.com/pkg")))
 	require.NoError(t, err)
@@ -87,7 +87,7 @@ func TestSimpleOutput_Verbose_FailedTest(t *testing.T) {
 func TestSimpleOutput_NonVerbose_PassingTest(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80)
 
 	err := simple.ProcessEvents(sendEvents(passingPackageEvents("example.com/pkg")))
 	require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestSimpleOutput_NonVerbose_PassingTest(t *testing.T) {
 func TestSimpleOutput_NonVerbose_FailedTest(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80)
 
 	err := simple.ProcessEvents(sendEvents(failingPackageEvents("example.com/pkg")))
 	require.NoError(t, err)
@@ -123,7 +123,7 @@ func TestSimpleOutput_NonVerbose_FailedTest(t *testing.T) {
 func TestSimpleOutput_NonVerbose_BuildError(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80)
 
 	events := []engine.Event{
 		{Type: engine.EventBuild, BuildEvent: parser.BuildEvent{ImportPath: "example.com/broken", Action: "build-output", Output: "# example.com/broken\n"}},
@@ -144,7 +144,7 @@ func TestSimpleOutput_NonVerbose_BuildError(t *testing.T) {
 func TestSimpleOutput_RawLines(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80)
 
 	events := []engine.Event{
 		{Type: engine.EventRawLine, RawLine: []byte("This is a raw line")},
@@ -166,7 +166,7 @@ func TestSimpleOutput_HasFailures(t *testing.T) {
 	state.Runs = append(state.Runs, run)
 
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80)
 
 	assert.False(t, simple.HasFailures())
 

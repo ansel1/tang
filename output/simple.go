@@ -19,6 +19,7 @@ type SimpleOutput struct {
 	slowThreshold  time.Duration
 	summaryOptions format.SummaryOptions
 	verbose        bool
+	width          int
 
 	// Per-event state (initialized by Init, used by ProcessEvent)
 	writers                   map[string]*packageWriter
@@ -89,13 +90,17 @@ func pickFocus(writers map[string]*packageWriter) string {
 	return best
 }
 
-func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold time.Duration, summaryOptions format.SummaryOptions, verbose bool) *SimpleOutput {
+func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold time.Duration, summaryOptions format.SummaryOptions, verbose bool, width int) *SimpleOutput {
+	if width <= 0 {
+		width = 80
+	}
 	return &SimpleOutput{
 		writer:         w,
 		collector:      collector,
 		slowThreshold:  slowThreshold,
 		summaryOptions: summaryOptions,
 		verbose:        verbose,
+		width:          width,
 	}
 }
 
@@ -346,7 +351,7 @@ func (s *SimpleOutput) writeSummary() error {
 		return nil
 	}
 
-	summaryText := format.NewSummaryFormatter(80, s.summaryOptions).Format(summary)
+	summaryText := format.NewSummaryFormatter(s.width, s.summaryOptions).Format(summary)
 	if summary.HasTestDetailsWithOptions(s.summaryOptions) {
 		_, _ = fmt.Fprintln(s.writer)
 	}

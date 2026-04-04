@@ -14,6 +14,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/ansel1/tang/engine"
+	"github.com/ansel1/tang/internal/termwidth"
 	"github.com/ansel1/tang/output"
 	"github.com/ansel1/tang/output/format"
 	"github.com/ansel1/tang/output/junit"
@@ -156,6 +157,9 @@ func run() int {
 	// 2. -f is used without -replay (reading from file without replay)
 	skipLive := *notty || (*infile != "" && !*replay)
 
+	termWidth := termwidth.Get(os.Stdout.Fd())
+	columnsOverride := termwidth.FromEnv()
+
 	summaryOpts := format.SummaryOptions{
 		IncludeSkipped: *includeSkipped,
 		IncludeSlow:    *includeSlow,
@@ -163,7 +167,7 @@ func run() int {
 
 	if skipLive {
 		// Simple output mode (no live UI)
-		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts, *verbose)
+		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts, *verbose, termWidth)
 		if err := simple.ProcessEvents(engineEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			return 1
@@ -182,7 +186,7 @@ func run() int {
 
 		// Buffer go test output to print after live UI exits
 		var outputBuf bytes.Buffer
-		simpleOut := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose)
+		simpleOut := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose, termWidth)
 		simpleOut.Init()
 
 		printSummary := func() {
@@ -201,7 +205,7 @@ func run() int {
 				}
 				summary := format.ComputeSummary(lastRun, *slowThreshold)
 				if summary != nil {
-					summaryText := format.NewSummaryFormatter(80, summaryOpts).Format(summary)
+					summaryText := format.NewSummaryFormatter(termWidth, summaryOpts).Format(summary)
 					if len(lastRun.NonTestOutput) > 0 || summary.HasTestDetailsWithOptions(summaryOpts) {
 						fmt.Print("\n")
 					}
@@ -227,7 +231,17 @@ func run() int {
 					// Run started! Start live UI.
 					m := tui.NewModel(*replay, *rate, collector)
 					m.SlowThreshold = *slowThreshold
-					p = tea.NewProgram(m)
+					var progOpts []tea.ProgramOption
+					if columnsOverride > 0 {
+						progOpts = append(progOpts, tea.WithFilter(func(_ tea.Model, msg tea.Msg) tea.Msg {
+							if ws, ok := msg.(tea.WindowSizeMsg); ok {
+								ws.Width = columnsOverride
+								return ws
+							}
+							return msg
+						}))
+					}
+					p = tea.NewProgram(m, progOpts...)
 					pDone = make(chan struct{})
 
 					go func() {
