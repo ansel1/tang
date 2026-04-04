@@ -101,7 +101,7 @@ type TestResult struct {
 	Elapsed       time.Duration
 	Output        []string // Failure/skip messages
 	SummaryLine   string   // The "===" or "---" line
-	TimedOut      bool     // True if the test was interrupted by a timeout panic
+	Interrupted   bool     // True if the test was interrupted by a panic or runtime fatal
 }
 
 func (t *TestResult) Running() bool {

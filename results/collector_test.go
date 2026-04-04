@@ -415,8 +415,8 @@ func TestCollectorTimeoutPanic(t *testing.T) {
 	if testA.Status != StatusFailed {
 		t.Errorf("Expected TestA status Failed, got %s", testA.Status)
 	}
-	if !testA.TimedOut {
-		t.Error("Expected TestA.TimedOut to be true")
+	if !testA.Interrupted {
+		t.Error("Expected TestA.Interrupted to be true")
 	}
 	if len(testA.Output) == 0 {
 		t.Error("Expected TestA to retain its panic output")
@@ -426,8 +426,8 @@ func TestCollectorTimeoutPanic(t *testing.T) {
 	if testB.Status != StatusFailed {
 		t.Errorf("Expected TestB status Failed, got %s", testB.Status)
 	}
-	if !testB.TimedOut {
-		t.Error("Expected TestB.TimedOut to be true")
+	if !testB.Interrupted {
+		t.Error("Expected TestB.Interrupted to be true")
 	}
 	if len(testB.Output) != 0 {
 		t.Errorf("Expected TestB to have no output (deduped), got %d lines", len(testB.Output))

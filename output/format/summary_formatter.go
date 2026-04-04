@@ -201,8 +201,8 @@ func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.Test
 	indent := testIndent(tr.Name)
 
 	annotation := fmt.Sprintf("(%.2fs)", tr.Elapsed.Seconds())
-	if tr.TimedOut && len(tr.Output) == 0 {
-		annotation = "(timed out)"
+	if tr.Interrupted && len(tr.Output) == 0 {
+		annotation = "(interrupted)"
 	}
 
 	sb.WriteString(indent)

@@ -260,10 +260,16 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 			} else {
 				testResult.Output = append(testResult.Output, output)
 
-				// Detect timeout panic: go test emits the panic stacktrace as
-				// output on one arbitrary running test per package.
-				if strings.HasPrefix(output, "panic: test timed out after ") {
-					pkg.PanicTestKey = testKey
+				// Detect fatal crashes: go test emits the panic/fatal
+				// stacktrace as output on one arbitrary running test.
+				// Timeout panics and runtime fatals (e.g. concurrent
+				// map writes) both kill the process, leaving other
+				// tests without terminal actions.
+				if pkg.PanicTestKey == "" {
+					if strings.HasPrefix(output, "panic: ") ||
+						strings.HasPrefix(output, "fatal error: ") {
+						pkg.PanicTestKey = testKey
+					}
 				}
 			}
 		}
@@ -301,14 +307,11 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 }
 
 // failInterruptedTests transitions still-running tests in a failed package to
-// StatusFailed. When a timeout panic is detected, the test that received the
-// panic output is marked as the primary failure (retaining its output), and
-// the remaining interrupted tests are marked as timed out.
+// StatusFailed. When a panic/fatal source test is identified (PanicTestKey),
+// its output is preserved and other interrupted tests have their output
+// cleared. When no source is identified, all interrupted tests retain their
+// output.
 func (c *Collector) failInterruptedTests(run *Run, pkg *PackageResult) {
-	if pkg.PanicTestKey == "" {
-		return
-	}
-
 	for _, testName := range pkg.TestOrder {
 		testKey := pkg.Name + "/" + testName
 		tr := run.TestResults[testKey]
@@ -317,13 +320,13 @@ func (c *Collector) failInterruptedTests(run *Run, pkg *PackageResult) {
 		}
 
 		tr.Status = StatusFailed
-		tr.TimedOut = true
+		tr.Interrupted = true
 		pkg.Counts.Failed++
 		pkg.Counts.Running--
 		run.Counts.Failed++
 		run.Counts.Running--
 
-		if testKey != pkg.PanicTestKey {
+		if pkg.PanicTestKey != "" && testKey != pkg.PanicTestKey {
 			tr.Output = nil
 		}
 	}
