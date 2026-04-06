@@ -55,7 +55,8 @@ type Run struct {
 		Passed  int // Number of passed tests
 		Failed  int // Number of failed tests
 		Skipped int // Number of skipped tests
-		Running int // Number of running tests
+		Running int // Number of actively running tests (excludes paused)
+		Paused  int // Number of paused tests
 	}
 	Status  Status
 	Running bool
@@ -83,7 +84,8 @@ type PackageResult struct {
 		Passed  int // Number of passed tests
 		Failed  int // Number of failed tests
 		Skipped int // Number of skipped tests
-		Running int // Number of running tests
+		Running int // Number of actively running tests (excludes paused)
+		Paused  int // Number of paused tests
 	}
 	Output       string   // Final output line (e.g., coverage information)
 	TestOrder    []string // Chronological order of test starts

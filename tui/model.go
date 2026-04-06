@@ -255,10 +255,12 @@ func (m *Model) renderRun(run *results.Run) string {
 	}
 
 	// Calculate max widths for each column (including run-level counts for the summary line)
-	var maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed int
+	var maxRunning, maxPaused, maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed int
 
 	// Include run-level counts in width calculation
-	runTotal := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped + run.Counts.Running
+	runTotal := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped
+	maxRunning = len(fmt.Sprintf("%d", run.Counts.Running))
+	maxPaused = len(fmt.Sprintf("%d", run.Counts.Paused))
 	maxPassed = len(fmt.Sprintf("%d", run.Counts.Passed))
 	maxFailed = len(fmt.Sprintf("%d", run.Counts.Failed))
 	maxSkipped = len(fmt.Sprintf("%d", run.Counts.Skipped))
@@ -266,6 +268,12 @@ func (m *Model) renderRun(run *results.Run) string {
 	maxElapsed = len(formatElapsedTime(m.runElapsed(run)))
 
 	for _, pkg := range run.Packages {
+		if runningLen := len(fmt.Sprintf("%d", pkg.Counts.Running)); runningLen > maxRunning {
+			maxRunning = runningLen
+		}
+		if pausedLen := len(fmt.Sprintf("%d", pkg.Counts.Paused)); pausedLen > maxPaused {
+			maxPaused = pausedLen
+		}
 		if passedLen := len(fmt.Sprintf("%d", pkg.Counts.Passed)); passedLen > maxPassed {
 			maxPassed = passedLen
 		}
@@ -405,7 +413,7 @@ func (m *Model) renderRun(run *results.Run) string {
 	allocate(p3)
 
 	// Summary line at top
-	m.renderSummaryLine(&b, run, maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed)
+	m.renderSummaryLine(&b, run, maxRunning, maxPaused, maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed)
 
 	// Add separator line
 	if len(run.PackageOrder) > 0 {
@@ -416,16 +424,16 @@ func (m *Model) renderRun(run *results.Run) string {
 	// Render packages
 	for _, pkgName := range run.PackageOrder {
 		pkgState := run.Packages[pkgName]
-		m.renderPackage(&b, run, pkgState, maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed, linesToShow[pkgName])
+		m.renderPackage(&b, run, pkgState, maxRunning, maxPaused, maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed, linesToShow[pkgName])
 	}
 
 	return b.String()
 }
 
 // renderPackage renders a single package and its tests
-func (m *Model) renderPackage(b *strings.Builder, run *results.Run, pkg *results.PackageResult, wPassed, wFailed, wSkipped, wTotal, wElapsed int, testLines map[string]int) {
+func (m *Model) renderPackage(b *strings.Builder, run *results.Run, pkg *results.PackageResult, wRunning, wPaused, wPassed, wFailed, wSkipped, wTotal, wElapsed int, testLines map[string]int) {
 	// Render package header
-	m.renderPackageHeader(b, pkg, wPassed, wFailed, wSkipped, wTotal, wElapsed)
+	m.renderPackageHeader(b, pkg, wRunning, wPaused, wPassed, wFailed, wSkipped, wTotal, wElapsed)
 
 	// Render tests if allocated
 	if pkg.Status == results.StatusRunning || pkg.Status == results.StatusInterrupted {
@@ -441,7 +449,7 @@ func (m *Model) renderPackage(b *strings.Builder, run *results.Run, pkg *results
 }
 
 // renderPackageHeader renders the package summary line
-func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResult, wPassed, wFailed, wSkipped, wTotal, wElapsed int) {
+func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResult, wRunning, wPaused, wPassed, wFailed, wSkipped, wTotal, wElapsed int) {
 	var leftPart string
 	var rightPart string
 
@@ -452,21 +460,21 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 		passColor, failColor, skipColor, neutralColor = m.brightPass, m.brightFail, m.brightSkip, m.brightNeutral
 	}
 
-	passedStr := fmt.Sprintf("✓%*d", wPassed, pkg.Counts.Passed)
+	passedStr := fmt.Sprintf("%*s", wPassed+1, fmt.Sprintf("✓%d", pkg.Counts.Passed))
 	if pkg.Counts.Passed > 0 {
 		passedStr = passColor.Render(passedStr)
 	} else {
 		passedStr = neutralColor.Render(passedStr)
 	}
 
-	failedStr := fmt.Sprintf("✗%*d", wFailed, pkg.Counts.Failed)
+	failedStr := fmt.Sprintf("%*s", wFailed+1, fmt.Sprintf("✗%d", pkg.Counts.Failed))
 	if pkg.Counts.Failed > 0 {
 		failedStr = failColor.Render(failedStr)
 	} else {
 		failedStr = neutralColor.Render(failedStr)
 	}
 
-	skippedStr := fmt.Sprintf("∅%*d", wSkipped, pkg.Counts.Skipped)
+	skippedStr := fmt.Sprintf("%*s", wSkipped+1, fmt.Sprintf("∅%d", pkg.Counts.Skipped))
 	if pkg.Counts.Skipped > 0 {
 		skippedStr = skipColor.Render(skippedStr)
 	} else {
@@ -474,7 +482,7 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 	}
 
 	total := pkg.Counts.Passed + pkg.Counts.Failed + pkg.Counts.Skipped
-	totalStr := neutralColor.Render(fmt.Sprintf("=%*d", wTotal, total))
+	totalStr := neutralColor.Render(fmt.Sprintf("%*d", wTotal, total))
 
 	var elapsedVal string
 	currentElapsed := m.packageElapsed(pkg)
@@ -484,7 +492,19 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 		elapsedStr = m.brightStyle.Render(elapsedStr)
 	}
 
-	rightPart = fmt.Sprintf("%s %s %s %s %s", passedStr, failedStr, skippedStr, totalStr, elapsedStr)
+	// Running/paused columns only shown for running packages; blank-padded otherwise
+	// Display width: icon(1) + digits(wN) per column, plus 1 space between + 1 trailing space
+	runPauseWidth := 1 + wRunning + 1 + 1 + wPaused + 1
+	var runPausePart string
+	if running {
+		runningStr := neutralColor.Render(fmt.Sprintf("%*s", wRunning+1, fmt.Sprintf("▶%d", pkg.Counts.Running)))
+		pausedStr := neutralColor.Render(fmt.Sprintf("%*s", wPaused+1, fmt.Sprintf("⏸%d", pkg.Counts.Paused)))
+		runPausePart = fmt.Sprintf("%s %s ", runningStr, pausedStr)
+	} else {
+		runPausePart = strings.Repeat(" ", runPauseWidth)
+	}
+
+	rightPart = fmt.Sprintf("%s(%s %s %s) %s %s", runPausePart, passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 	leftPart = pkg.Name
 	if !running && pkg.Output != "" {
 		leftPart = expandTabs(pkg.Output, 8)
@@ -651,64 +671,67 @@ func (m *Model) renderAlignedLine(b *strings.Builder, left, right, prefix string
 }
 
 // renderSummaryLine renders the top summary line
-func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wPassed, wFailed, wSkipped, wTotal, wElapsed int) {
+func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wRunning, wPaused, wPassed, wFailed, wSkipped, wTotal, wElapsed int) {
 	var leftPart string
 	var rightPart string
 
-	var statusLabel string
-	switch run.Status {
-	case results.StatusRunning:
-		statusLabel = "RUNNING"
-	case results.StatusFailed:
-		statusLabel = "FAILED"
-	case results.StatusPassed:
-		statusLabel = "PASSED"
-	case results.StatusInterrupted:
-		statusLabel = "INTERRUPTED"
-	default:
-		statusLabel = "UNKNOWN"
-	}
+	running := run.Status == results.StatusRunning
 
-	if run.Counts.Running > 0 {
-		leftPart = fmt.Sprintf("%s (%d)", statusLabel, run.Counts.Running)
+	totalPkgs := len(run.PackageOrder)
+	donePkgs := totalPkgs - run.RunningPkgs
+	if running {
+		leftPart = fmt.Sprintf("(%d packages: %d running, %d done)", totalPkgs, run.RunningPkgs, donePkgs)
 	} else {
+		var statusLabel string
+		switch run.Status {
+		case results.StatusFailed:
+			statusLabel = "FAILED"
+		case results.StatusPassed:
+			statusLabel = "PASSED"
+		case results.StatusInterrupted:
+			statusLabel = "INTERRUPTED"
+		default:
+			statusLabel = "UNKNOWN"
+		}
 		leftPart = statusLabel
 	}
 
-	running := run.Status == results.StatusRunning
 	passColor, failColor, skipColor, neutralColor := m.passStyle, m.failStyle, m.skipStyle, m.neutralStyle
 	if running {
 		passColor, failColor, skipColor, neutralColor = m.brightPass, m.brightFail, m.brightSkip, m.brightNeutral
 	}
 
-	passedStr := fmt.Sprintf("✓%*d", wPassed, run.Counts.Passed)
+	passedStr := fmt.Sprintf("%*s", wPassed+1, fmt.Sprintf("✓%d", run.Counts.Passed))
 	if run.Counts.Passed > 0 {
 		passedStr = passColor.Render(passedStr)
 	} else {
 		passedStr = neutralColor.Render(passedStr)
 	}
 
-	failedStr := fmt.Sprintf("✗%*d", wFailed, run.Counts.Failed)
+	failedStr := fmt.Sprintf("%*s", wFailed+1, fmt.Sprintf("✗%d", run.Counts.Failed))
 	if run.Counts.Failed > 0 {
 		failedStr = failColor.Render(failedStr)
 	} else {
 		failedStr = neutralColor.Render(failedStr)
 	}
 
-	skippedStr := fmt.Sprintf("∅%*d", wSkipped, run.Counts.Skipped)
+	skippedStr := fmt.Sprintf("%*s", wSkipped+1, fmt.Sprintf("∅%d", run.Counts.Skipped))
 	if run.Counts.Skipped > 0 {
 		skippedStr = skipColor.Render(skippedStr)
 	} else {
 		skippedStr = neutralColor.Render(skippedStr)
 	}
 
-	total := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped + run.Counts.Running
-	totalStr := neutralColor.Render(fmt.Sprintf("=%*d", wTotal, total))
+	total := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped
+	totalStr := neutralColor.Render(fmt.Sprintf("%*d", wTotal, total))
+
+	runningStr := neutralColor.Render(fmt.Sprintf("%*s", wRunning+1, fmt.Sprintf("▶%d", run.Counts.Running)))
+	pausedStr := neutralColor.Render(fmt.Sprintf("%*s", wPaused+1, fmt.Sprintf("⏸%d", run.Counts.Paused)))
 
 	elapsedVal := formatElapsedTime(m.runElapsed(run))
 	elapsedStr := fmt.Sprintf("%*s", wElapsed, elapsedVal)
 
-	rightPart = fmt.Sprintf("%s %s %s %s %s", passedStr, failedStr, skippedStr, totalStr, elapsedStr)
+	rightPart = fmt.Sprintf("%s %s (%s %s %s) %s %s", runningStr, pausedStr, passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 
 	prefix := m.getStatusPrefix(run.Status, run.Counts.Failed > 0)
 	if running {

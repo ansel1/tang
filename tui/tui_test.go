@@ -231,7 +231,7 @@ func TestRunningPackagesShowTests(t *testing.T) {
 		{"Package name", "github.com/test/pkg1"},
 		{"Test name", "TestBar"},
 		{"Test output", "bar_test.go:20"},
-		{"Running indicator", "RUNNING"},
+		{"Running indicator", "running"},
 	}
 
 	for _, test := range tests {
@@ -342,7 +342,7 @@ func TestBoldRunningEntities(t *testing.T) {
 		t.Errorf("Expected running test summary to be bright white bold.\nGot:\n%s", output)
 	}
 
-	if !strings.Contains(output, brightWhiteBold+"RUNNING") {
+	if !strings.Contains(output, brightWhiteBold+"(1 packages: 1 running, 0 done)") {
 		t.Errorf("Expected summary line to be bright white bold.\nGot:\n%s", output)
 	}
 }

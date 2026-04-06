@@ -149,6 +149,7 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) {
 		pkgResult.Counts.Failed = 0
 		pkgResult.Counts.Skipped = 0
 		pkgResult.Counts.Running = 0
+		pkgResult.Counts.Paused = 0
 
 		// 3. Clear out old test results from the run map
 		for _, testName := range pkgResult.TestOrder {
@@ -280,35 +281,57 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 		}
 
 	case "pass":
+		wasPaused := testResult.Status == StatusPaused
 		testResult.Status = StatusPassed
 		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
 		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
 		pkg.Counts.Passed++
-		pkg.Counts.Running--
 		run.Counts.Passed++
-		run.Counts.Running--
+		if wasPaused {
+			pkg.Counts.Paused--
+			run.Counts.Paused--
+		} else {
+			pkg.Counts.Running--
+			run.Counts.Running--
+		}
 
 	case "fail":
+		wasPaused := testResult.Status == StatusPaused
 		testResult.Status = StatusFailed
 		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
 		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
 		pkg.Counts.Failed++
-		pkg.Counts.Running--
 		run.Counts.Failed++
-		run.Counts.Running--
+		if wasPaused {
+			pkg.Counts.Paused--
+			run.Counts.Paused--
+		} else {
+			pkg.Counts.Running--
+			run.Counts.Running--
+		}
 
 	case "skip":
+		wasPaused := testResult.Status == StatusPaused
 		testResult.Status = StatusSkipped
 		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
 		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
 		pkg.Counts.Skipped++
-		pkg.Counts.Running--
 		run.Counts.Skipped++
-		run.Counts.Running--
+		if wasPaused {
+			pkg.Counts.Paused--
+			run.Counts.Paused--
+		} else {
+			pkg.Counts.Running--
+			run.Counts.Running--
+		}
 
 	case "pause":
 		testResult.Status = StatusPaused
 		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
+		pkg.Counts.Running--
+		pkg.Counts.Paused++
+		run.Counts.Running--
+		run.Counts.Paused++
 
 	case "cont":
 		testResult.Status = StatusRunning
@@ -316,6 +339,10 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 		testResult.LastResumeTime = now
 		testResult.WallStartTime = now
 		testResult.StartTime = event.Time
+		pkg.Counts.Running++
+		pkg.Counts.Paused--
+		run.Counts.Running++
+		run.Counts.Paused--
 		pkg.moveToEndOfDisplayOrder(event.Test)
 	}
 }
@@ -333,12 +360,18 @@ func (c *Collector) failInterruptedTests(run *Run, pkg *PackageResult) {
 			continue
 		}
 
+		wasPaused := tr.Status == StatusPaused
 		tr.Status = StatusFailed
 		tr.Interrupted = true
 		pkg.Counts.Failed++
-		pkg.Counts.Running--
 		run.Counts.Failed++
-		run.Counts.Running--
+		if wasPaused {
+			pkg.Counts.Paused--
+			run.Counts.Paused--
+		} else {
+			pkg.Counts.Running--
+			run.Counts.Running--
+		}
 
 		if pkg.PanicTestKey != "" && testKey != pkg.PanicTestKey {
 			tr.Output = nil
