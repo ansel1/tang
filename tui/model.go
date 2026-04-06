@@ -189,10 +189,14 @@ func (m *Model) packageElapsed(pkg *results.PackageResult) time.Duration {
 }
 
 func (m *Model) testElapsed(test *results.TestResult) time.Duration {
-	if test.Running() {
-		return m.scaledElapsedDuration(time.Since(test.WallStartTime))
+	switch test.Status {
+	case results.StatusRunning:
+		return m.scaledElapsedDuration(test.ActiveDuration + time.Since(test.LastResumeTime))
+	case results.StatusPaused:
+		return m.scaledElapsedDuration(test.ActiveDuration)
+	default:
+		return test.Elapsed
 	}
-	return test.Elapsed
 }
 
 func (m *Model) runElapsed(run *results.Run) time.Duration {
@@ -317,8 +321,8 @@ func (m *Model) renderRun(run *results.Run) string {
 				// line for summary
 				lineCount := 1
 
-				// Only show output for running tests
-				if test.Running() {
+				// Only show output for actively running tests
+				if test.Status == results.StatusRunning {
 					// Update output lines (take last N lines)
 					n := len(test.Output)
 					if n < MaxOutputLines {
@@ -331,9 +335,9 @@ func (m *Model) renderRun(run *results.Run) string {
 				// Priority:
 				// 1. Running (Highest)
 				// 2. Failed
-				// 3. Passed/Skipped (Lowest)
+				// 3. Passed/Skipped/Paused (Lowest)
 				priority := 3
-				if test.Running() {
+				if test.Status == results.StatusRunning {
 					priority = 1
 				} else if test.Status == results.StatusFailed {
 					priority = 2
@@ -425,7 +429,7 @@ func (m *Model) renderPackage(b *strings.Builder, run *results.Run, pkg *results
 
 	// Render tests if allocated
 	if pkg.Status == results.StatusRunning || pkg.Status == results.StatusInterrupted {
-		for _, testName := range pkg.TestOrder {
+		for _, testName := range pkg.DisplayOrder {
 			count, ok := testLines[testName]
 			if ok && count > 0 {
 				testKey := pkg.Name + "/" + testName

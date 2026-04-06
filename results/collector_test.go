@@ -444,3 +444,105 @@ func TestCollectorTimeoutPanic(t *testing.T) {
 		t.Errorf("Expected 0 running tests, got %d", run.Counts.Running)
 	}
 }
+
+func TestCollectorContReordersDisplayOrder(t *testing.T) {
+	collector := NewCollector()
+
+	startTime := time.Now().Add(-2 * time.Second)
+	pkg := "github.com/test/pkg1"
+
+	events := []engine.Event{
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime, Action: "run", Package: pkg, Test: "TestA",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Millisecond), Action: "run", Package: pkg, Test: "TestB",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(2 * time.Millisecond), Action: "run", Package: pkg, Test: "TestC",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(10 * time.Millisecond), Action: "pause", Package: pkg, Test: "TestA",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(time.Second), Action: "cont", Package: pkg, Test: "TestA",
+		}},
+	}
+
+	for _, evt := range events {
+		collector.Push(evt)
+	}
+
+	run := collector.State().MostRecentRun()
+	pkgResult := run.Packages[pkg]
+
+	expectedTestOrder := []string{"TestA", "TestB", "TestC"}
+	expectedDisplayOrder := []string{"TestB", "TestC", "TestA"}
+
+	if len(pkgResult.TestOrder) != len(expectedTestOrder) {
+		t.Fatalf("Expected TestOrder length %d, got %d", len(expectedTestOrder), len(pkgResult.TestOrder))
+	}
+	for i, name := range expectedTestOrder {
+		if pkgResult.TestOrder[i] != name {
+			t.Errorf("TestOrder[%d]: expected %q, got %q", i, name, pkgResult.TestOrder[i])
+		}
+	}
+
+	if len(pkgResult.DisplayOrder) != len(expectedDisplayOrder) {
+		t.Fatalf("Expected DisplayOrder length %d, got %d", len(expectedDisplayOrder), len(pkgResult.DisplayOrder))
+	}
+	for i, name := range expectedDisplayOrder {
+		if pkgResult.DisplayOrder[i] != name {
+			t.Errorf("DisplayOrder[%d]: expected %q, got %q", i, name, pkgResult.DisplayOrder[i])
+		}
+	}
+}
+
+func TestCollectorPauseContTimestamps(t *testing.T) {
+	collector := NewCollector()
+
+	startTime := time.Now().Add(-2 * time.Second)
+	pkg := "github.com/test/pkg1"
+
+	events := []engine.Event{
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime, Action: "run", Package: pkg, Test: "TestA",
+		}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{
+			Time: startTime.Add(10 * time.Millisecond), Action: "pause", Package: pkg, Test: "TestA",
+		}},
+	}
+
+	for _, evt := range events {
+		collector.Push(evt)
+	}
+
+	run := collector.State().MostRecentRun()
+	testA := run.TestResults[pkg+"/TestA"]
+
+	if testA.Status != StatusPaused {
+		t.Errorf("Expected StatusPaused, got %s", testA.Status)
+	}
+	if testA.ActiveDuration == 0 {
+		t.Error("Expected ActiveDuration > 0 after pause")
+	}
+
+	beforeCont := time.Now()
+	contTime := startTime.Add(time.Second)
+	collector.Push(engine.Event{Type: engine.EventTest, TestEvent: parser.TestEvent{
+		Time: contTime, Action: "cont", Package: pkg, Test: "TestA",
+	}})
+
+	if testA.Status != StatusRunning {
+		t.Errorf("Expected StatusRunning after cont, got %s", testA.Status)
+	}
+	if testA.LastResumeTime.Before(beforeCont) {
+		t.Error("Expected LastResumeTime to be updated on cont")
+	}
+	if testA.WallStartTime.Before(beforeCont) {
+		t.Error("Expected WallStartTime to be reset on cont")
+	}
+	if testA.StartTime != contTime {
+		t.Errorf("Expected StartTime to be updated to cont event time, got %v", testA.StartTime)
+	}
+}

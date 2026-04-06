@@ -87,21 +87,33 @@ type PackageResult struct {
 	}
 	Output       string   // Final output line (e.g., coverage information)
 	TestOrder    []string // Chronological order of test starts
+	DisplayOrder []string // Render order for TUI; reordered when paused tests resume
 	FailedBuild  string   // ImportPath of failed build (if any)
 	PanicTestKey string   // "package/test" key of the test carrying the timeout panic output
 }
 
+func (p *PackageResult) moveToEndOfDisplayOrder(name string) {
+	for i, n := range p.DisplayOrder {
+		if n == name {
+			p.DisplayOrder = append(p.DisplayOrder[:i], append(p.DisplayOrder[i+1:], name)...)
+			return
+		}
+	}
+}
+
 // TestResult represents the result of a single test.
 type TestResult struct {
-	Package       string
-	Name          string
-	Status        Status    // "pass", "fail", "skip", "running"
-	StartTime     time.Time // When the test started
-	WallStartTime time.Time // When the test started (wall clock)
-	Elapsed       time.Duration
-	Output        []string // Failure/skip messages
-	SummaryLine   string   // The "===" or "---" line
-	Interrupted   bool     // True if the test was interrupted by a panic or runtime fatal
+	Package        string
+	Name           string
+	Status         Status    // "pass", "fail", "skip", "running"
+	StartTime      time.Time // When the test started
+	WallStartTime  time.Time // When the test started (wall clock)
+	Elapsed        time.Duration
+	Output         []string      // Failure/skip messages
+	SummaryLine    string        // The "===" or "---" line
+	Interrupted    bool          // True if the test was interrupted by a panic or runtime fatal
+	ActiveDuration time.Duration // Accumulated time spent actively running (excludes paused time)
+	LastResumeTime time.Time     // Wall clock time when the test last entered running state
 }
 
 func (t *TestResult) Running() bool {

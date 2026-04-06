@@ -23,12 +23,14 @@ func TestSmartRendering(t *testing.T) {
 	state.CurrentRun = run
 
 	// Packet 1: Running, mixed tests
+	now := time.Now()
 	pkg1 := &results.PackageResult{
 		Name:          "pkg1",
 		Status:        results.StatusRunning,
-		StartTime:     time.Now(),
-		WallStartTime: time.Now(),
+		StartTime:     now,
+		WallStartTime: now,
 		TestOrder:     make([]string, 0),
+		DisplayOrder:  make([]string, 0),
 	}
 	run.Packages["pkg1"] = pkg1
 	run.PackageOrder = append(run.PackageOrder, "pkg1")
@@ -36,45 +38,51 @@ func TestSmartRendering(t *testing.T) {
 
 	// Test 1: Passed (Low priority)
 	t1 := &results.TestResult{
-		Package:       "pkg1",
-		Name:          "TestPassed",
-		Status:        results.StatusPassed,
-		SummaryLine:   "=== RUN   TestPassed",
-		StartTime:     time.Now(),
-		WallStartTime: time.Now(),
+		Package:        "pkg1",
+		Name:           "TestPassed",
+		Status:         results.StatusPassed,
+		SummaryLine:    "=== RUN   TestPassed",
+		StartTime:      now,
+		WallStartTime:  now,
+		LastResumeTime: now,
 	}
 	run.TestResults["pkg1/TestPassed"] = t1
 	pkg1.TestOrder = append(pkg1.TestOrder, "TestPassed")
+	pkg1.DisplayOrder = append(pkg1.DisplayOrder, "TestPassed")
 	pkg1.Counts.Passed++
 	run.Counts.Passed++
 
 	// Test 2: Failed (High priority)
 	t2 := &results.TestResult{
-		Package:       "pkg1",
-		Name:          "TestFailed",
-		Status:        results.StatusFailed,
-		SummaryLine:   "=== RUN   TestFailed",
-		Output:        []string{"Error: something went wrong", "    at file.go:10"},
-		StartTime:     time.Now(),
-		WallStartTime: time.Now(),
+		Package:        "pkg1",
+		Name:           "TestFailed",
+		Status:         results.StatusFailed,
+		SummaryLine:    "=== RUN   TestFailed",
+		Output:         []string{"Error: something went wrong", "    at file.go:10"},
+		StartTime:      now,
+		WallStartTime:  now,
+		LastResumeTime: now,
 	}
 	run.TestResults["pkg1/TestFailed"] = t2
 	pkg1.TestOrder = append(pkg1.TestOrder, "TestFailed")
+	pkg1.DisplayOrder = append(pkg1.DisplayOrder, "TestFailed")
 	pkg1.Counts.Failed++
 	run.Counts.Failed++
 
-	// Test 3: Running (Medium priority)
+	// Test 3: Running (High priority)
 	t3 := &results.TestResult{
-		Package:       "pkg1",
-		Name:          "TestRunning",
-		Status:        results.StatusRunning,
-		SummaryLine:   "=== RUN   TestRunning",
-		Output:        []string{"Log: doing work"},
-		StartTime:     time.Now(),
-		WallStartTime: time.Now(),
+		Package:        "pkg1",
+		Name:           "TestRunning",
+		Status:         results.StatusRunning,
+		SummaryLine:    "=== RUN   TestRunning",
+		Output:         []string{"Log: doing work"},
+		StartTime:      now,
+		WallStartTime:  now,
+		LastResumeTime: now,
 	}
 	run.TestResults["pkg1/TestRunning"] = t3
 	pkg1.TestOrder = append(pkg1.TestOrder, "TestRunning")
+	pkg1.DisplayOrder = append(pkg1.DisplayOrder, "TestRunning")
 	pkg1.Counts.Running++
 	run.Counts.Running++
 
@@ -85,21 +93,24 @@ func TestSmartRendering(t *testing.T) {
 		StartTime:     time.Now(),
 		WallStartTime: time.Now(),
 		TestOrder:     make([]string, 0),
+		DisplayOrder:  make([]string, 0),
 	}
 	run.Packages["pkg2"] = pkg2
 	run.PackageOrder = append(run.PackageOrder, "pkg2")
 	run.RunningPkgs++
 
 	t4 := &results.TestResult{
-		Package:       "pkg2",
-		Name:          "TestPassed2",
-		Status:        results.StatusPassed,
-		SummaryLine:   "=== RUN   TestPassed2",
-		StartTime:     time.Now(),
-		WallStartTime: time.Now(),
+		Package:        "pkg2",
+		Name:           "TestPassed2",
+		Status:         results.StatusPassed,
+		SummaryLine:    "=== RUN   TestPassed2",
+		StartTime:      now,
+		WallStartTime:  now,
+		LastResumeTime: now,
 	}
 	run.TestResults["pkg2/TestPassed2"] = t4
 	pkg2.TestOrder = append(pkg2.TestOrder, "TestPassed2")
+	pkg2.DisplayOrder = append(pkg2.DisplayOrder, "TestPassed2")
 	pkg2.Counts.Passed++
 	run.Counts.Passed++
 
@@ -151,15 +162,17 @@ func TestSmartRendering(t *testing.T) {
 
 	// Test Recency: Add another running test, started later
 	t5 := &results.TestResult{
-		Package:       "pkg1",
-		Name:          "TestRunningNew",
-		Status:        results.StatusRunning,
-		SummaryLine:   "=== RUN   TestRunningNew",
-		StartTime:     t3.StartTime.Add(time.Second), // Newer
-		WallStartTime: t3.WallStartTime.Add(time.Second),
+		Package:        "pkg1",
+		Name:           "TestRunningNew",
+		Status:         results.StatusRunning,
+		SummaryLine:    "=== RUN   TestRunningNew",
+		StartTime:      t3.StartTime.Add(time.Second), // Newer
+		WallStartTime:  t3.WallStartTime.Add(time.Second),
+		LastResumeTime: t3.WallStartTime.Add(time.Second),
 	}
 	run.TestResults["pkg1/TestRunningNew"] = t5
 	pkg1.TestOrder = append(pkg1.TestOrder, "TestRunningNew")
+	pkg1.DisplayOrder = append(pkg1.DisplayOrder, "TestRunningNew")
 	pkg1.Counts.Running++
 	run.Counts.Running++
 
@@ -186,15 +199,17 @@ func TestSmartRendering(t *testing.T) {
 	// Test Recency with Failed tests
 	// Add another failed test, newer than t2
 	t6 := &results.TestResult{
-		Package:       "pkg1",
-		Name:          "TestFailedNew",
-		Status:        results.StatusFailed,
-		SummaryLine:   "=== RUN   TestFailedNew",
-		StartTime:     t2.StartTime.Add(time.Second),
-		WallStartTime: t2.WallStartTime.Add(time.Second),
+		Package:        "pkg1",
+		Name:           "TestFailedNew",
+		Status:         results.StatusFailed,
+		SummaryLine:    "=== RUN   TestFailedNew",
+		StartTime:      t2.StartTime.Add(time.Second),
+		WallStartTime:  t2.WallStartTime.Add(time.Second),
+		LastResumeTime: t2.WallStartTime.Add(time.Second),
 	}
 	run.TestResults["pkg1/TestFailedNew"] = t6
 	pkg1.TestOrder = append(pkg1.TestOrder, "TestFailedNew")
+	pkg1.DisplayOrder = append(pkg1.DisplayOrder, "TestFailedNew")
 	pkg1.Counts.Failed++
 	run.Counts.Failed++
 
@@ -211,5 +226,87 @@ func TestSmartRendering(t *testing.T) {
 	}
 	if strings.Contains(output, "TestFailed") && !strings.Contains(output, "TestFailedNew") {
 		t.Error("Expected TestFailed (older) to be elided in favor of TestFailedNew")
+	}
+}
+
+func TestPausedTestPriority(t *testing.T) {
+	collector := results.NewCollector()
+	m := NewModel(false, 1.0, collector)
+	m.TerminalWidth = 80
+	m.TerminalHeight = 20
+
+	run := results.NewRun(1)
+	run.Status = results.StatusRunning
+
+	state := collector.State()
+	state.Runs = append(state.Runs, run)
+	state.CurrentRun = run
+
+	now := time.Now()
+
+	pkg1 := &results.PackageResult{
+		Name:          "pkg1",
+		Status:        results.StatusRunning,
+		StartTime:     now,
+		WallStartTime: now,
+		TestOrder:     make([]string, 0),
+		DisplayOrder:  make([]string, 0),
+	}
+	run.Packages["pkg1"] = pkg1
+	run.PackageOrder = append(run.PackageOrder, "pkg1")
+	run.RunningPkgs++
+
+	// Paused test (started first)
+	tPaused := &results.TestResult{
+		Package:        "pkg1",
+		Name:           "TestPaused",
+		Status:         results.StatusPaused,
+		SummaryLine:    "=== RUN   TestPaused",
+		StartTime:      now,
+		WallStartTime:  now,
+		LastResumeTime: now,
+	}
+	run.TestResults["pkg1/TestPaused"] = tPaused
+	pkg1.TestOrder = append(pkg1.TestOrder, "TestPaused")
+	pkg1.DisplayOrder = append(pkg1.DisplayOrder, "TestPaused")
+	pkg1.Counts.Running++
+	run.Counts.Running++
+
+	// Running test (started later)
+	tRunning := &results.TestResult{
+		Package:        "pkg1",
+		Name:           "TestActive",
+		Status:         results.StatusRunning,
+		SummaryLine:    "=== RUN   TestActive",
+		Output:         []string{"doing stuff"},
+		StartTime:      now.Add(time.Second),
+		WallStartTime:  now.Add(time.Second),
+		LastResumeTime: now.Add(time.Second),
+	}
+	run.TestResults["pkg1/TestActive"] = tRunning
+	pkg1.TestOrder = append(pkg1.TestOrder, "TestActive")
+	pkg1.DisplayOrder = append(pkg1.DisplayOrder, "TestActive")
+	pkg1.Counts.Running++
+	run.Counts.Running++
+
+	// With enough space, both should be visible
+	output := m.String()
+	if !strings.Contains(output, "TestPaused") {
+		t.Error("Expected TestPaused to be visible with plenty of space")
+	}
+	if !strings.Contains(output, "TestActive") {
+		t.Error("Expected TestActive to be visible with plenty of space")
+	}
+
+	// Constrain to fit only TestActive (2 lines: summary + output).
+	// Fixed lines: summary(1) + separator(1) + pkg header(1) = 3.
+	// Available = TerminalHeight - 3 = 2. TestActive uses 2, TestPaused gets nothing.
+	m.TerminalHeight = 5
+	output = m.String()
+	if !strings.Contains(output, "TestActive") {
+		t.Error("Expected TestActive (running) to be visible over paused test")
+	}
+	if strings.Contains(output, "TestPaused") {
+		t.Error("Expected TestPaused (paused) to be elided in favor of running test")
 	}
 }

@@ -128,6 +128,7 @@ func WithPackage(name string, opts ...PkgOpt) ModelOpt {
 			StartTime:     now,
 			WallStartTime: now,
 			TestOrder:     make([]string, 0),
+			DisplayOrder:  make([]string, 0),
 		}
 
 		// Apply package-level options.
@@ -145,18 +146,20 @@ func WithPackage(name string, opts ...PkgOpt) ModelOpt {
 		// Wire up tests.
 		for _, ts := range ps.tests {
 			tr := &results.TestResult{
-				Package:       name,
-				Name:          ts.name,
-				Status:        results.StatusRunning, // default
-				StartTime:     now,
-				WallStartTime: now,
-				Output:        make([]string, 0),
+				Package:        name,
+				Name:           ts.name,
+				Status:         results.StatusRunning, // default
+				StartTime:      now,
+				WallStartTime:  now,
+				LastResumeTime: now,
+				Output:         make([]string, 0),
 			}
 			for _, to := range ts.opts {
 				to(tr)
 			}
 
 			pkg.TestOrder = append(pkg.TestOrder, ts.name)
+			pkg.DisplayOrder = append(pkg.DisplayOrder, ts.name)
 			testKey := name + "/" + ts.name
 			run.TestResults[testKey] = tr
 

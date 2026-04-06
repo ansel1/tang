@@ -155,6 +155,7 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) {
 			delete(run.TestResults, event.Package+"/"+testName)
 		}
 		pkgResult.TestOrder = make([]string, 0)
+		pkgResult.DisplayOrder = make([]string, 0)
 
 		// 4. Reset package status and metadata
 		pkgResult.Status = StatusRunning
@@ -174,6 +175,7 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) {
 			StartTime:     event.Time,
 			WallStartTime: time.Now(),
 			TestOrder:     make([]string, 0),
+			DisplayOrder:  make([]string, 0),
 			Status:        StatusRunning,
 		}
 		run.Packages[event.Package] = pkgResult
@@ -232,16 +234,19 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 
 	testResult, exists := run.TestResults[testKey]
 	if !exists {
+		now := time.Now()
 		testResult = &TestResult{
-			Package:       event.Package,
-			Name:          event.Test,
-			Status:        StatusRunning,
-			Output:        make([]string, 0),
-			StartTime:     event.Time,
-			WallStartTime: time.Now(),
+			Package:        event.Package,
+			Name:           event.Test,
+			Status:         StatusRunning,
+			Output:         make([]string, 0),
+			StartTime:      event.Time,
+			WallStartTime:  now,
+			LastResumeTime: now,
 		}
 		run.TestResults[testKey] = testResult
 		pkg.TestOrder = append(pkg.TestOrder, event.Test)
+		pkg.DisplayOrder = append(pkg.DisplayOrder, event.Test)
 		pkg.Counts.Running++
 		run.Counts.Running++
 	}
@@ -277,6 +282,7 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 	case "pass":
 		testResult.Status = StatusPassed
 		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
+		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
 		pkg.Counts.Passed++
 		pkg.Counts.Running--
 		run.Counts.Passed++
@@ -285,6 +291,7 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 	case "fail":
 		testResult.Status = StatusFailed
 		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
+		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
 		pkg.Counts.Failed++
 		pkg.Counts.Running--
 		run.Counts.Failed++
@@ -293,6 +300,7 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 	case "skip":
 		testResult.Status = StatusSkipped
 		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
+		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
 		pkg.Counts.Skipped++
 		pkg.Counts.Running--
 		run.Counts.Skipped++
@@ -300,9 +308,15 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 
 	case "pause":
 		testResult.Status = StatusPaused
+		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
 
 	case "cont":
 		testResult.Status = StatusRunning
+		now := time.Now()
+		testResult.LastResumeTime = now
+		testResult.WallStartTime = now
+		testResult.StartTime = event.Time
+		pkg.moveToEndOfDisplayOrder(event.Test)
 	}
 }
 

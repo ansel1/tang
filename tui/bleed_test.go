@@ -24,10 +24,11 @@ func TestBleedProtection(t *testing.T) {
 	state.CurrentRun = run
 
 	pkg := &results.PackageResult{
-		Name:      "pkg1",
-		TestOrder: []string{"TestBleed"},
-		Status:    results.StatusRunning,
-		StartTime: time.Now(),
+		Name:         "pkg1",
+		TestOrder:    []string{"TestBleed"},
+		DisplayOrder: []string{"TestBleed"},
+		Status:       results.StatusRunning,
+		StartTime:    time.Now(),
 	}
 	pkg.Counts.Running = 1
 	run.Packages["pkg1"] = pkg
@@ -35,12 +36,13 @@ func TestBleedProtection(t *testing.T) {
 	run.RunningPkgs = 1
 
 	test := &results.TestResult{
-		Package:     "pkg1",
-		Name:        "TestBleed",
-		Status:      results.StatusRunning,
-		SummaryLine: "=== RUN   TestBleed",
-		Output:      []string{"\033[31mThis is red text"},
-		StartTime:   time.Now(),
+		Package:        "pkg1",
+		Name:           "TestBleed",
+		Status:         results.StatusRunning,
+		SummaryLine:    "=== RUN   TestBleed",
+		Output:         []string{"\033[31mThis is red text"},
+		StartTime:      time.Now(),
+		LastResumeTime: time.Now(),
 	}
 	run.TestResults["pkg1/TestBleed"] = test
 	run.Counts.Running++
