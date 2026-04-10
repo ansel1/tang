@@ -9,7 +9,7 @@ import (
 )
 
 func TestSummaryFormatterBasic(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, false)
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -45,7 +45,7 @@ func TestSummaryFormatterBasic(t *testing.T) {
 }
 
 func TestSummaryFormatterWithFailures(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, false)
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -95,7 +95,7 @@ func TestSummaryFormatterWithFailures(t *testing.T) {
 }
 
 func TestSummaryFormatterWithSkipped(t *testing.T) {
-	formatter := NewSummaryFormatter(80, SummaryOptions{IncludeSkipped: true})
+	formatter := NewSummaryFormatter(80, false, SummaryOptions{IncludeSkipped: true})
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -145,7 +145,7 @@ func TestSummaryFormatterWithSkipped(t *testing.T) {
 }
 
 func TestSummaryFormatterWithSlowTests(t *testing.T) {
-	formatter := NewSummaryFormatter(80, SummaryOptions{IncludeSlow: true})
+	formatter := NewSummaryFormatter(80, false, SummaryOptions{IncludeSlow: true})
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -190,7 +190,7 @@ func TestSummaryFormatterWithSlowTests(t *testing.T) {
 }
 
 func TestSummaryFormatterSkippedHiddenByDefault(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, false)
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -237,7 +237,7 @@ func TestSummaryFormatterSkippedHiddenByDefault(t *testing.T) {
 }
 
 func TestSummaryFormatterSlowHiddenByDefault(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, false)
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -279,7 +279,7 @@ func TestSummaryFormatterSlowHiddenByDefault(t *testing.T) {
 }
 
 func TestSummaryFormatterNoFailuresOrSkips(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, false)
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -309,7 +309,7 @@ func TestSummaryFormatterNoFailuresOrSkips(t *testing.T) {
 }
 
 func TestSummaryFormatterTotalsLine(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, false)
 
 	pkg1 := &results.PackageResult{
 		Name:    "github.com/user/project/pkg1",
@@ -354,7 +354,7 @@ func TestSummaryFormatterTotalsLine(t *testing.T) {
 }
 
 func TestSummaryFormatterSymbols(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, false)
 
 	pkg1 := &results.PackageResult{
 		Name:    "pkg1",

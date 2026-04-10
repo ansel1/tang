@@ -4,19 +4,16 @@ import (
 	"fmt"
 	"strings"
 
-	"os"
-
 	"charm.land/lipgloss/v2"
 	"github.com/ansel1/tang/results"
-	"github.com/mattn/go-isatty"
 )
 
 // SummaryFormatter formats a Summary for display, with test details grouped by
 // package, go-test-style package summary, then totals.
 type SummaryFormatter struct {
-	width     int
-	useColors bool
-	options   SummaryOptions
+	width   int
+	noColor bool
+	options SummaryOptions
 
 	failStyle    lipgloss.Style
 	passStyle    lipgloss.Style
@@ -31,33 +28,50 @@ type SummaryFormatter struct {
 	neutralStyle lipgloss.Style
 }
 
-func NewSummaryFormatter(width int, opts ...SummaryOptions) *SummaryFormatter {
+func NewSummaryFormatter(width int, noColor bool, opts ...SummaryOptions) *SummaryFormatter {
 	if width <= 0 {
 		width = 80
 	}
-	useColors := isatty.IsTerminal(os.Stdout.Fd())
 
 	var options SummaryOptions
 	if len(opts) > 0 {
 		options = opts[0]
 	}
 
-	return &SummaryFormatter{
+	neutral := lipgloss.NewStyle()
+
+	f := &SummaryFormatter{
 		width:        width,
-		useColors:    useColors,
+		noColor:      noColor,
 		options:      options,
-		failStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("1")),
-		passStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("2")),
-		skipStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("3")),
-		slowStyle:    lipgloss.NewStyle().Foreground(lipgloss.Color("4")),
-		boldFail:     lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true),
-		boldSkip:     lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Bold(true),
-		boldSlow:     lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Bold(true),
-		boldPass:     lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true),
-		dimStyle:     lipgloss.NewStyle().Foreground(lipgloss.Color("8")),
-		boldWhite:    lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true),
-		neutralStyle: lipgloss.NewStyle(),
+		neutralStyle: neutral,
 	}
+
+	if noColor {
+		f.failStyle = neutral
+		f.passStyle = neutral
+		f.skipStyle = neutral
+		f.slowStyle = neutral
+		f.boldFail = neutral
+		f.boldSkip = neutral
+		f.boldSlow = neutral
+		f.boldPass = neutral
+		f.dimStyle = neutral
+		f.boldWhite = neutral
+	} else {
+		f.failStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("1"))
+		f.passStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("2"))
+		f.skipStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("3"))
+		f.slowStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("4"))
+		f.boldFail = lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Bold(true)
+		f.boldSkip = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Bold(true)
+		f.boldSlow = lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Bold(true)
+		f.boldPass = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
+		f.dimStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+		f.boldWhite = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
+	}
+
+	return f
 }
 
 func (f *SummaryFormatter) Format(summary *Summary) string {
@@ -216,7 +230,11 @@ func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.Test
 
 	for _, line := range tr.Output {
 		sb.WriteString(indent)
-		sb.WriteString(ensureReset(line))
+		if f.noColor {
+			sb.WriteString(line)
+		} else {
+			sb.WriteString(ensureReset(line))
+		}
 		sb.WriteString("\n")
 	}
 }
@@ -248,7 +266,11 @@ func (f *SummaryFormatter) formatBuildIssue(sb *strings.Builder, pkg *results.Pa
 			for _, line := range lines {
 				if line != "" {
 					sb.WriteString(IndentLevel)
-					sb.WriteString(f.failStyle.Render(ensureReset(line)))
+					if f.noColor {
+						sb.WriteString(line)
+					} else {
+						sb.WriteString(f.failStyle.Render(ensureReset(line)))
+					}
 					sb.WriteString("\n")
 				}
 			}

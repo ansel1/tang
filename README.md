@@ -46,6 +46,9 @@ To see help and available options, like highlighting slow tests:
 | `-replay` | `false` | Use with -f, replay events with pauses to simulate original test run |
 | `-rate` | `1` | Use with -replay, set rate to replay<br>Defaults to 1 (original speed), 0.5 = double speed, 0 = no pauses |
 | `-renderer` | `default` | Select the renderer (default, simple) |
+| `-no-color` | `false` | Disable all ANSI color and style escape codes |
+
+The `NO_COLOR` environment variable is also respected. Setting `NO_COLOR=1` (or any non-empty value) has the same effect as `-no-color`. See [no-color.org](https://no-color.org) for details.
 
 Anything piped to `tang` which doesn't appear to be `go test -json` output is just
 passed directly to output, so you can pipe any output which has test output embedded in it:

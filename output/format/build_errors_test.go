@@ -11,7 +11,7 @@ import (
 
 // TestFormatBuildErrors tests the ERRORS section formatting
 func TestFormatBuildErrors(t *testing.T) {
-	formatter := NewSummaryFormatter(80)
+	formatter := NewSummaryFormatter(80, false)
 
 	run := results.NewRun(1)
 	run.BuildEvents = []parser.BuildEvent{

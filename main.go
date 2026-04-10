@@ -20,6 +20,7 @@ import (
 	"github.com/ansel1/tang/output/junit"
 	"github.com/ansel1/tang/results"
 	"github.com/ansel1/tang/tui"
+	"github.com/charmbracelet/colorprofile"
 )
 
 func main() {
@@ -39,7 +40,15 @@ func run() int {
 	slowThreshold := flag.Duration("slow-threshold", 10*time.Second, "Duration threshold for slow test detection")
 	includeSkipped := flag.Bool("include-skipped", false, "Include skipped tests in summary")
 	includeSlow := flag.Bool("include-slow", false, "Include slow tests in summary")
+	noColorFlag := flag.Bool("no-color", false, "Disable all ANSI color and style escape codes")
 	flag.Parse()
+
+	// Detect color profile (respects NO_COLOR env var and terminal capabilities)
+	profile := colorprofile.Detect(os.Stdout, os.Environ())
+	if *noColorFlag {
+		profile = colorprofile.NoTTY
+	}
+	noColor := profile == colorprofile.NoTTY
 
 	// Validate flag combinations
 	if *replay && *infile == "" {
@@ -167,7 +176,7 @@ func run() int {
 
 	if skipLive {
 		// Simple output mode (no live UI)
-		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts, *verbose, termWidth)
+		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
 		if err := simple.ProcessEvents(engineEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			return 1
@@ -186,7 +195,7 @@ func run() int {
 
 		// Buffer go test output to print after live UI exits
 		var outputBuf bytes.Buffer
-		simpleOut := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose, termWidth)
+		simpleOut := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
 		simpleOut.Init()
 
 		printSummary := func() {
@@ -205,7 +214,7 @@ func run() int {
 				}
 				summary := format.ComputeSummary(lastRun, *slowThreshold)
 				if summary != nil {
-					summaryText := format.NewSummaryFormatter(termWidth, summaryOpts).Format(summary)
+					summaryText := format.NewSummaryFormatter(termWidth, noColor, summaryOpts).Format(summary)
 					if len(lastRun.NonTestOutput) > 0 || summary.HasTestDetailsWithOptions(summaryOpts) {
 						fmt.Print("\n")
 					}
@@ -232,6 +241,7 @@ func run() int {
 					m := tui.NewModel(*replay, *rate, collector)
 					m.SlowThreshold = *slowThreshold
 					var progOpts []tea.ProgramOption
+					progOpts = append(progOpts, tea.WithColorProfile(profile))
 					if columnsOverride > 0 {
 						progOpts = append(progOpts, tea.WithFilter(func(_ tea.Model, msg tea.Msg) tea.Msg {
 							if ws, ok := msg.(tea.WindowSizeMsg); ok {
