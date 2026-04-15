@@ -28,7 +28,8 @@ func main() {
 }
 
 func run() int {
-	// Parse command-line flags
+	testIdx := scanForTestSubcommand()
+
 	infile := flag.String("f", "", "Read from file instead of stdin")
 	outfile := flag.String("outfile", "", "Save all input to the specified file")
 	jsonfile := flag.String("jsonfile", "", "Save JSON events to the specified file")
@@ -41,28 +42,90 @@ func run() int {
 	includeSkipped := flag.Bool("include-skipped", false, "Include skipped tests in summary")
 	includeSlow := flag.Bool("include-slow", false, "Include slow tests in summary")
 	noColorFlag := flag.Bool("no-color", false, "Disable all ANSI color and style escape codes")
+
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: tang [flags] [test [go test flags]]\n\n")
+		fmt.Fprintf(os.Stderr, "Commands:\n")
+		fmt.Fprintf(os.Stderr, "  test    Run go test and summarize results (auto-adds -json)\n\n")
+		fmt.Fprintf(os.Stderr, "Flags:\n")
+		flag.PrintDefaults()
+	}
+
+	var goTestArgs []string
+	var hasVerboseAfterTest bool
+	isTestMode := testIdx != -1
+
+	if isTestMode {
+		preTestArgs := os.Args[1:testIdx]
+
+		for _, arg := range preTestArgs {
+			if arg == "-h" || arg == "-help" || arg == "--help" {
+				flag.Usage()
+				return 0
+			}
+		}
+
+		if err := validatePreTestArgs(preTestArgs); err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			return 1
+		}
+
+		var tangArgs []string
+		tangArgs, goTestArgs, hasVerboseAfterTest = splitTestArgs(os.Args[1:])
+
+		os.Args = append([]string{os.Args[0]}, tangArgs...)
+	}
+
 	flag.Parse()
 
-	// Detect color profile (respects NO_COLOR env var and terminal capabilities)
+	if isTestMode {
+		if *infile != "" {
+			fmt.Fprintf(os.Stderr, "Error: -f is not compatible with 'test' subcommand\n")
+			return 1
+		}
+		if *replay {
+			fmt.Fprintf(os.Stderr, "Error: -replay is not compatible with 'test' subcommand\n")
+			return 1
+		}
+		if *rate != 1.0 {
+			fmt.Fprintf(os.Stderr, "Error: -rate is not compatible with 'test' subcommand\n")
+			return 1
+		}
+		if hasVerboseAfterTest {
+			*verbose = true
+		}
+	}
+
 	profile := colorprofile.Detect(os.Stdout, os.Environ())
 	if *noColorFlag {
 		profile = colorprofile.NoTTY
 	}
 	noColor := profile == colorprofile.NoTTY
 
-	// Validate flag combinations
-	if *replay && *infile == "" {
-		fmt.Fprintf(os.Stderr, "Error: -replay requires -f <filename>\n")
-		return 1
-	}
-	if *rate < 0 {
-		fmt.Fprintf(os.Stderr, "Error: -rate must be >= 0\n")
-		return 1
+	if !isTestMode {
+		if *replay && *infile == "" {
+			fmt.Fprintf(os.Stderr, "Error: -replay requires -f <filename>\n")
+			return 1
+		}
+		if *rate < 0 {
+			fmt.Fprintf(os.Stderr, "Error: -rate must be >= 0\n")
+			return 1
+		}
 	}
 
-	// Setup input source (file or stdin)
-	var inputSource io.Reader = os.Stdin
-	if *infile != "" {
+	var inputSource io.Reader
+	var goTestCmd *goTestProcess
+
+	if isTestMode {
+		proc, err := startGoTest(goTestArgs)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			return 1
+		}
+		defer proc.cleanup()
+		goTestCmd = proc
+		inputSource = proc.stdout
+	} else if *infile != "" {
 		f, err := os.Open(*infile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error opening input file: %v\n", err)
@@ -70,7 +133,6 @@ func run() int {
 		}
 		defer func() { _ = f.Close() }()
 
-		// Wrap with ReplayReader if replay mode is enabled
 		if *replay {
 			replayReader, err := engine.NewReplayReader(f, *rate)
 			if err != nil {
@@ -81,12 +143,12 @@ func run() int {
 		} else {
 			inputSource = f
 		}
+	} else {
+		inputSource = os.Stdin
 	}
 
-	// Setup engine options
 	var opts []engine.Option
 
-	// Raw output file
 	if *outfile != "" {
 		f, err := os.Create(*outfile)
 		if err != nil {
@@ -97,7 +159,6 @@ func run() int {
 		opts = append(opts, engine.WithRawOutput(f))
 	}
 
-	// JSON output file
 	if *jsonfile != "" {
 		f, err := os.Create(*jsonfile)
 		if err != nil {
@@ -108,17 +169,14 @@ func run() int {
 		opts = append(opts, engine.WithJSONOutput(f))
 	}
 
-	// Create engine and start streaming
 	eng := engine.NewEngine(opts...)
 	engineEvents := eng.Stream(inputSource)
 
-	// Create results collector
 	collector := results.NewCollector()
 	if *replay {
 		collector.SetReplay(true, *rate)
 	}
 
-	// Setup JUnit output handling
 	var writeJUnitOnce sync.Once
 	writeJUnit := func() {
 		writeJUnitOnce.Do(func() {
@@ -138,32 +196,19 @@ func run() int {
 	}
 	defer writeJUnit()
 
-	// Handle interrupts
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		<-sigChan
+		sig := <-sigChan
+		if goTestCmd != nil {
+			_ = goTestCmd.signal(sig)
+		}
 		writeJUnit()
-		// Re-trigger exit to ensure default behavior if not in live mode or if it hangs
-		// In live mode, bubbletea usually catches SIGINT first, but we need to ensure this output happens.
-		// However, signal.Notify might intercept it from bubbletea if we aren't careful.
-		// Actually, bubbletea handles interrupts internally if not specified otherwise.
-		// But in this global handler, we want to ensure we write the file.
-		// If the main goroutine exits (defer), we are good.
-		// If the user force kills, we might miss it.
-		// Let's rely on defer for normal exit, and this goroutine for signals.
-		// After writing, we should probably let the program terminate naturally or force it if it's stuck.
-		// But the live UI also listens for signals. This might compete.
-		//
-		// Correct approach: output generation is fast. We can do it and let default handler proceed or exit.
 		os.Exit(1)
 	}()
 
 	var exitCode int
 
-	// Skip live mode if:
-	// 1. -notty flag is set, OR
-	// 2. -f is used without -replay (reading from file without replay)
 	skipLive := *notty || (*infile != "" && !*replay)
 
 	termWidth := termwidth.Get(os.Stdout.Fd())
@@ -175,25 +220,19 @@ func run() int {
 	}
 
 	if skipLive {
-		// Simple output mode (no live UI)
 		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
 		if err := simple.ProcessEvents(engineEvents); err != nil {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			return 1
 		}
-		// Set exit code based on test failures
 		if simple.HasFailures() {
 			exitCode = 1
-		} else {
-			exitCode = 0
 		}
 	} else {
-		// Live mode
 		var p *tea.Program
 		var pDone chan struct{}
 		var eventCount int
 
-		// Buffer go test output to print after live UI exits
 		var outputBuf bytes.Buffer
 		simpleOut := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
 		simpleOut.Init()
@@ -201,7 +240,6 @@ func run() int {
 		printSummary := func() {
 			collector.Finish()
 
-			// Print buffered go test output
 			simpleOut.Flush()
 			if outputBuf.Len() > 0 {
 				fmt.Print(outputBuf.String())
@@ -223,7 +261,6 @@ func run() int {
 			}
 		}
 
-		// Consume events
 	EventLoop:
 		for evt := range engineEvents {
 			collector.Push(evt)
@@ -232,12 +269,7 @@ func run() int {
 			}
 
 			if p == nil {
-				// Live UI is NOT running
-				// safe to access state without lock
-
-				// Check if run is active
 				if collector.State().CurrentRun != nil {
-					// Run started! Start live UI.
 					m := tui.NewModel(*replay, *rate, collector)
 					m.SlowThreshold = *slowThreshold
 					var progOpts []tea.ProgramOption
@@ -261,19 +293,13 @@ func run() int {
 						close(pDone)
 					}()
 				} else {
-					// No run active. Print raw lines directly.
 					if evt.Type == engine.EventRawLine {
 						fmt.Println(string(evt.RawLine))
 					}
 				}
 			} else {
-				// Live UI IS running
-				// Check if live UI exited unexpectedly (e.g. user pressed q)
 				select {
 				case <-pDone:
-					// Live UI finished but run is still active (or we haven't processed the end event yet)
-					// This implies user requested quit.
-					// We should exit the whole program.
 					printSummary()
 					p = nil
 					pDone = nil
@@ -286,26 +312,20 @@ func run() int {
 				collector.Unlock()
 
 				if currentRun == nil {
-					// Run finished! Quit live UI with an empty final render.
 					p.Send(tui.QuitMsg{})
 					<-pDone
 					p = nil
 					pDone = nil
 
-					// Print buffered output and summary for the finished run
 					printSummary()
 
-					// Reset for next run
 					outputBuf.Reset()
 					simpleOut.Init()
 
-					// If the run finished because of a raw line, print it now
 					if evt.Type == engine.EventRawLine {
 						fmt.Println(string(evt.RawLine))
 					}
 				} else {
-					// Run still running.
-					// Send repaint occasionally to keep UI updated
 					eventCount++
 					if eventCount%50 == 0 {
 						p.Send(tui.RepaintMsg{})
@@ -314,18 +334,23 @@ func run() int {
 			}
 		}
 
-		// Ensure live UI is closed if loop finishes
 		if p != nil {
 			p.Send(tui.QuitMsg{})
 			<-pDone
 		}
 
-		// Set exit code based on test failures
 		for _, run := range collector.State().Runs {
 			if run.Counts.Failed > 0 {
 				exitCode = 1
 				break
 			}
+		}
+	}
+
+	if goTestCmd != nil {
+		childExit := goTestCmd.wait()
+		if childExit > exitCode {
+			exitCode = childExit
 		}
 	}
 
