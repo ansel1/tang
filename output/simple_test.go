@@ -159,6 +159,79 @@ func TestSimpleOutput_RawLines(t *testing.T) {
 	assert.Contains(t, output, "Another raw line")
 }
 
+// badFlagEvents simulates `go test -json --badflag`: the test binary starts but
+// immediately fails with a flag error. No individual tests ever run.
+func badFlagEvents(pkg string) []engine.Event {
+	return []engine.Event{
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "start", Package: pkg}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "flag provided but not defined: -badflag\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "Usage of /tmp/test.binary:\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "exit status 2\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "FAIL\t" + pkg + "\t0.100s\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "fail", Package: pkg, Elapsed: 0.1}},
+	}
+}
+
+// testMainPanicEvents simulates `go test -json` when TestMain panics before
+// any tests run.
+func testMainPanicEvents(pkg string) []engine.Event {
+	return []engine.Event{
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "start", Package: pkg}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "panic: TestMain setup failed\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "goroutine 1 [running]:\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "main.main()\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "\t/tmp/TestMain_test.go:10 +0x38\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "exit status 2\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "FAIL\t" + pkg + "\t0.050s\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "fail", Package: pkg, Elapsed: 0.05}},
+	}
+}
+
+func TestSimpleOutput_NonVerbose_BadFlag(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
+
+	err := simple.ProcessEvents(sendEvents(badFlagEvents("example.com/pkg")))
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "flag provided but not defined: -badflag")
+	assert.Contains(t, output, "exit status 2")
+	assert.Contains(t, output, "FAIL\texample.com/pkg")
+	assert.True(t, simple.HasFailures())
+}
+
+func TestSimpleOutput_NonVerbose_TestMainPanic(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
+
+	err := simple.ProcessEvents(sendEvents(testMainPanicEvents("example.com/pkg")))
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "panic: TestMain setup failed")
+	assert.Contains(t, output, "goroutine 1 [running]:")
+	assert.Contains(t, output, "FAIL\texample.com/pkg")
+	assert.True(t, simple.HasFailures())
+}
+
+func TestSimpleOutput_Verbose_BadFlag(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true, 80, false)
+
+	err := simple.ProcessEvents(sendEvents(badFlagEvents("example.com/pkg")))
+	require.NoError(t, err)
+
+	output := buf.String()
+	assert.Contains(t, output, "flag provided but not defined: -badflag")
+	assert.Contains(t, output, "exit status 2")
+	assert.True(t, simple.HasFailures())
+}
+
 func TestSimpleOutput_HasFailures(t *testing.T) {
 	collector := results.NewCollector()
 	state := collector.State()

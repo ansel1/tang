@@ -125,7 +125,7 @@ func (s *SimpleOutput) Init() {
 func (s *SimpleOutput) ProcessEvent(evt engine.Event) {
 	switch evt.Type {
 	case engine.EventRawLine:
-		_, _ = fmt.Fprint(s.writer, string(evt.RawLine))
+		_, _ = fmt.Fprintf(s.writer, "%s\n", evt.RawLine)
 
 	case engine.EventBuild:
 		if evt.BuildEvent.Action == "build-output" && evt.BuildEvent.Output != "" {
@@ -237,7 +237,7 @@ func (s *SimpleOutput) handlePackageLevelEvent(
 					strings.HasPrefix(trimmed, "?"))
 			if isSummaryLine {
 				pkgSummaryLine[te.Package] = te.Output
-			} else if s.verbose {
+			} else {
 				getWriter(writers, te.Package).appendLine(te.Output)
 			}
 		}
