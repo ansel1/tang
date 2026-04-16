@@ -240,9 +240,11 @@ func run() int {
 		printSummary := func() {
 			collector.Finish()
 
-			simpleOut.Flush()
-			if outputBuf.Len() > 0 {
-				fmt.Print(outputBuf.String())
+			if *verbose {
+				simpleOut.Flush()
+				if outputBuf.Len() > 0 {
+					fmt.Print(outputBuf.String())
+				}
 			}
 
 			lastRun := collector.State().MostRecentRun()
