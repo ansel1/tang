@@ -233,14 +233,20 @@ func run() int {
 		var pDone chan struct{}
 		var eventCount int
 
+		// SimpleOutput is only used in verbose live mode to replay test output
+		// after the TUI closes. In non-verbose mode the summary alone is the
+		// final report.
 		var outputBuf bytes.Buffer
-		simpleOut := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
-		simpleOut.Init()
+		var simpleOut *output.SimpleOutput
+		if *verbose {
+			simpleOut = output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
+			simpleOut.Init()
+		}
 
 		printSummary := func() {
 			collector.Finish()
 
-			if *verbose {
+			if simpleOut != nil {
 				simpleOut.Flush()
 				if outputBuf.Len() > 0 {
 					fmt.Print(outputBuf.String())
@@ -266,7 +272,7 @@ func run() int {
 	EventLoop:
 		for evt := range engineEvents {
 			collector.Push(evt)
-			if evt.Type != engine.EventRawLine {
+			if simpleOut != nil && evt.Type != engine.EventRawLine {
 				simpleOut.ProcessEvent(evt)
 			}
 
@@ -321,8 +327,10 @@ func run() int {
 
 					printSummary()
 
-					outputBuf.Reset()
-					simpleOut.Init()
+					if simpleOut != nil {
+						outputBuf.Reset()
+						simpleOut.Init()
+					}
 
 					if evt.Type == engine.EventRawLine {
 						fmt.Println(string(evt.RawLine))

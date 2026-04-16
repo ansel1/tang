@@ -159,7 +159,7 @@ func TestWriteXML_BuildFailure(t *testing.T) {
 		Elapsed:     0,
 		TestOrder:   []string{}, // No tests ran
 		FailedBuild: "github.com/example/pkg",
-		Output:      "FAIL\tgithub.com/example/pkg [build failed]",
+		SummaryLine: "FAIL\tgithub.com/example/pkg [build failed]",
 	}
 	run.Packages[pkgName] = pkg
 	run.PackageOrder = append(run.PackageOrder, pkgName)

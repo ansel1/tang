@@ -82,9 +82,10 @@ func (f *SummaryFormatter) Format(summary *Summary) string {
 }
 
 type packageIssue struct {
-	kind     string // "fail", "skip", "slow", "build"
+	kind     string // "fail", "skip", "slow", "build", "output"
 	test     *results.TestResult
 	buildPkg *results.PackageResult
+	pkg      *results.PackageResult
 }
 
 func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summary) {
@@ -100,6 +101,13 @@ func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summa
 			pkgOrder = append(pkgOrder, name)
 		}
 		return pkgMap[name]
+	}
+
+	for _, pkg := range summary.Packages {
+		if len(pkg.OutputLines) > 0 {
+			pd := ensurePkg(pkg.Name)
+			pd.issues = append(pd.issues, packageIssue{kind: "output", pkg: pkg})
+		}
 	}
 
 	for _, pkg := range summary.BuildFailures {
@@ -192,6 +200,8 @@ func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summa
 
 		for _, issue := range pd.issues {
 			switch issue.kind {
+			case "output":
+				f.formatPackageOutput(sb, issue.pkg)
 			case "build":
 				f.formatBuildIssue(sb, issue.buildPkg, summary)
 			case "fail":
@@ -252,6 +262,18 @@ func (f *SummaryFormatter) formatSlowTestIssue(sb *strings.Builder, tr *results.
 	sb.WriteString(" ")
 	sb.WriteString(f.boldWhite.Render(elapsed))
 	sb.WriteString("\n")
+}
+
+func (f *SummaryFormatter) formatPackageOutput(sb *strings.Builder, pkg *results.PackageResult) {
+	for _, line := range pkg.OutputLines {
+		sb.WriteString(IndentLevel)
+		if f.noColor {
+			sb.WriteString(line)
+		} else {
+			sb.WriteString(ensureReset(line))
+		}
+		sb.WriteString("\n")
+	}
 }
 
 func (f *SummaryFormatter) formatBuildIssue(sb *strings.Builder, pkg *results.PackageResult, summary *Summary) {
@@ -322,8 +344,8 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		pl.name = pkg.Name
 		if pkg.FailedBuild != "" {
 			pl.extra = "[build failed]"
-		} else if pkg.Output != "" {
-			output := expandTabs(pkg.Output, 8)
+		} else if pkg.SummaryLine != "" {
+			output := expandTabs(pkg.SummaryLine, 8)
 			nameIdx := strings.Index(output, pkg.Name)
 			if nameIdx >= 0 {
 				rest := strings.TrimSpace(output[nameIdx+len(pkg.Name):])

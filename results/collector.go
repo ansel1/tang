@@ -163,7 +163,8 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) {
 		pkgResult.StartTime = event.Time
 		pkgResult.WallStartTime = time.Now()
 		pkgResult.Elapsed = 0
-		pkgResult.Output = ""
+		pkgResult.SummaryLine = ""
+		pkgResult.OutputLines = nil
 		pkgResult.FailedBuild = ""
 
 		run.RunningPkgs++
@@ -194,6 +195,29 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) {
 	c.handleTestLevelEvent(run, pkgResult, event)
 }
 
+// classifyPackageOutput routes a package-level output line into the right
+// bucket on the PackageResult:
+//   - The "ok\tpkg\ttime" / "FAIL\tpkg\ttime" / "?\tpkg\ttime" summary line
+//     is stored in SummaryLine (overwriting any previous value).
+//   - Bare "PASS" or "FAIL" lines (which `go test` emits before the summary
+//     line) are dropped.
+//   - Anything else (panics, flag errors, coverage, TestMain output, ...) is
+//     appended to OutputLines.
+func classifyPackageOutput(pkg *PackageResult, output string) {
+	trimmed := strings.TrimSpace(output)
+	if strings.ContainsRune(trimmed, '\t') &&
+		(strings.HasPrefix(trimmed, "ok") ||
+			strings.HasPrefix(trimmed, "FAIL") ||
+			strings.HasPrefix(trimmed, "?")) {
+		pkg.SummaryLine = output
+		return
+	}
+	if trimmed == "PASS" || trimmed == "FAIL" {
+		return
+	}
+	pkg.OutputLines = append(pkg.OutputLines, output)
+}
+
 // handlePackageEvent handles package-level events.
 func (c *Collector) handlePackageEvent(run *Run, pkg *PackageResult, event parser.TestEvent) {
 	switch event.Action {
@@ -204,7 +228,7 @@ func (c *Collector) handlePackageEvent(run *Run, pkg *PackageResult, event parse
 				output = output[:len(output)-1]
 			}
 			if output != "" {
-				pkg.Output = output
+				classifyPackageOutput(pkg, output)
 			}
 		}
 

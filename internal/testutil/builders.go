@@ -95,11 +95,21 @@ func PkgElapsed(d time.Duration) PkgOpt {
 	}
 }
 
-// PkgOutput sets the final output line for the package (e.g. the "ok ..." line).
+// PkgOutput sets the final summary line for the package (e.g. the "ok ..." line).
 func PkgOutput(s string) PkgOpt {
 	return func(ps *pkgSpec) {
 		ps.opts = append(ps.opts, func(pkg *results.PackageResult) {
-			pkg.Output = s
+			pkg.SummaryLine = s
+		})
+	}
+}
+
+// PkgOutputLines appends arbitrary package-level output lines (panics, flag
+// errors, coverage, etc.) to the package result.
+func PkgOutputLines(lines ...string) PkgOpt {
+	return func(ps *pkgSpec) {
+		ps.opts = append(ps.opts, func(pkg *results.PackageResult) {
+			pkg.OutputLines = append(pkg.OutputLines, lines...)
 		})
 	}
 }

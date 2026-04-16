@@ -506,8 +506,8 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 
 	rightPart = fmt.Sprintf("%s(%s %s %s) %s %s", runPausePart, passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 	leftPart = pkg.Name
-	if !running && pkg.Output != "" {
-		leftPart = expandTabs(pkg.Output, 8)
+	if !running && pkg.SummaryLine != "" {
+		leftPart = expandTabs(pkg.SummaryLine, 8)
 	}
 
 	switch pkg.Status {

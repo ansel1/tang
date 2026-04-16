@@ -237,6 +237,9 @@ func (s *SimpleOutput) handlePackageLevelEvent(
 					strings.HasPrefix(trimmed, "?"))
 			if isSummaryLine {
 				pkgSummaryLine[te.Package] = te.Output
+			} else if !s.verbose && trimmed == "PASS" {
+				// `go test` omits the bare "PASS" line in non-verbose mode;
+				// match that behavior. Bare "FAIL" lines are kept.
 			} else {
 				getWriter(writers, te.Package).appendLine(te.Output)
 			}

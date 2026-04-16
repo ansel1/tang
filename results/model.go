@@ -87,7 +87,8 @@ type PackageResult struct {
 		Running int // Number of actively running tests (excludes paused)
 		Paused  int // Number of paused tests
 	}
-	Output       string   // Final output line (e.g., coverage information)
+	SummaryLine  string   // Final package result line (e.g. "ok\tpkg\t0.30s\tcoverage: 87.5%")
+	OutputLines  []string // Package-level output that isn't the summary line or a bare PASS/FAIL
 	TestOrder    []string // Chronological order of test starts
 	DisplayOrder []string // Render order for TUI; reordered when paused tests resume
 	FailedBuild  string   // ImportPath of failed build (if any)

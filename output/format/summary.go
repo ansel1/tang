@@ -115,6 +115,11 @@ func (s *Summary) HasTestDetailsWithOptions(opts SummaryOptions) bool {
 	if opts.IncludeSlow && len(s.SlowTests) > 0 {
 		return true
 	}
+	for _, pkg := range s.Packages {
+		if len(pkg.OutputLines) > 0 {
+			return true
+		}
+	}
 	return false
 }
 
