@@ -64,6 +64,14 @@ type Model struct {
 	interrupted bool
 	quitting    bool
 
+	// OnInterrupt, if set, is invoked when the user presses ctrl+c (or
+	// otherwise interrupts the TUI). It runs before tea.Quit is returned so
+	// callers can forward the interrupt (e.g. to a child go test process)
+	// while bubbletea still has control of the terminal and will restore it
+	// cleanly. Must be safe to call from a bubbletea goroutine and may be
+	// invoked more than once across a program's lifetime.
+	OnInterrupt func()
+
 	NonTestOutput []string
 }
 
@@ -121,6 +129,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "esc", "ctrl+c":
 			m.interrupted = true
 			m.quitting = true
+			if m.OnInterrupt != nil {
+				m.OnInterrupt()
+			}
 			return m, tea.Quit
 		}
 

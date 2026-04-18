@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"syscall"
 
 	"time"
@@ -196,15 +197,48 @@ func run() int {
 	}
 	defer writeJUnit()
 
+	var (
+		interrupted    atomic.Bool
+		shutdownOnce   sync.Once
+		shutdownMu     sync.Mutex
+		forceKillTimer *time.Timer
+		forceKillAfter = 2 * time.Second
+	)
+	triggerShutdown := func() {
+		shutdownOnce.Do(func() {
+			interrupted.Store(true)
+			shutdownMu.Lock()
+			if goTestCmd != nil {
+				_ = goTestCmd.signal(os.Interrupt)
+				forceKillTimer = time.AfterFunc(forceKillAfter, func() {
+					goTestCmd.cleanup()
+				})
+			}
+			shutdownMu.Unlock()
+		})
+	}
+	defer func() {
+		shutdownMu.Lock()
+		if forceKillTimer != nil {
+			forceKillTimer.Stop()
+		}
+		shutdownMu.Unlock()
+	}()
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		sig := <-sigChan
-		if goTestCmd != nil {
-			_ = goTestCmd.signal(sig)
+		count := 0
+		for range sigChan {
+			count++
+			if count == 1 {
+				triggerShutdown()
+			} else {
+				if goTestCmd != nil {
+					goTestCmd.cleanup()
+				}
+			}
 		}
-		writeJUnit()
-		os.Exit(1)
 	}()
 
 	var exitCode int
@@ -225,7 +259,7 @@ func run() int {
 			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
 			return 1
 		}
-		if simple.HasFailures() {
+		if simple.HasFailures() || interrupted.Load() {
 			exitCode = 1
 		}
 	} else {
@@ -280,6 +314,7 @@ func run() int {
 				if collector.State().CurrentRun != nil {
 					m := tui.NewModel(*replay, *rate, collector)
 					m.SlowThreshold = *slowThreshold
+					m.OnInterrupt = triggerShutdown
 					var progOpts []tea.ProgramOption
 					progOpts = append(progOpts, tea.WithColorProfile(profile))
 					if columnsOverride > 0 {
@@ -347,6 +382,11 @@ func run() int {
 		if p != nil {
 			p.Send(tui.QuitMsg{})
 			<-pDone
+			printSummary()
+		}
+
+		if interrupted.Load() {
+			exitCode = 1
 		}
 
 		for _, run := range collector.State().Runs {

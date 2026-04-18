@@ -126,6 +126,7 @@ func startGoTest(goTestArgs []string) (*goTestProcess, error) {
 	args = append(args, goTestArgs...)
 
 	cmd := exec.Command("go", args...)
+	configureProcessGroup(cmd)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return nil, fmt.Errorf("Error creating stdout pipe: %w", err)
@@ -150,14 +151,9 @@ func (p *goTestProcess) wait() int {
 }
 
 func (p *goTestProcess) signal(sig os.Signal) error {
-	if p.cmd.Process != nil {
-		return p.cmd.Process.Signal(sig)
-	}
-	return nil
+	return signalProcessGroup(p.cmd, sig)
 }
 
 func (p *goTestProcess) cleanup() {
-	if p.cmd.Process != nil {
-		_ = p.cmd.Process.Kill()
-	}
+	killProcessGroup(p.cmd)
 }
