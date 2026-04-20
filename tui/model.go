@@ -521,20 +521,16 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 		leftPart = expandTabs(stripSummaryStatusWord(pkg.SummaryLine), 8)
 	}
 
+	// Running/interrupted packages keep their bright highlight so the active
+	// package stands out. Finished packages (passed/failed/skipped) leave the
+	// name+info in the terminal's default foreground color; the colored gutter
+	// icon alone conveys status. Failures in a running package are signaled
+	// by the spinner flipping to red (see getStatusPrefix); the name stays
+	// bright white so the active package reads consistently.
 	switch pkg.Status {
 	case results.StatusRunning, results.StatusInterrupted:
-		if pkg.Counts.Failed > 0 {
-			leftPart = m.brightFail.Render(leftPart)
-		} else {
-			leftPart = m.brightStyle.Render(leftPart)
-		}
+		leftPart = m.brightStyle.Render(leftPart)
 		rightPart = m.brightStyle.Render(rightPart)
-	case results.StatusFailed:
-		leftPart = m.failStyle.Render(leftPart)
-	case results.StatusSkipped:
-		leftPart = m.skipStyle.Render(leftPart)
-	case results.StatusPassed:
-		leftPart = m.passStyle.Render(leftPart)
 	}
 
 	// Prefix uses a colored gutter icon for both running and finished packages so

@@ -1,5 +1,13 @@
 TODO
 ----
+- [ ] When running with -count > 1, the running count goes negative.
+
+        ⠦ (1 packages: 1 running, 0 done)                                                                                                                                   ▶-1053 ⏸903 (✓1378 ✗4 ∅22) 1404 15.5m
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+⠦ gitlab.protectv.local/ncryptify/henry                                                                                                                             ▶-1053 ⏸903 (✓1378 ✗4 ∅22) 1404 15.5m
+
+- [ ] also, when -count > 0, failures that happened during the first run of the test are erased when the second
+      run starts, so they don't show up in the summary, or the tui.  The only evidence that they happened is in the counts
 - [x] detect and report panics
 - [x] Play with the UX: make the live feed more like the summary format
 - [x] add a `-v` flag.  In both live and notty, outputs something closer to the original 
@@ -47,14 +55,6 @@ TODO
 **Browse**
 - [ ] add browse command: must pass a file, and opens a tui which lets user navigate to any test run, and view the output
 - [ ] add option to locate specific test in file (maybe with regex?) and dump it
-
-**Run**
-- [ ] add a subcommand which runs `go test`, as an alternative to piping output, e.g.:
-
-        tang test ./... -v
-
-**live**
-- [ ] 
 
 **optimizations**
 - [ ] The replay reader parses each line.  The same line gets parsed again later.  So we're double parsing.  Would be more efficient to implement the replay logic later in the data pipeline.  Also, the replay reader reads all the lines into memory.

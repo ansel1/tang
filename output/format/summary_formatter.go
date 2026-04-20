@@ -432,15 +432,9 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 			nameExtra += " " + pl.extra
 		}
 
-		var coloredNameExtra string
-		switch pl.statusWord {
-		case "FAIL":
-			coloredNameExtra = f.failStyle.Render(fmt.Sprintf("%-*s", maxNameExtraLen, nameExtra))
-		case "ok":
-			coloredNameExtra = f.passStyle.Render(fmt.Sprintf("%-*s", maxNameExtraLen, nameExtra))
-		case "?":
-			coloredNameExtra = f.skipStyle.Render(fmt.Sprintf("%-*s", maxNameExtraLen, nameExtra))
-		}
+		// Package name+info renders in the terminal's default foreground; the
+		// color-coded status word (FAIL/ok/?) alone signals package status.
+		paddedNameExtra := fmt.Sprintf("%-*s", maxNameExtraLen, nameExtra)
 
 		hasCounts := pl.pkg.Counts.Passed > 0 || pl.pkg.Counts.Failed > 0 || pl.pkg.Counts.Skipped > 0
 		countsStr := ""
@@ -479,11 +473,11 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 
 		if countsStr != "" {
 			fmt.Fprintf(sb, "%s    %s  %s%s\n",
-				statusStr, coloredNameExtra, countsStr, elapsed)
+				statusStr, paddedNameExtra, countsStr, elapsed)
 		} else {
 			emptyCounts := strings.Repeat(" ", countsWidth)
 			fmt.Fprintf(sb, "%s    %s  %s%s\n",
-				statusStr, coloredNameExtra, emptyCounts, elapsed)
+				statusStr, paddedNameExtra, emptyCounts, elapsed)
 		}
 	}
 
