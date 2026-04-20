@@ -7,10 +7,10 @@ TODO
 - [x] rename `--junitout` to `--junitfile`
 - [x] add COLUMNS support if we don't already have it
 - [x] still something wrong with indentation of log lines in the summary.  when running sample, they are indented too far, but not when running henry's tests
-- [ ] add a `--no-color` flag
-- [ ] if panic happens in TestMain, tang prints nothing
+- [x] add a `--no-color` flag
+- [x] if panic happens in TestMain, tang prints nothing
 - [x] when eliding, have RUN and CONT taking higher precendence than PAUSE
-- [ ] don't count paused tests in the running count
+- [x] don't count paused tests in the running count
 - [ ] clear up the help string
 - [ ] in live mode, try using the icons again in the left gutter for finished packages, so isntead of:
 
