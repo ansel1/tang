@@ -53,11 +53,15 @@ func TestPackageSummaryLastOutput(t *testing.T) {
 
 	output := viewLatest(m)
 
-	// The output should contain the last output line (with tabs expanded)
-	// The original line is "ok  \tgithub.com/test/pkg1\t0.10s"
-	// After tab expansion, it becomes "ok      github.com/test/pkg1    0.10s"
-	expected := "ok      github.com/test/pkg1    0.10s"
+	// The original summary line is "ok  \tgithub.com/test/pkg1\t0.10s". For
+	// finished packages, the leading status word is replaced with a gutter
+	// icon (✓/✗/∅), so the rendered tail is "github.com/test/pkg1    0.10s"
+	// after tab expansion.
+	expected := "github.com/test/pkg1    0.10s"
 	if !strings.Contains(output, expected) {
 		t.Errorf("Expected output to contain last output line '%s'.\nGot:\n%s", expected, output)
+	}
+	if strings.Contains(output, "ok      github.com/test/pkg1") {
+		t.Errorf("Finished package line should not include the 'ok' status word; gutter icon replaces it.\nGot:\n%s", output)
 	}
 }

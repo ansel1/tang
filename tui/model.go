@@ -518,7 +518,7 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 	rightPart = fmt.Sprintf("%s(%s %s %s) %s %s", runPausePart, passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 	leftPart = pkg.Name
 	if !running && pkg.SummaryLine != "" {
-		leftPart = expandTabs(pkg.SummaryLine, 8)
+		leftPart = expandTabs(stripSummaryStatusWord(pkg.SummaryLine), 8)
 	}
 
 	switch pkg.Status {
@@ -537,17 +537,36 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 		leftPart = m.passStyle.Render(leftPart)
 	}
 
-	var prefix string
-	switch pkg.Status {
-	case results.StatusRunning, results.StatusInterrupted:
-		prefix = m.getStatusPrefix(pkg.Status, pkg.Counts.Failed > 0)
-	case results.StatusPaused:
-		prefix = m.getStatusPrefix(pkg.Status, pkg.Counts.Failed > 0)
-	default:
-		prefix = "  "
-	}
+	// Prefix uses a colored gutter icon for both running and finished packages so
+	// the package name aligns at column 3 across all states.
+	prefix := m.getStatusPrefix(pkg.Status, pkg.Counts.Failed > 0)
 
 	m.renderAlignedLine(b, leftPart, rightPart, prefix)
+}
+
+// stripSummaryStatusWord removes the leading go test status token ("ok",
+// "FAIL", or "?") and the whitespace that follows it from a package summary
+// line. The gutter icon conveys the status visually, so repeating it as text
+// would be redundant. The remaining text (package name, duration, "[no test
+// files]", etc.) is returned untouched so that subsequent tab expansion keeps
+// the original column layout.
+func stripSummaryStatusWord(summary string) string {
+	// Trim only leading spaces; preserve tabs so expandTabs can still align
+	// the rest of the line.
+	trimmed := strings.TrimLeft(summary, " ")
+	for _, prefix := range []string{"FAIL", "ok", "?"} {
+		if strings.HasPrefix(trimmed, prefix) {
+			rest := trimmed[len(prefix):]
+			// The go test runner always separates the status word from the
+			// package name with at least one whitespace character (usually a
+			// tab). Only strip if that separator is present, otherwise leave
+			// the line alone (e.g. a package literally named "ok-foo").
+			if len(rest) > 0 && (rest[0] == ' ' || rest[0] == '\t') {
+				return strings.TrimLeft(rest, " \t")
+			}
+		}
+	}
+	return summary
 }
 
 // renderTest renders a test and its output lines
