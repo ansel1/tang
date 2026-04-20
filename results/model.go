@@ -38,7 +38,7 @@ func (s Status) String() string {
 
 // Run represents a single discrete test execution.
 //
-// A run starts when any test event is received and there is no current run in progress.
+// A run starts when any test or build event is received and there is no current run in progress.
 // A run finishes when the number of running packages drops to 0.
 type Run struct {
 	ID             int                       // Sequential run ID (1, 2, 3...)

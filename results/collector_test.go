@@ -546,3 +546,82 @@ func TestCollectorPauseContTimestamps(t *testing.T) {
 		t.Errorf("Expected StartTime to be updated to cont event time, got %v", testA.StartTime)
 	}
 }
+
+func TestCollectorBuildEventStartsRun(t *testing.T) {
+	collector := NewCollector()
+
+	collector.Push(engine.Event{
+		Type:       engine.EventBuild,
+		BuildEvent: parser.BuildEvent{ImportPath: "example.com/broken", Action: "build-output", Output: "# example.com/broken\n"},
+	})
+
+	state := collector.State()
+	if state.CurrentRun == nil {
+		t.Fatal("Expected CurrentRun to be created on first build event, got nil")
+	}
+	if len(state.Runs) != 1 {
+		t.Fatalf("Expected 1 run, got %d", len(state.Runs))
+	}
+	run := state.Runs[0]
+	if len(run.BuildEvents) != 1 {
+		t.Fatalf("Expected 1 build event on run, got %d", len(run.BuildEvents))
+	}
+	if run.BuildEvents[0].ImportPath != "example.com/broken" {
+		t.Errorf("Expected build event ImportPath 'example.com/broken', got '%s'", run.BuildEvents[0].ImportPath)
+	}
+	if len(run.Packages) != 0 {
+		t.Errorf("Expected 0 packages, got %d", len(run.Packages))
+	}
+
+	// A subsequent test event should attach to the same run, not create a new one.
+	collector.Push(engine.Event{
+		Type: engine.EventTest,
+		TestEvent: parser.TestEvent{
+			Time:    time.Now(),
+			Action:  "run",
+			Package: "example.com/ok",
+			Test:    "TestOne",
+		},
+	})
+
+	if len(state.Runs) != 1 {
+		t.Fatalf("Expected still 1 run after test event, got %d", len(state.Runs))
+	}
+	if state.CurrentRun != run {
+		t.Error("Expected test event to attach to the existing run")
+	}
+}
+
+func TestCollectorBuildOnlyRunFinalizes(t *testing.T) {
+	collector := NewCollector()
+
+	collector.Push(engine.Event{
+		Type:       engine.EventBuild,
+		BuildEvent: parser.BuildEvent{ImportPath: "example.com/broken", Action: "build-output", Output: "# example.com/broken\n"},
+	})
+	collector.Push(engine.Event{
+		Type:       engine.EventBuild,
+		BuildEvent: parser.BuildEvent{ImportPath: "example.com/broken", Action: "build-fail"},
+	})
+	collector.Push(engine.Event{Type: engine.EventComplete})
+
+	state := collector.State()
+	if state.CurrentRun != nil {
+		t.Error("Expected CurrentRun to be nil after EventComplete")
+	}
+	if len(state.Runs) != 1 {
+		t.Fatalf("Expected 1 run in history, got %d", len(state.Runs))
+	}
+	run := state.Runs[0]
+	if len(run.BuildEvents) != 2 {
+		t.Errorf("Expected 2 build events on run, got %d", len(run.BuildEvents))
+	}
+	if len(run.Packages) != 0 {
+		t.Errorf("Expected 0 packages, got %d", len(run.Packages))
+	}
+	// No tests ran, no failures recorded against tests, so the run is reported as passed
+	// per the existing Finish() heuristic. The build failures live in run.BuildEvents.
+	if run.Status != StatusPassed {
+		t.Errorf("Expected run status StatusPassed (no failed tests, no running pkgs), got %s", run.Status)
+	}
+}

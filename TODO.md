@@ -62,7 +62,6 @@ TODO
 - [x] need to rethink the notty mode
 - [ ] ctrl-c doesn't work if the live UI hasn't started yet
 - [ ] handle "action":"bench" events 
-- [ ] in Collector.handleBuildEvent(), why not just start a new run if needed?
   // The Action field is one of a fixed set of action descriptions:
 //
 //	start  - the test binary is about to be executed

@@ -14,15 +14,14 @@ import (
 // The Collector is a passive component that tracks the state of test runs.
 // It IS thread-safe.
 // It detects run boundaries using the heuristic:
-// - Run starts: Any test event when no current run exists
+// - Run starts: Any test or build event when no current run exists
 // - Run finishes: Running package count drops to 0
 type Collector struct {
-	mu                 sync.Mutex
-	state              *State
-	lastEventTime      time.Time
-	isReplay           bool
-	replayRate         float64
-	pendingBuildEvents []parser.BuildEvent // Accumulate before run starts
+	mu            sync.Mutex
+	state         *State
+	lastEventTime time.Time
+	isReplay      bool
+	replayRate    float64
 }
 
 // NewCollector creates a new result collector.
@@ -94,9 +93,7 @@ func (c *Collector) Push(evt engine.Event) {
 // handleBuildEvent processes a build event.
 func (c *Collector) handleBuildEvent(event parser.BuildEvent) {
 	if c.state.CurrentRun == nil {
-		// Build events can come before test events - accumulate them
-		c.pendingBuildEvents = append(c.pendingBuildEvents, event)
-		return
+		c.startNewRun()
 	}
 	c.state.CurrentRun.BuildEvents = append(c.state.CurrentRun.BuildEvents, event)
 }
@@ -408,12 +405,6 @@ func (c *Collector) startNewRun() {
 	runID := len(c.state.Runs) + 1
 	run := NewRun(runID)
 	run.Status = StatusRunning
-
-	// Add any build events that arrived before the run started
-	if len(c.pendingBuildEvents) > 0 {
-		run.BuildEvents = append(run.BuildEvents, c.pendingBuildEvents...)
-		c.pendingBuildEvents = nil // Clear pending events
-	}
 
 	c.state.Runs = append(c.state.Runs, run)
 	c.state.CurrentRun = run
