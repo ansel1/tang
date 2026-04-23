@@ -70,6 +70,14 @@ func ensureReset(s string) string {
 	return s + reset
 }
 
+// TestExecutionEntry holds a single execution of a test for summary display.
+type TestExecutionEntry struct {
+	TestResult      *results.TestResult
+	TestExecution   *results.TestExecution
+	Iteration       int // 1-based iteration number
+	TotalExecutions int
+}
+
 // Summary represents computed summary statistics from a test run.
 type Summary struct {
 	Packages         []*results.PackageResult
@@ -79,9 +87,9 @@ type Summary struct {
 	SkippedTests     int
 	TotalTime        time.Duration
 	PackageCount     int
-	Failures         []*results.TestResult
-	Skipped          []*results.TestResult
-	SlowTests        []*results.TestResult
+	Failures         []*TestExecutionEntry
+	Skipped          []*TestExecutionEntry
+	SlowTests        []*TestExecutionEntry
 	BuildFailures    []*results.PackageResult // Packages that failed to build
 	Run              *results.Run             // Reference to the run for accessing build errors
 	FastestPackage   *results.PackageResult
@@ -162,16 +170,27 @@ func ComputeSummary(run *results.Run, slowThreshold time.Duration) *Summary {
 	summary.TotalTests = summary.PassedTests + summary.FailedTests + summary.SkippedTests
 
 	// Collect failure details, skipped tests, and slow tests from the
-	// unique test results map (detail display only needs one entry per test).
+	// unique test results map, iterating over each execution.
 	for _, testResult := range run.TestResults {
-		switch testResult.Status {
-		case results.StatusFailed:
-			summary.Failures = append(summary.Failures, testResult)
-		case results.StatusSkipped:
-			summary.Skipped = append(summary.Skipped, testResult)
-		}
-		if testResult.Elapsed >= slowThreshold {
-			summary.SlowTests = append(summary.SlowTests, testResult)
+		totalExecutions := len(testResult.Executions)
+		for i, exec := range testResult.Executions {
+			iteration := i + 1
+			entry := &TestExecutionEntry{
+				TestResult:      testResult,
+				TestExecution:   exec,
+				Iteration:       iteration,
+				TotalExecutions: totalExecutions,
+			}
+
+			switch exec.Status {
+			case results.StatusFailed:
+				summary.Failures = append(summary.Failures, entry)
+			case results.StatusSkipped:
+				summary.Skipped = append(summary.Skipped, entry)
+			}
+			if exec.Elapsed >= slowThreshold {
+				summary.SlowTests = append(summary.SlowTests, entry)
+			}
 		}
 	}
 
@@ -216,12 +235,12 @@ func ComputeSummary(run *results.Run, slowThreshold time.Duration) *Summary {
 	return summary
 }
 
-// sortSlowTests sorts test results by elapsed time in descending order.
-func sortSlowTests(tests []*results.TestResult) {
+// sortSlowTests sorts test execution entries by elapsed time in descending order.
+func sortSlowTests(tests []*TestExecutionEntry) {
 	n := len(tests)
 	for i := 0; i < n-1; i++ {
 		for j := 0; j < n-i-1; j++ {
-			if tests[j].Elapsed < tests[j+1].Elapsed {
+			if tests[j].TestExecution.Elapsed < tests[j+1].TestExecution.Elapsed {
 				tests[j], tests[j+1] = tests[j+1], tests[j]
 			}
 		}

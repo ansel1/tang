@@ -291,10 +291,11 @@ func (s *SimpleOutput) handleNonVerboseTestFailure(
 	depth := strings.Count(te.Test, "/")
 	indent := strings.Repeat("    ", depth)
 	var lines []string
-	if tr.SummaryLine != "" {
-		lines = append(lines, fmt.Sprintf("%s%s\n", indent, tr.SummaryLine))
+	summaryLine := tr.SummaryLine()
+	if summaryLine != "" {
+		lines = append(lines, fmt.Sprintf("%s%s\n", indent, summaryLine))
 	}
-	for _, line := range tr.Output {
+	for _, line := range tr.Output() {
 		lines = append(lines, fmt.Sprintf("%s%s\n", indent, line))
 	}
 

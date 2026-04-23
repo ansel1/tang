@@ -206,13 +206,17 @@ func (m *Model) packageElapsed(pkg *results.PackageResult) time.Duration {
 }
 
 func (m *Model) testElapsed(test *results.TestResult) time.Duration {
-	switch test.Status {
+	latest := test.Latest()
+	if latest == nil {
+		return 0
+	}
+	switch latest.Status {
 	case results.StatusRunning:
-		return m.scaledElapsedDuration(test.ActiveDuration + time.Since(test.LastResumeTime))
+		return m.scaledElapsedDuration(latest.ActiveDuration + time.Since(latest.LastResumeTime))
 	case results.StatusPaused:
-		return m.scaledElapsedDuration(test.ActiveDuration)
+		return m.scaledElapsedDuration(latest.ActiveDuration)
 	default:
-		return test.Elapsed
+		return latest.Elapsed
 	}
 }
 
@@ -347,9 +351,9 @@ func (m *Model) renderRun(run *results.Run) string {
 				lineCount := 1
 
 				// Only show output for actively running tests
-				if test.Status == results.StatusRunning {
+				if test.Status() == results.StatusRunning {
 					// Update output lines (take last N lines)
-					n := len(test.Output)
+					n := len(test.Output())
 					if n < MaxOutputLines {
 						lineCount += n
 					} else {
@@ -362,7 +366,7 @@ func (m *Model) renderRun(run *results.Run) string {
 				// 2. Failed
 				// 3. Passed/Skipped/Paused (Lowest)
 				priority := 3
-				switch test.Status {
+				switch test.Status() {
 				case results.StatusRunning:
 					priority = 1
 				case results.StatusFailed:
@@ -374,7 +378,7 @@ func (m *Model) renderRun(run *results.Run) string {
 					testName:  testName,
 					lineCount: lineCount,
 					priority:  priority,
-					startTime: test.StartTime,
+					startTime: test.StartTime(),
 				})
 			}
 		}
@@ -598,12 +602,13 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 	maxLines--
 
 	// Render output lines
-	l := len(test.Output)
+	output := test.Output()
+	l := len(output)
 	if l > MaxOutputLines {
 		l = MaxOutputLines
 	}
 	logIndent := prefix + testIndent(test.Name)
-	for _, outputLine := range test.Output[len(test.Output)-l:] {
+	for _, outputLine := range output[len(output)-l:] {
 		if maxLines <= 0 {
 			break
 		}
@@ -630,13 +635,13 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 }
 
 func (m *Model) testStyle(test *results.TestResult) *lipgloss.Style {
-	switch test.Status {
+	switch test.Status() {
 	case results.StatusFailed:
 		return &m.failStyle
 	case results.StatusSkipped:
 		return &m.skipStyle
 	case results.StatusPassed:
-		if m.SlowThreshold > 0 && test.Elapsed >= m.SlowThreshold {
+		if m.SlowThreshold > 0 && test.Elapsed() >= m.SlowThreshold {
 			return &m.slowStyle
 		}
 	}
@@ -646,8 +651,9 @@ func (m *Model) testStyle(test *results.TestResult) *lipgloss.Style {
 // formatTestSummary formats the test summary line (left part)
 func (m *Model) formatTestSummary(test *results.TestResult) string {
 	indent := testIndent(test.Name)
-	if test.SummaryLine != "" {
-		return indent + test.SummaryLine
+	summaryLine := test.SummaryLine()
+	if summaryLine != "" {
+		return indent + summaryLine
 	}
 	return fmt.Sprintf("%s=== RUN   %s", indent, test.Name)
 }

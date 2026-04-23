@@ -23,15 +23,20 @@ func TestComputeSummaryBasic(t *testing.T) {
 	run.Packages["pkg1"] = pkg1
 	run.PackageOrder = append(run.PackageOrder, "pkg1")
 
-	run.TestResults["pkg1/TestA"] = &results.TestResult{
-		Package: "pkg1", Name: "TestA", Status: results.StatusPassed, Elapsed: 1.0 * time.Second,
-	}
-	run.TestResults["pkg1/TestB"] = &results.TestResult{
-		Package: "pkg1", Name: "TestB", Status: results.StatusFailed, Elapsed: 1.0 * time.Second,
-	}
-	run.TestResults["pkg1/TestC"] = &results.TestResult{
-		Package: "pkg1", Name: "TestC", Status: results.StatusPassed, Elapsed: 1.0 * time.Second,
-	}
+	tr1 := results.NewTestResult("pkg1", "TestA")
+	tr1.Latest().Status = results.StatusPassed
+	tr1.Latest().Elapsed = 1.0 * time.Second
+	run.TestResults["pkg1/TestA"] = tr1
+
+	tr2 := results.NewTestResult("pkg1", "TestB")
+	tr2.Latest().Status = results.StatusFailed
+	tr2.Latest().Elapsed = 1.0 * time.Second
+	run.TestResults["pkg1/TestB"] = tr2
+
+	tr3 := results.NewTestResult("pkg1", "TestC")
+	tr3.Latest().Status = results.StatusPassed
+	tr3.Latest().Elapsed = 1.0 * time.Second
+	run.TestResults["pkg1/TestC"] = tr3
 
 	// Package 2: 1 pass, 1 skip
 	pkg2 := &results.PackageResult{
@@ -45,12 +50,15 @@ func TestComputeSummaryBasic(t *testing.T) {
 	run.Packages["pkg2"] = pkg2
 	run.PackageOrder = append(run.PackageOrder, "pkg2")
 
-	run.TestResults["pkg2/TestD"] = &results.TestResult{
-		Package: "pkg2", Name: "TestD", Status: results.StatusPassed, Elapsed: 1.0 * time.Second,
-	}
-	run.TestResults["pkg2/TestE"] = &results.TestResult{
-		Package: "pkg2", Name: "TestE", Status: results.StatusSkipped, Elapsed: 1.0 * time.Second,
-	}
+	tr4 := results.NewTestResult("pkg2", "TestD")
+	tr4.Latest().Status = results.StatusPassed
+	tr4.Latest().Elapsed = 1.0 * time.Second
+	run.TestResults["pkg2/TestD"] = tr4
+
+	tr5 := results.NewTestResult("pkg2", "TestE")
+	tr5.Latest().Status = results.StatusSkipped
+	tr5.Latest().Elapsed = 1.0 * time.Second
+	run.TestResults["pkg2/TestE"] = tr5
 
 	// Compute summary
 	summary := ComputeSummary(run, 10*time.Second)
@@ -76,16 +84,16 @@ func TestComputeSummaryBasic(t *testing.T) {
 	if len(summary.Failures) != 1 {
 		t.Errorf("Expected 1 failure, got %d", len(summary.Failures))
 	}
-	if len(summary.Failures) > 0 && summary.Failures[0].Name != "TestB" {
-		t.Errorf("Expected failure TestB, got %s", summary.Failures[0].Name)
+	if len(summary.Failures) > 0 && summary.Failures[0].TestResult.Name != "TestB" {
+		t.Errorf("Expected failure TestB, got %s", summary.Failures[0].TestResult.Name)
 	}
 
 	// Verify skipped collection
 	if len(summary.Skipped) != 1 {
 		t.Errorf("Expected 1 skipped test, got %d", len(summary.Skipped))
 	}
-	if len(summary.Skipped) > 0 && summary.Skipped[0].Name != "TestE" {
-		t.Errorf("Expected skipped TestE, got %s", summary.Skipped[0].Name)
+	if len(summary.Skipped) > 0 && summary.Skipped[0].TestResult.Name != "TestE" {
+		t.Errorf("Expected skipped TestE, got %s", summary.Skipped[0].TestResult.Name)
 	}
 
 	// Verify package statistics
@@ -131,9 +139,10 @@ func TestComputeSummarySlowTests(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		run.TestResults["pkg1/"+test.name] = &results.TestResult{
-			Package: "pkg1", Name: test.name, Status: results.StatusPassed, Elapsed: time.Duration(test.elapsed * float64(time.Second)),
-		}
+		tr := results.NewTestResult("pkg1", test.name)
+		tr.Latest().Status = results.StatusPassed
+		tr.Latest().Elapsed = time.Duration(test.elapsed * float64(time.Second))
+		run.TestResults["pkg1/"+test.name] = tr
 		pkg1.TestOrder = append(pkg1.TestOrder, test.name)
 	}
 
@@ -147,14 +156,14 @@ func TestComputeSummarySlowTests(t *testing.T) {
 
 	// Verify slow tests are sorted by duration (descending)
 	if len(summary.SlowTests) >= 3 {
-		if summary.SlowTests[0].Name != "TestSlow2" {
-			t.Errorf("Expected first slow test to be TestSlow2 (25s), got %s", summary.SlowTests[0].Name)
+		if summary.SlowTests[0].TestResult.Name != "TestSlow2" {
+			t.Errorf("Expected first slow test to be TestSlow2 (25s), got %s", summary.SlowTests[0].TestResult.Name)
 		}
-		if summary.SlowTests[1].Name != "TestSlow1" {
-			t.Errorf("Expected second slow test to be TestSlow1 (15s), got %s", summary.SlowTests[1].Name)
+		if summary.SlowTests[1].TestResult.Name != "TestSlow1" {
+			t.Errorf("Expected second slow test to be TestSlow1 (15s), got %s", summary.SlowTests[1].TestResult.Name)
 		}
-		if summary.SlowTests[2].Name != "TestSlow3" {
-			t.Errorf("Expected third slow test to be TestSlow3 (12s), got %s", summary.SlowTests[2].Name)
+		if summary.SlowTests[2].TestResult.Name != "TestSlow3" {
+			t.Errorf("Expected third slow test to be TestSlow3 (12s), got %s", summary.SlowTests[2].TestResult.Name)
 		}
 	}
 }
@@ -196,9 +205,10 @@ func TestComputeSummaryAllPass(t *testing.T) {
 	run.PackageOrder = append(run.PackageOrder, "pkg1")
 
 	for _, name := range []string{"TestA", "TestB", "TestC"} {
-		run.TestResults["pkg1/"+name] = &results.TestResult{
-			Package: "pkg1", Name: name, Status: results.StatusPassed, Elapsed: 1.0 * time.Second,
-		}
+		tr := results.NewTestResult("pkg1", name)
+		tr.Latest().Status = results.StatusPassed
+		tr.Latest().Elapsed = 1.0 * time.Second
+		run.TestResults["pkg1/"+name] = tr
 	}
 
 	summary := ComputeSummary(run, 10*time.Second)

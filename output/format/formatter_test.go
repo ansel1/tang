@@ -59,15 +59,20 @@ func TestSummaryFormatterWithFailures(t *testing.T) {
 	run.Packages["github.com/user/project/pkg1"] = pkg1
 	run.PackageOrder = []string{"github.com/user/project/pkg1"}
 
-	failTest := &results.TestResult{
-		Package: "github.com/user/project/pkg1",
-		Name:    "TestFailing",
-		Status:  results.StatusFailed,
-		Elapsed: 1 * time.Second,
-		Output:  []string{"Error: expected true, got false", "at line 42"},
-	}
+	failTest := results.NewTestResult("github.com/user/project/pkg1", "TestFailing")
+	failTest.Latest().Status = results.StatusFailed
+	failTest.Latest().Elapsed = 1 * time.Second
+	failTest.Latest().Output = []string{"Error: expected true, got false", "at line 42"}
 	run.TestResults["github.com/user/project/pkg1/TestFailing"] = failTest
 	pkg1.TestOrder = []string{"TestFailing"}
+
+	// Create TestExecutionEntry for the failure
+	failEntry := &TestExecutionEntry{
+		TestResult:      failTest,
+		TestExecution:   failTest.Latest(),
+		Iteration:       1,
+		TotalExecutions: 1,
+	}
 
 	summary := &Summary{
 		Packages:     []*results.PackageResult{pkg1},
@@ -77,7 +82,7 @@ func TestSummaryFormatterWithFailures(t *testing.T) {
 		SkippedTests: 0,
 		TotalTime:    5 * time.Second,
 		PackageCount: 1,
-		Failures:     []*results.TestResult{failTest},
+		Failures:     []*TestExecutionEntry{failEntry},
 		Run:          run,
 	}
 
@@ -109,15 +114,20 @@ func TestSummaryFormatterWithSkipped(t *testing.T) {
 	run.Packages["github.com/user/project/pkg1"] = pkg1
 	run.PackageOrder = []string{"github.com/user/project/pkg1"}
 
-	skipTest := &results.TestResult{
-		Package: "github.com/user/project/pkg1",
-		Name:    "TestSkipped",
-		Status:  results.StatusSkipped,
-		Elapsed: 0,
-		Output:  []string{"Skipping: not implemented yet"},
-	}
+	skipTest := results.NewTestResult("github.com/user/project/pkg1", "TestSkipped")
+	skipTest.Latest().Status = results.StatusSkipped
+	skipTest.Latest().Elapsed = 0
+	skipTest.Latest().Output = []string{"Skipping: not implemented yet"}
 	run.TestResults["github.com/user/project/pkg1/TestSkipped"] = skipTest
 	pkg1.TestOrder = []string{"TestSkipped"}
+
+	// Create TestExecutionEntry for the skipped test
+	skipEntry := &TestExecutionEntry{
+		TestResult:      skipTest,
+		TestExecution:   skipTest.Latest(),
+		Iteration:       1,
+		TotalExecutions: 1,
+	}
 
 	summary := &Summary{
 		Packages:     []*results.PackageResult{pkg1},
@@ -127,7 +137,7 @@ func TestSummaryFormatterWithSkipped(t *testing.T) {
 		SkippedTests: 2,
 		TotalTime:    5 * time.Second,
 		PackageCount: 1,
-		Skipped:      []*results.TestResult{skipTest},
+		Skipped:      []*TestExecutionEntry{skipEntry},
 		Run:          run,
 	}
 
@@ -154,18 +164,23 @@ func TestSummaryFormatterWithSlowTests(t *testing.T) {
 	}
 	pkg1.Counts.Passed = 2
 
-	slowTest := &results.TestResult{
-		Package: "github.com/user/project/pkg1",
-		Name:    "TestSlow",
-		Status:  results.StatusPassed,
-		Elapsed: 65 * time.Second,
-	}
+	slowTest := results.NewTestResult("github.com/user/project/pkg1", "TestSlow")
+	slowTest.Latest().Status = results.StatusPassed
+	slowTest.Latest().Elapsed = 65 * time.Second
 
 	run := results.NewRun(1)
 	run.Packages["github.com/user/project/pkg1"] = pkg1
 	run.PackageOrder = []string{"github.com/user/project/pkg1"}
 	run.TestResults["github.com/user/project/pkg1/TestSlow"] = slowTest
 	pkg1.TestOrder = []string{"TestSlow"}
+
+	// Create TestExecutionEntry for the slow test
+	slowEntry := &TestExecutionEntry{
+		TestResult:      slowTest,
+		TestExecution:   slowTest.Latest(),
+		Iteration:       1,
+		TotalExecutions: 1,
+	}
 
 	summary := &Summary{
 		Packages:     []*results.PackageResult{pkg1},
@@ -175,7 +190,7 @@ func TestSummaryFormatterWithSlowTests(t *testing.T) {
 		SkippedTests: 0,
 		TotalTime:    65 * time.Second,
 		PackageCount: 1,
-		SlowTests:    []*results.TestResult{slowTest},
+		SlowTests:    []*TestExecutionEntry{slowEntry},
 		Run:          run,
 	}
 
@@ -204,15 +219,20 @@ func TestSummaryFormatterSkippedHiddenByDefault(t *testing.T) {
 	run.Packages["github.com/user/project/pkg1"] = pkg1
 	run.PackageOrder = []string{"github.com/user/project/pkg1"}
 
-	skipTest := &results.TestResult{
-		Package: "github.com/user/project/pkg1",
-		Name:    "TestSkipped",
-		Status:  results.StatusSkipped,
-		Elapsed: 0,
-		Output:  []string{"Skipping: not implemented yet"},
-	}
+	skipTest := results.NewTestResult("github.com/user/project/pkg1", "TestSkipped")
+	skipTest.Latest().Status = results.StatusSkipped
+	skipTest.Latest().Elapsed = 0
+	skipTest.Latest().Output = []string{"Skipping: not implemented yet"}
 	run.TestResults["github.com/user/project/pkg1/TestSkipped"] = skipTest
 	pkg1.TestOrder = []string{"TestSkipped"}
+
+	// Create TestExecutionEntry for the skipped test
+	skipEntry := &TestExecutionEntry{
+		TestResult:      skipTest,
+		TestExecution:   skipTest.Latest(),
+		Iteration:       1,
+		TotalExecutions: 1,
+	}
 
 	summary := &Summary{
 		Packages:     []*results.PackageResult{pkg1},
@@ -222,7 +242,7 @@ func TestSummaryFormatterSkippedHiddenByDefault(t *testing.T) {
 		SkippedTests: 2,
 		TotalTime:    5 * time.Second,
 		PackageCount: 1,
-		Skipped:      []*results.TestResult{skipTest},
+		Skipped:      []*TestExecutionEntry{skipEntry},
 		Run:          run,
 	}
 
@@ -246,18 +266,23 @@ func TestSummaryFormatterSlowHiddenByDefault(t *testing.T) {
 	}
 	pkg1.Counts.Passed = 2
 
-	slowTest := &results.TestResult{
-		Package: "github.com/user/project/pkg1",
-		Name:    "TestSlow",
-		Status:  results.StatusPassed,
-		Elapsed: 65 * time.Second,
-	}
+	slowTest := results.NewTestResult("github.com/user/project/pkg1", "TestSlow")
+	slowTest.Latest().Status = results.StatusPassed
+	slowTest.Latest().Elapsed = 65 * time.Second
 
 	run := results.NewRun(1)
 	run.Packages["github.com/user/project/pkg1"] = pkg1
 	run.PackageOrder = []string{"github.com/user/project/pkg1"}
 	run.TestResults["github.com/user/project/pkg1/TestSlow"] = slowTest
 	pkg1.TestOrder = []string{"TestSlow"}
+
+	// Create TestExecutionEntry for the slow test
+	slowEntry := &TestExecutionEntry{
+		TestResult:      slowTest,
+		TestExecution:   slowTest.Latest(),
+		Iteration:       1,
+		TotalExecutions: 1,
+	}
 
 	summary := &Summary{
 		Packages:     []*results.PackageResult{pkg1},
@@ -267,7 +292,7 @@ func TestSummaryFormatterSlowHiddenByDefault(t *testing.T) {
 		SkippedTests: 0,
 		TotalTime:    65 * time.Second,
 		PackageCount: 1,
-		SlowTests:    []*results.TestResult{slowTest},
+		SlowTests:    []*TestExecutionEntry{slowEntry},
 		Run:          run,
 	}
 

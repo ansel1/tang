@@ -1,5 +1,12 @@
 TODO
 ----
+- [ ] need to review all the unit tests for redundancy
+- [ ] what value is Summary bringing?  it seems to be a middleman between the run and the formatting code
+- [ ] FastestPackage   *results.PackageResult
+	SlowestPackage   *results.PackageResult
+	MostTestsPackage *results.PackageResult don't seem to be used anymore
+- [ ] an immediate fail leads to a stuck terminal.  I think it's the bubbletea issue
+- [ ] try not using color for passing tests/packages
 - [ ] When running with -count > 1, the running count goes negative.
 
         ⠦ (1 packages: 1 running, 0 done)                                                                                                                                   ▶-1053 ⏸903 (✓1378 ✗4 ∅22) 1404 15.5m
@@ -19,8 +26,8 @@ TODO
 - [x] if panic happens in TestMain, tang prints nothing
 - [x] when eliding, have RUN and CONT taking higher precendence than PAUSE
 - [x] don't count paused tests in the running count
-- [ ] clear up the help string
-- [ ] in live mode, try using the icons again in the left gutter for finished packages, so isntead of:
+- [x] clear up the help string
+- [x] in live mode, try using the icons again in the left gutter for finished packages, so isntead of:
 
         ⠦ gitlab.protectv.local/ncryptify/solo.git                                                                                                                                                                                 ✓279 ✗0 ∅1 =280 3.4m
             --- PASS: TestGetLoginURI/good_URL_w/javascript-quote,_should_be_escaped (0.00s)                                                                                                                                                       0.0s

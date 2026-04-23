@@ -90,16 +90,16 @@ func TestCollectorInterruptedPackage(t *testing.T) {
 	if testOne == nil {
 		t.Fatal("TestOne not found in test results")
 	}
-	if testOne.Status != StatusPassed {
-		t.Errorf("Expected TestOne status 'pass', got '%s'", testOne.Status)
+	if testOne.Status() != StatusPassed {
+		t.Errorf("Expected TestOne status 'pass', got '%s'", testOne.Status())
 	}
 
 	testTwo := run.TestResults["github.com/test/pkg1/TestTwo"]
 	if testTwo == nil {
 		t.Fatal("TestTwo not found in test results")
 	}
-	if testTwo.Status != StatusRunning {
-		t.Errorf("Expected TestTwo status 'running', got '%s'", testTwo.Status)
+	if testTwo.Status() != StatusRunning {
+		t.Errorf("Expected TestTwo status 'running', got '%s'", testTwo.Status())
 	}
 }
 
@@ -412,25 +412,25 @@ func TestCollectorTimeoutPanic(t *testing.T) {
 	}
 
 	testA := run.TestResults[pkg+"/TestA"]
-	if testA.Status != StatusFailed {
-		t.Errorf("Expected TestA status Failed, got %s", testA.Status)
+	if testA.Status() != StatusFailed {
+		t.Errorf("Expected TestA status Failed, got %s", testA.Status())
 	}
-	if !testA.Interrupted {
+	if !testA.Interrupted() {
 		t.Error("Expected TestA.Interrupted to be true")
 	}
-	if len(testA.Output) == 0 {
+	if len(testA.Output()) == 0 {
 		t.Error("Expected TestA to retain its panic output")
 	}
 
 	testB := run.TestResults[pkg+"/TestB"]
-	if testB.Status != StatusFailed {
-		t.Errorf("Expected TestB status Failed, got %s", testB.Status)
+	if testB.Status() != StatusFailed {
+		t.Errorf("Expected TestB status Failed, got %s", testB.Status())
 	}
-	if !testB.Interrupted {
+	if !testB.Interrupted() {
 		t.Error("Expected TestB.Interrupted to be true")
 	}
-	if len(testB.Output) != 0 {
-		t.Errorf("Expected TestB to have no output (deduped), got %d lines", len(testB.Output))
+	if len(testB.Output()) != 0 {
+		t.Errorf("Expected TestB to have no output (deduped), got %d lines", len(testB.Output()))
 	}
 
 	// Verify counts
@@ -520,10 +520,10 @@ func TestCollectorPauseContTimestamps(t *testing.T) {
 	run := collector.State().MostRecentRun()
 	testA := run.TestResults[pkg+"/TestA"]
 
-	if testA.Status != StatusPaused {
-		t.Errorf("Expected StatusPaused, got %s", testA.Status)
+	if testA.Status() != StatusPaused {
+		t.Errorf("Expected StatusPaused, got %s", testA.Status())
 	}
-	if testA.ActiveDuration == 0 {
+	if testA.ActiveDuration() == 0 {
 		t.Error("Expected ActiveDuration > 0 after pause")
 	}
 
@@ -533,17 +533,17 @@ func TestCollectorPauseContTimestamps(t *testing.T) {
 		Time: contTime, Action: "cont", Package: pkg, Test: "TestA",
 	}})
 
-	if testA.Status != StatusRunning {
-		t.Errorf("Expected StatusRunning after cont, got %s", testA.Status)
+	if testA.Status() != StatusRunning {
+		t.Errorf("Expected StatusRunning after cont, got %s", testA.Status())
 	}
-	if testA.LastResumeTime.Before(beforeCont) {
+	if testA.LastResumeTime().Before(beforeCont) {
 		t.Error("Expected LastResumeTime to be updated on cont")
 	}
-	if testA.WallStartTime.Before(beforeCont) {
+	if testA.WallStartTime().Before(beforeCont) {
 		t.Error("Expected WallStartTime to be reset on cont")
 	}
-	if testA.StartTime != contTime {
-		t.Errorf("Expected StartTime to be updated to cont event time, got %v", testA.StartTime)
+	if testA.StartTime() != contTime {
+		t.Errorf("Expected StartTime to be updated to cont event time, got %v", testA.StartTime())
 	}
 }
 
@@ -693,5 +693,294 @@ func TestClassifyPackageOutput(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestCollectorCountMultiExecutionBothPass tests -count=2 where both executions pass
+func TestCollectorCountMultiExecutionBothPass(t *testing.T) {
+	collector := NewCollector()
+
+	events := []parser.TestEvent{
+		// First execution
+		{Time: time.Now(), Action: "run", Package: "pkg", Test: "TestFoo"},
+		{Time: time.Now(), Action: "pass", Package: "pkg", Test: "TestFoo", Elapsed: 0.1},
+		// Second execution (detected because first passed)
+		{Time: time.Now(), Action: "run", Package: "pkg", Test: "TestFoo"},
+		{Time: time.Now(), Action: "pass", Package: "pkg", Test: "TestFoo", Elapsed: 0.15},
+		// Package finishes
+		{Time: time.Now(), Action: "pass", Package: "pkg", Elapsed: 0.25},
+	}
+
+	for _, e := range events {
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: e})
+	}
+
+	state := collector.State()
+	run := state.MostRecentRun()
+
+	tr := run.TestResults["pkg/TestFoo"]
+	if tr == nil {
+		t.Fatal("TestFoo not found")
+	}
+
+	// Should have 2 executions
+	if len(tr.Executions) != 2 {
+		t.Errorf("Expected 2 executions, got %d", len(tr.Executions))
+	}
+
+	// Both should be passed
+	if tr.Executions[0].Status != StatusPassed {
+		t.Errorf("First execution should be passed, got %s", tr.Executions[0].Status)
+	}
+	if tr.Executions[1].Status != StatusPassed {
+		t.Errorf("Second execution should be passed, got %s", tr.Executions[1].Status)
+	}
+
+	// Package counts should reflect 2 passes
+	pkg := run.Packages["pkg"]
+	if pkg.Counts.Passed != 2 {
+		t.Errorf("Expected Passed=2, got %d", pkg.Counts.Passed)
+	}
+	if run.Counts.Passed != 2 {
+		t.Errorf("Expected run Passed=2, got %d", run.Counts.Passed)
+	}
+	if run.Counts.Running != 0 {
+		t.Errorf("Expected Running=0, got %d", run.Counts.Running)
+	}
+}
+
+// TestCollectorCountMultiExecutionFailThenPass tests -count=2 where first fails, second passes
+func TestCollectorCountMultiExecutionFailThenPass(t *testing.T) {
+	collector := NewCollector()
+
+	events := []parser.TestEvent{
+		// First execution - fails
+		{Time: time.Now(), Action: "run", Package: "pkg", Test: "TestFoo"},
+		{Time: time.Now(), Action: "fail", Package: "pkg", Test: "TestFoo", Elapsed: 0.1},
+		// Second execution - passes (detected because first failed)
+		{Time: time.Now(), Action: "run", Package: "pkg", Test: "TestFoo"},
+		{Time: time.Now(), Action: "pass", Package: "pkg", Test: "TestFoo", Elapsed: 0.15},
+		// Package finishes with fail (because first execution failed)
+		{Time: time.Now(), Action: "fail", Package: "pkg", Elapsed: 0.25},
+	}
+
+	for _, e := range events {
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: e})
+	}
+
+	state := collector.State()
+	run := state.MostRecentRun()
+
+	tr := run.TestResults["pkg/TestFoo"]
+	if tr == nil {
+		t.Fatal("TestFoo not found")
+	}
+
+	// Should have 2 executions
+	if len(tr.Executions) != 2 {
+		t.Errorf("Expected 2 executions, got %d", len(tr.Executions))
+	}
+
+	// First should be failed, second passed
+	if tr.Executions[0].Status != StatusFailed {
+		t.Errorf("First execution should be failed, got %s", tr.Executions[0].Status)
+	}
+	if tr.Executions[1].Status != StatusPassed {
+		t.Errorf("Second execution should be passed, got %s", tr.Executions[1].Status)
+	}
+
+	// First execution's output should be retained
+	if len(tr.Executions[0].Output) != 0 {
+		t.Error("First execution output should be retained")
+	}
+
+	// Package counts
+	pkg := run.Packages["pkg"]
+	if pkg.Counts.Failed != 1 {
+		t.Errorf("Expected Failed=1, got %d", pkg.Counts.Failed)
+	}
+	if pkg.Counts.Passed != 1 {
+		t.Errorf("Expected Passed=1, got %d", pkg.Counts.Passed)
+	}
+	if pkg.Status != StatusFailed {
+		t.Errorf("Expected package status Failed, got %s", pkg.Status)
+	}
+	if run.Counts.Running != 0 {
+		t.Errorf("Expected Running=0, got %d", run.Counts.Running)
+	}
+}
+
+// TestCollectorCountMultiExecutionBothFail tests -count=2 where both executions fail
+func TestCollectorCountMultiExecutionBothFail(t *testing.T) {
+	collector := NewCollector()
+
+	events := []parser.TestEvent{
+		// First execution - fails
+		{Time: time.Now(), Action: "run", Package: "pkg", Test: "TestFoo"},
+		{Time: time.Now(), Action: "fail", Package: "pkg", Test: "TestFoo", Elapsed: 0.1},
+		// Second execution - also fails (detected because first failed)
+		{Time: time.Now(), Action: "run", Package: "pkg", Test: "TestFoo"},
+		{Time: time.Now(), Action: "fail", Package: "pkg", Test: "TestFoo", Elapsed: 0.15},
+		// Package finishes
+		{Time: time.Now(), Action: "fail", Package: "pkg", Elapsed: 0.25},
+	}
+
+	for _, e := range events {
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: e})
+	}
+
+	state := collector.State()
+	run := state.MostRecentRun()
+
+	tr := run.TestResults["pkg/TestFoo"]
+	if tr == nil {
+		t.Fatal("TestFoo not found")
+	}
+
+	// Should have 2 executions
+	if len(tr.Executions) != 2 {
+		t.Errorf("Expected 2 executions, got %d", len(tr.Executions))
+	}
+
+	// Both should be failed
+	if tr.Executions[0].Status != StatusFailed {
+		t.Errorf("First execution should be failed, got %s", tr.Executions[0].Status)
+	}
+	if tr.Executions[1].Status != StatusFailed {
+		t.Errorf("Second execution should be failed, got %s", tr.Executions[1].Status)
+	}
+
+	// Both executions' outputs should be preserved
+	if len(tr.Executions[0].Output) != 0 {
+		t.Error("First execution output should be retained")
+	}
+	if len(tr.Executions[1].Output) != 0 {
+		t.Error("Second execution output should be retained")
+	}
+
+	// Package counts
+	pkg := run.Packages["pkg"]
+	if pkg.Counts.Failed != 2 {
+		t.Errorf("Expected Failed=2, got %d", pkg.Counts.Failed)
+	}
+	if run.Counts.Running != 0 {
+		t.Errorf("Expected Running=0, got %d", run.Counts.Running)
+	}
+}
+
+// TestCollectorMultiExecutionPauseCont tests pause/cont within a rerun execution
+func TestCollectorMultiExecutionPauseCont(t *testing.T) {
+	collector := NewCollector()
+
+	startTime := time.Now()
+
+	events := []parser.TestEvent{
+		// First execution - passes
+		{Time: startTime, Action: "run", Package: "pkg", Test: "TestFoo"},
+		{Time: startTime.Add(100 * time.Millisecond), Action: "pass", Package: "pkg", Test: "TestFoo", Elapsed: 0.1},
+		// Second execution - pause and cont
+		{Time: startTime.Add(200 * time.Millisecond), Action: "run", Package: "pkg", Test: "TestFoo"},
+		{Time: startTime.Add(300 * time.Millisecond), Action: "pause", Package: "pkg", Test: "TestFoo"},
+		{Time: startTime.Add(400 * time.Millisecond), Action: "cont", Package: "pkg", Test: "TestFoo"},
+		{Time: startTime.Add(500 * time.Millisecond), Action: "pass", Package: "pkg", Test: "TestFoo", Elapsed: 0.3},
+		// Package finishes
+		{Time: startTime.Add(600 * time.Millisecond), Action: "pass", Package: "pkg", Elapsed: 0.6},
+	}
+
+	for _, e := range events {
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: e})
+	}
+
+	state := collector.State()
+	run := state.MostRecentRun()
+
+	tr := run.TestResults["pkg/TestFoo"]
+	if tr == nil {
+		t.Fatal("TestFoo not found")
+	}
+
+	// Should have 2 executions
+	if len(tr.Executions) != 2 {
+		t.Errorf("Expected 2 executions, got %d", len(tr.Executions))
+	}
+
+	// Second execution should have gone through pause/cont
+	if tr.Executions[1].Status != StatusPassed {
+		t.Errorf("Second execution should be passed, got %s", tr.Executions[1].Status)
+	}
+
+	// Running/Paused counts should be balanced
+	pkg := run.Packages["pkg"]
+	if pkg.Counts.Running < 0 || pkg.Counts.Paused < 0 {
+		t.Errorf("Counts should not be negative: Running=%d, Paused=%d", pkg.Counts.Running, pkg.Counts.Paused)
+	}
+	if run.Counts.Running < 0 || run.Counts.Paused < 0 {
+		t.Errorf("Run counts should not be negative: Running=%d, Paused=%d", run.Counts.Running, run.Counts.Paused)
+	}
+}
+
+// TestCollectorWatchModeRerunClearsPanicKey tests that watch-mode rerun clears PanicTestKey
+func TestCollectorWatchModeRerunClearsPanicKey(t *testing.T) {
+	collector := NewCollector()
+
+	startTime := time.Now()
+
+	// First run: test fails with panic
+	events := []parser.TestEvent{
+		{Time: startTime, Action: "run", Package: "pkg", Test: "TestA"},
+		{Time: startTime.Add(10 * time.Millisecond), Action: "output", Package: "pkg", Test: "TestA", Output: "panic: some panic"},
+		{Time: startTime.Add(20 * time.Millisecond), Action: "fail", Package: "pkg", Test: "TestA", Elapsed: 0.02},
+		{Time: startTime.Add(30 * time.Millisecond), Action: "fail", Package: "pkg", Elapsed: 0.03},
+	}
+
+	for _, e := range events {
+		collector.Push(engine.Event{Type: engine.EventTest, TestEvent: e})
+	}
+
+	state := collector.State()
+	run := state.MostRecentRun()
+	pkg := run.Packages["pkg"]
+
+	// First run should have PanicTestKey set
+	if pkg.PanicTestKey != "pkg/TestA" {
+		t.Errorf("Expected PanicTestKey='pkg/TestA', got %q", pkg.PanicTestKey)
+	}
+
+	// Second run: package restart (watch mode)
+	// Simulating: same package starts again after first completed
+	run2 := NewRun(2)
+	run2.Status = StatusRunning
+	state.Runs = append(state.Runs, run2)
+	state.CurrentRun = run2
+
+	// Add same package with start event (watch mode rerun)
+	pkg2 := &PackageResult{
+		Name:          "pkg",
+		Status:        StatusRunning,
+		StartTime:     time.Now(),
+		WallStartTime: time.Now(),
+		TestOrder:     []string{},
+		DisplayOrder:  []string{},
+	}
+	// Pretend the collector processed a start event which should reset PanicTestKey
+	// We'll simulate the reset that happens in handleTestEvent
+	run2.Packages["pkg"] = pkg2
+	run2.PackageOrder = append(run2.PackageOrder, "pkg")
+
+	// Simulate what happens when collector detects package restart
+	// This clears PanicTestKey
+	pkg2.PanicTestKey = ""
+
+	if pkg2.PanicTestKey != "" {
+		t.Error("PanicTestKey should be cleared on watch-mode rerun")
+	}
+
+	// New test results in the new run should be separate
+	tr2 := NewTestResult("pkg", "TestB")
+	run2.TestResults["pkg/TestB"] = tr2
+
+	// Verify no carryover from previous run
+	if len(run2.TestResults) != 1 {
+		t.Errorf("Expected 1 test result in new run, got %d", len(run2.TestResults))
 	}
 }

@@ -2,6 +2,7 @@ package format
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"charm.land/lipgloss/v2"
@@ -83,7 +84,7 @@ func (f *SummaryFormatter) Format(summary *Summary) string {
 
 type packageIssue struct {
 	kind     string // "fail", "skip", "slow", "build", "output"
-	test     *results.TestResult
+	entry    *TestExecutionEntry
 	buildPkg *results.PackageResult
 	pkg      *results.PackageResult
 }
@@ -115,31 +116,27 @@ func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summa
 		pd.issues = append(pd.issues, packageIssue{kind: "build", buildPkg: pkg})
 	}
 
-	slowSet := make(map[string]bool, len(summary.SlowTests))
-	for _, slow := range summary.SlowTests {
-		slowSet[slow.Package+"/"+slow.Name] = true
+	// Use the execution entries directly from summary for failures, skipped, and slow tests
+	// Build a map to look up entries by test key with iteration
+	entryByKey := make(map[string][]*TestExecutionEntry)
+
+	for _, entry := range summary.Failures {
+		key := entry.TestResult.Package + "/" + entry.TestResult.Name
+		entryByKey[key] = append(entryByKey[key], entry)
 	}
 
-	classifyTest := func(pkg *results.PackageResult, testName string) (string, *results.TestResult) {
-		testKey := pkg.Name + "/" + testName
-		tr, ok := summary.Run.TestResults[testKey]
-		if !ok {
-			return "", nil
+	if f.options.IncludeSkipped {
+		for _, entry := range summary.Skipped {
+			key := entry.TestResult.Package + "/" + entry.TestResult.Name
+			entryByKey[key] = append(entryByKey[key], entry)
 		}
-		switch tr.Status {
-		case results.StatusFailed:
-			return "fail", tr
-		case results.StatusSkipped:
-			if !f.options.IncludeSkipped {
-				return "", nil
-			}
-			return "skip", tr
-		default:
-			if slowSet[testKey] && f.options.IncludeSlow {
-				return "slow", tr
-			}
+	}
+
+	if f.options.IncludeSlow {
+		for _, entry := range summary.SlowTests {
+			key := entry.TestResult.Package + "/" + entry.TestResult.Name
+			entryByKey[key] = append(entryByKey[key], entry)
 		}
-		return "", nil
 	}
 
 	// Group subtests under their parent so they render nested in the output.
@@ -162,27 +159,63 @@ func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summa
 			}
 
 			for _, parentName := range topLevel {
-				parentKind, parentTR := classifyTest(pkg, parentName)
+				parentKey := pkg.Name + "/" + parentName
+				parentEntries := entryByKey[parentKey]
 
-				var subtestIssues []packageIssue
+				// Collect subtest entries grouped by iteration so each
+				// iteration's subtests render under their corresponding
+				// parent iteration. Also remember the in-package subtest
+				// order so subtests under the same iteration keep stable
+				// ordering.
+				subEntriesByIter := make(map[int][]*TestExecutionEntry)
+				subIters := make(map[int]bool)
+				subtestCount := 0
 				for _, subName := range subtestsByParent[parentName] {
-					kind, tr := classifyTest(pkg, subName)
-					if kind != "" {
-						subtestIssues = append(subtestIssues, packageIssue{kind: kind, test: tr})
+					subKey := pkg.Name + "/" + subName
+					if entries, ok := entryByKey[subKey]; ok {
+						for _, entry := range entries {
+							subEntriesByIter[entry.Iteration] = append(subEntriesByIter[entry.Iteration], entry)
+							subIters[entry.Iteration] = true
+							subtestCount++
+						}
 					}
 				}
 
-				if parentKind == "" && len(subtestIssues) == 0 {
+				if len(parentEntries) == 0 && subtestCount == 0 {
 					continue
 				}
 
 				pd := ensurePkg(pkg.Name)
 
-				if parentKind != "" {
-					pd.issues = append(pd.issues, packageIssue{kind: parentKind, test: parentTR})
+				// Determine the full set of iterations to emit (union of
+				// parent and subtest iterations) so iteration order is
+				// preserved regardless of which side has entries.
+				iterSet := make(map[int]bool)
+				for _, entry := range parentEntries {
+					iterSet[entry.Iteration] = true
+				}
+				for it := range subIters {
+					iterSet[it] = true
+				}
+				iters := make([]int, 0, len(iterSet))
+				for it := range iterSet {
+					iters = append(iters, it)
+				}
+				sort.Ints(iters)
+
+				parentByIter := make(map[int]*TestExecutionEntry, len(parentEntries))
+				for _, entry := range parentEntries {
+					parentByIter[entry.Iteration] = entry
 				}
 
-				pd.issues = append(pd.issues, subtestIssues...)
+				for _, it := range iters {
+					if entry, ok := parentByIter[it]; ok {
+						pd.issues = append(pd.issues, packageIssue{kind: entryKind(entry), entry: entry})
+					}
+					for _, entry := range subEntriesByIter[it] {
+						pd.issues = append(pd.issues, packageIssue{kind: entryKind(entry), entry: entry})
+					}
+				}
 			}
 		}
 	}
@@ -205,11 +238,11 @@ func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summa
 			case "build":
 				f.formatBuildIssue(sb, issue.buildPkg, summary)
 			case "fail":
-				f.formatTestIssue(sb, issue.test, "FAIL", f.boldFail, f.failStyle)
+				f.formatTestIssue(sb, issue.entry, "FAIL", f.boldFail, f.failStyle)
 			case "skip":
-				f.formatTestIssue(sb, issue.test, "SKIP", f.boldSkip, f.skipStyle)
+				f.formatTestIssue(sb, issue.entry, "SKIP", f.boldSkip, f.skipStyle)
 			case "slow":
-				f.formatSlowTestIssue(sb, issue.test)
+				f.formatSlowTestIssue(sb, issue.entry)
 			}
 		}
 
@@ -221,11 +254,28 @@ func isSubtest(name string) bool {
 	return strings.Contains(name, "/")
 }
 
-func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.TestResult, label string, boldStyle, colorStyle lipgloss.Style) {
-	indent := testIndent(tr.Name)
+// entryKind classifies a test execution entry for issue rendering.
+func entryKind(entry *TestExecutionEntry) string {
+	switch entry.TestExecution.Status {
+	case results.StatusFailed:
+		return "fail"
+	case results.StatusSkipped:
+		return "skip"
+	default:
+		return "slow"
+	}
+}
 
-	annotation := fmt.Sprintf("(%.2fs)", tr.Elapsed.Seconds())
-	if tr.Interrupted && len(tr.Output) == 0 {
+func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, entry *TestExecutionEntry, label string, boldStyle, colorStyle lipgloss.Style) {
+	tr := entry.TestResult
+	exec := entry.TestExecution
+
+	// Use centralized naming helper for multi-execution tests
+	name := results.ExecutionDisplayName(tr.Name, entry.Iteration, entry.TotalExecutions)
+	indent := testIndent(name)
+
+	annotation := fmt.Sprintf("(%.2fs)", exec.Elapsed.Seconds())
+	if exec.Interrupted && len(exec.Output) == 0 {
 		annotation = "(interrupted)"
 	}
 
@@ -233,12 +283,12 @@ func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.Test
 	sb.WriteString("--- ")
 	sb.WriteString(boldStyle.Render(label))
 	sb.WriteString(": ")
-	sb.WriteString(colorStyle.Render(tr.Name))
+	sb.WriteString(colorStyle.Render(name))
 	sb.WriteString(" ")
 	sb.WriteString(f.dimStyle.Render(annotation))
 	sb.WriteString("\n")
 
-	for _, line := range tr.Output {
+	for _, line := range exec.Output {
 		sb.WriteString(indent)
 		if f.noColor {
 			sb.WriteString(line)
@@ -249,16 +299,21 @@ func (f *SummaryFormatter) formatTestIssue(sb *strings.Builder, tr *results.Test
 	}
 }
 
-func (f *SummaryFormatter) formatSlowTestIssue(sb *strings.Builder, tr *results.TestResult) {
-	indent := testIndent(tr.Name)
+func (f *SummaryFormatter) formatSlowTestIssue(sb *strings.Builder, entry *TestExecutionEntry) {
+	tr := entry.TestResult
+	exec := entry.TestExecution
 
-	elapsed := fmt.Sprintf("(%.2fs)", tr.Elapsed.Seconds())
+	// Use centralized naming helper for multi-execution tests
+	name := results.ExecutionDisplayName(tr.Name, entry.Iteration, entry.TotalExecutions)
+	indent := testIndent(name)
+
+	elapsed := fmt.Sprintf("(%.2fs)", exec.Elapsed.Seconds())
 
 	sb.WriteString(indent)
 	sb.WriteString("--- ")
 	sb.WriteString(f.boldSlow.Render("SLOW"))
 	sb.WriteString(": ")
-	sb.WriteString(f.slowStyle.Render(tr.Name))
+	sb.WriteString(f.slowStyle.Render(name))
 	sb.WriteString(" ")
 	sb.WriteString(f.boldWhite.Render(elapsed))
 	sb.WriteString("\n")

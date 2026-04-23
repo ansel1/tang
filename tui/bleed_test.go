@@ -37,15 +37,12 @@ func TestFaintOutputLine(t *testing.T) {
 	run.PackageOrder = append(run.PackageOrder, "pkg1")
 	run.RunningPkgs = 1
 
-	test := &results.TestResult{
-		Package:        "pkg1",
-		Name:           "TestFaint",
-		Status:         results.StatusRunning,
-		SummaryLine:    "=== RUN   TestFaint",
-		Output:         []string{"hello log line"},
-		StartTime:      time.Now(),
-		LastResumeTime: time.Now(),
-	}
+	test := results.NewTestResult("pkg1", "TestFaint")
+	test.Latest().Status = results.StatusRunning
+	test.Latest().SummaryLine = "=== RUN   TestFaint"
+	test.Latest().Output = []string{"hello log line"}
+	test.Latest().StartTime = time.Now()
+	test.Latest().LastResumeTime = time.Now()
 	run.TestResults["pkg1/TestFaint"] = test
 	run.Counts.Running++
 
@@ -116,15 +113,12 @@ func TestBleedProtection(t *testing.T) {
 	run.PackageOrder = append(run.PackageOrder, "pkg1")
 	run.RunningPkgs = 1
 
-	test := &results.TestResult{
-		Package:        "pkg1",
-		Name:           "TestBleed",
-		Status:         results.StatusRunning,
-		SummaryLine:    "=== RUN   TestBleed",
-		Output:         []string{"\033[31mThis is red text"},
-		StartTime:      time.Now(),
-		LastResumeTime: time.Now(),
-	}
+	test := results.NewTestResult("pkg1", "TestBleed")
+	test.Latest().Status = results.StatusRunning
+	test.Latest().SummaryLine = "=== RUN   TestBleed"
+	test.Latest().Output = []string{"\033[31mThis is red text"}
+	test.Latest().StartTime = time.Now()
+	test.Latest().LastResumeTime = time.Now()
 	run.TestResults["pkg1/TestBleed"] = test
 	run.Counts.Running++
 

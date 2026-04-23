@@ -145,7 +145,7 @@ func TestTangTestSubcommand(t *testing.T) {
 		exitCode, stdout, stderr := runTangCommand(t, tangBinary, "-f", "somefile", "test", "./...")
 		require.Equal(t, 1, exitCode)
 		require.Empty(t, stdout)
-		require.Contains(t, stderr, "Error: -f is not compatible with 'test' subcommand")
+		require.Contains(t, stderr, "error: -f is not compatible with 'test' subcommand")
 	})
 }
 

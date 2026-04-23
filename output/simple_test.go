@@ -253,3 +253,79 @@ func TestSimpleOutput_HasFailures(t *testing.T) {
 
 	assert.True(t, simple.HasFailures())
 }
+
+// TestSimpleOutput_MultiExecutionBothFail tests -count=2 where both executions fail
+// This verifies that both executions' summary/output blocks are emitted in the stream
+func TestSimpleOutput_MultiExecutionBothFail(t *testing.T) {
+	pkgName := "example.com/pkg"
+
+	// Events for -count=2 where both executions fail
+	events := []engine.Event{
+		// Package start
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "start", Package: pkgName}},
+		// First execution
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "run", Package: pkgName, Test: "TestFoo"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkgName, Test: "TestFoo", Output: "=== RUN   TestFoo\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkgName, Test: "TestFoo", Output: "    first_fail.go:5: first failure\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkgName, Test: "TestFoo", Output: "--- FAIL: TestFoo (0.10s)\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "fail", Package: pkgName, Test: "TestFoo", Elapsed: 0.1}},
+		// Second execution (detected because first failed)
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "run", Package: pkgName, Test: "TestFoo"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkgName, Test: "TestFoo", Output: "=== RUN   TestFoo\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkgName, Test: "TestFoo", Output: "    second_fail.go:7: second failure\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkgName, Test: "TestFoo", Output: "--- FAIL: TestFoo (0.15s)\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "fail", Package: pkgName, Test: "TestFoo", Elapsed: 0.15}},
+		// Package finishes
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkgName, Output: "FAIL\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkgName, Output: "FAIL\t" + pkgName + "\t0.250s\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "fail", Package: pkgName, Elapsed: 0.25}},
+	}
+
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true, 80, false)
+
+	err := simple.ProcessEvents(sendEvents(events))
+	require.NoError(t, err)
+
+	output := buf.String()
+
+	// First execution failure output should appear
+	assert.True(t, strings.Contains(output, "first failure"),
+		"Expected first failure output to be emitted")
+
+	// Second execution failure output should appear
+	assert.True(t, strings.Contains(output, "second failure"),
+		"Expected second failure output to be emitted")
+
+	// Both FAIL lines should appear
+	failCount := strings.Count(output, "--- FAIL: TestFoo")
+	assert.Equal(t, 2, failCount,
+		"Expected 2 FAIL summary lines (one per execution)")
+
+	// Verify the test result has 2 executions
+	run := collector.State().MostRecentRun()
+	tr := run.TestResults[pkgName+"/TestFoo"]
+	assert.NotNil(t, tr, "TestFoo should exist in results")
+	assert.Len(t, tr.Executions, 2, "Should have 2 executions")
+
+	// Verify both executions are failed
+	assert.Equal(t, results.StatusFailed, tr.Executions[0].Status,
+		"First execution should be failed")
+	assert.Equal(t, results.StatusFailed, tr.Executions[1].Status,
+		"Second execution should be failed")
+
+	// Verify both outputs are preserved
+	assert.Contains(t, tr.Executions[0].Output[0], "first failure",
+		"First execution output should be preserved")
+	assert.Contains(t, tr.Executions[1].Output[0], "second failure",
+		"Second execution output should be preserved")
+
+	// Verify package counts are correct
+	pkg := run.Packages[pkgName]
+	assert.Equal(t, 2, pkg.Counts.Failed, "Package should have 2 failed tests")
+	assert.Equal(t, 0, run.Counts.Running, "Running count should be 0")
+
+	// Verify HasFailures returns true
+	assert.True(t, simple.HasFailures(), "HasFailures should return true")
+}

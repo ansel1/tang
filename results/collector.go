@@ -163,6 +163,7 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) {
 		pkgResult.SummaryLine = ""
 		pkgResult.OutputLines = nil
 		pkgResult.FailedBuild = ""
+		pkgResult.PanicTestKey = ""
 
 		run.RunningPkgs++
 		return
@@ -263,15 +264,10 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 	testResult, exists := run.TestResults[testKey]
 	if !exists {
 		now := time.Now()
-		testResult = &TestResult{
-			Package:        event.Package,
-			Name:           event.Test,
-			Status:         StatusRunning,
-			Output:         make([]string, 0),
-			StartTime:      event.Time,
-			WallStartTime:  now,
-			LastResumeTime: now,
-		}
+		testResult = NewTestResult(event.Package, event.Test)
+		testResult.Latest().StartTime = event.Time
+		testResult.Latest().WallStartTime = now
+		testResult.Latest().LastResumeTime = now
 		run.TestResults[testKey] = testResult
 		pkg.TestOrder = append(pkg.TestOrder, event.Test)
 		pkg.DisplayOrder = append(pkg.DisplayOrder, event.Test)
@@ -281,17 +277,31 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 
 	switch event.Action {
 	case "run":
-		testResult.Status = StatusRunning
+		// Detect rerun: if the latest execution is terminal and we get a new "run",
+		// this is a -count=N rerun. Append a new execution.
+		latest := testResult.Latest()
+		if latest.Status == StatusPassed || latest.Status == StatusFailed || latest.Status == StatusSkipped {
+			latest = testResult.AppendExecution()
+			now := time.Now()
+			latest.StartTime = event.Time
+			latest.WallStartTime = now
+			latest.LastResumeTime = now
+			pkg.Counts.Running++
+			run.Counts.Running++
+		} else {
+			latest.Status = StatusRunning
+		}
 
 	case "output":
+		latest := testResult.Latest()
 		if event.Output != "" {
 			output := strings.TrimRight(event.Output, "\n")
 
 			// Extract summary line (lines starting with "===" or "---")
 			if strings.HasPrefix(output, "===") || strings.HasPrefix(output, "---") {
-				testResult.SummaryLine = output
+				latest.SummaryLine = output
 			} else {
-				testResult.Output = append(testResult.Output, output)
+				latest.Output = append(latest.Output, output)
 
 				// Detect fatal crashes: go test emits the panic/fatal
 				// stacktrace as output on one arbitrary running test.
@@ -308,10 +318,11 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 		}
 
 	case "pass":
-		wasPaused := testResult.Status == StatusPaused
-		testResult.Status = StatusPassed
-		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
-		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
+		latest := testResult.Latest()
+		wasPaused := latest.Status == StatusPaused
+		latest.Status = StatusPassed
+		latest.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
+		latest.ActiveDuration += time.Since(latest.LastResumeTime)
 		pkg.Counts.Passed++
 		run.Counts.Passed++
 		if wasPaused {
@@ -323,10 +334,11 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 		}
 
 	case "fail":
-		wasPaused := testResult.Status == StatusPaused
-		testResult.Status = StatusFailed
-		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
-		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
+		latest := testResult.Latest()
+		wasPaused := latest.Status == StatusPaused
+		latest.Status = StatusFailed
+		latest.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
+		latest.ActiveDuration += time.Since(latest.LastResumeTime)
 		pkg.Counts.Failed++
 		run.Counts.Failed++
 		if wasPaused {
@@ -338,10 +350,11 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 		}
 
 	case "skip":
-		wasPaused := testResult.Status == StatusPaused
-		testResult.Status = StatusSkipped
-		testResult.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
-		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
+		latest := testResult.Latest()
+		wasPaused := latest.Status == StatusPaused
+		latest.Status = StatusSkipped
+		latest.Elapsed = time.Duration(event.Elapsed * float64(time.Second))
+		latest.ActiveDuration += time.Since(latest.LastResumeTime)
 		pkg.Counts.Skipped++
 		run.Counts.Skipped++
 		if wasPaused {
@@ -353,19 +366,21 @@ func (c *Collector) handleTestLevelEvent(run *Run, pkg *PackageResult, event par
 		}
 
 	case "pause":
-		testResult.Status = StatusPaused
-		testResult.ActiveDuration += time.Since(testResult.LastResumeTime)
+		latest := testResult.Latest()
+		latest.Status = StatusPaused
+		latest.ActiveDuration += time.Since(latest.LastResumeTime)
 		pkg.Counts.Running--
 		pkg.Counts.Paused++
 		run.Counts.Running--
 		run.Counts.Paused++
 
 	case "cont":
-		testResult.Status = StatusRunning
+		latest := testResult.Latest()
+		latest.Status = StatusRunning
 		now := time.Now()
-		testResult.LastResumeTime = now
-		testResult.WallStartTime = now
-		testResult.StartTime = event.Time
+		latest.LastResumeTime = now
+		latest.WallStartTime = now
+		latest.StartTime = event.Time
 		pkg.Counts.Running++
 		pkg.Counts.Paused--
 		run.Counts.Running++
@@ -387,9 +402,10 @@ func (c *Collector) failInterruptedTests(run *Run, pkg *PackageResult) {
 			continue
 		}
 
-		wasPaused := tr.Status == StatusPaused
-		tr.Status = StatusFailed
-		tr.Interrupted = true
+		latest := tr.Latest()
+		wasPaused := latest.Status == StatusPaused
+		latest.Status = StatusFailed
+		latest.Interrupted = true
 		pkg.Counts.Failed++
 		run.Counts.Failed++
 		if wasPaused {
@@ -401,7 +417,7 @@ func (c *Collector) failInterruptedTests(run *Run, pkg *PackageResult) {
 		}
 
 		if pkg.PanicTestKey != "" && testKey != pkg.PanicTestKey {
-			tr.Output = nil
+			latest.Output = nil
 		}
 	}
 }

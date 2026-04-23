@@ -34,30 +34,24 @@ func TestWriteXML(t *testing.T) {
 	run.PackageOrder = append(run.PackageOrder, pkgName)
 
 	// Add test results
-	run.TestResults[pkgName+"/TestPass"] = &results.TestResult{
-		Name:      "TestPass",
-		Package:   pkgName,
-		Status:    results.StatusPassed,
-		Elapsed:   100 * time.Millisecond,
-		StartTime: pkg.StartTime,
-	}
+	tr1 := results.NewTestResult(pkgName, "TestPass")
+	tr1.Latest().Status = results.StatusPassed
+	tr1.Latest().Elapsed = 100 * time.Millisecond
+	tr1.Latest().StartTime = pkg.StartTime
+	run.TestResults[pkgName+"/TestPass"] = tr1
 
-	run.TestResults[pkgName+"/TestFail"] = &results.TestResult{
-		Name:      "TestFail",
-		Package:   pkgName,
-		Status:    results.StatusFailed,
-		Elapsed:   200 * time.Millisecond,
-		StartTime: pkg.StartTime,
-		Output:    []string{"assertion failed", "expected true got false"},
-	}
+	tr2 := results.NewTestResult(pkgName, "TestFail")
+	tr2.Latest().Status = results.StatusFailed
+	tr2.Latest().Elapsed = 200 * time.Millisecond
+	tr2.Latest().StartTime = pkg.StartTime
+	tr2.Latest().Output = []string{"assertion failed", "expected true got false"}
+	run.TestResults[pkgName+"/TestFail"] = tr2
 
-	run.TestResults[pkgName+"/TestSkip"] = &results.TestResult{
-		Name:      "TestSkip",
-		Package:   pkgName,
-		Status:    results.StatusSkipped,
-		Elapsed:   0,
-		StartTime: pkg.StartTime,
-	}
+	tr3 := results.NewTestResult(pkgName, "TestSkip")
+	tr3.Latest().Status = results.StatusSkipped
+	tr3.Latest().Elapsed = 0
+	tr3.Latest().StartTime = pkg.StartTime
+	run.TestResults[pkgName+"/TestSkip"] = tr3
 
 	// Capture output
 	var buf bytes.Buffer
@@ -232,5 +226,239 @@ func TestWriteXML_BuildFailure(t *testing.T) {
 	}
 	if val.Errors != 1 {
 		t.Errorf("Expected errors count of 1, got %d", val.Errors)
+	}
+}
+
+func TestWriteXML_MultiExecution(t *testing.T) {
+	// Test -count=2 scenario where first execution fails, second passes
+	state := results.NewState()
+	run := results.NewRun(1)
+	state.Runs = append(state.Runs, run)
+	state.CurrentRun = run
+
+	pkgName := "github.com/example/pkg"
+	pkg := &results.PackageResult{
+		Name:      pkgName,
+		Status:    results.StatusPassed, // Package passes because second execution passed
+		StartTime: time.Date(2023, 1, 1, 10, 0, 0, 0, time.UTC),
+		Elapsed:   500 * time.Millisecond,
+		TestOrder: []string{"TestFoo"},
+	}
+	pkg.Counts.Passed = 1
+	pkg.Counts.Failed = 1 // First execution failed
+	run.Packages[pkgName] = pkg
+	run.PackageOrder = append(run.PackageOrder, pkgName)
+
+	// Create test result with 2 executions
+	tr := results.NewTestResult(pkgName, "TestFoo")
+	// First execution - failed
+	tr.Executions[0].Status = results.StatusFailed
+	tr.Executions[0].Elapsed = 100 * time.Millisecond
+	tr.Executions[0].Output = []string{"FAIL: assertion failed", "expected true got false"}
+	tr.Executions[0].SummaryLine = "--- FAIL: TestFoo (0.10s)"
+	// Second execution - passed
+	tr.AppendExecution()
+	tr.Latest().Status = results.StatusPassed
+	tr.Latest().Elapsed = 150 * time.Millisecond
+	tr.Latest().SummaryLine = "--- PASS: TestFoo (0.15s)"
+
+	run.TestResults[pkgName+"/TestFoo"] = tr
+
+	var buf bytes.Buffer
+	err := WriteXML(&buf, state)
+	if err != nil {
+		t.Fatalf("WriteXML failed: %v", err)
+	}
+
+	output := buf.String()
+
+	// Should have 2 testcases (one per execution)
+	if !strings.Contains(output, `tests="2"`) {
+		t.Error("Expected 2 tests in output")
+	}
+	// First execution should have #01 suffix (per design decision)
+	if !strings.Contains(output, `name="TestFoo#01"`) {
+		t.Error("Expected first execution to have #01 suffix")
+	}
+	// Second execution should have #02 suffix
+	if !strings.Contains(output, `name="TestFoo#02"`) {
+		t.Error("Expected second execution to have #02 suffix")
+	}
+	// First execution should have failure
+	if !strings.Contains(output, `name="TestFoo#01"`) || !strings.Contains(strings.Split(output, "TestFoo#01")[1], "<failure") {
+		t.Error("Expected first execution to have failure element")
+	}
+	// Second execution should not have failure
+	if !strings.Contains(output, `name="TestFoo#02"`) || strings.Contains(strings.Split(output, "TestFoo#02")[1], "<failure>") {
+		t.Error("Expected second execution to not have failure element")
+	}
+
+	// XML Validation
+	var val JUnitTestSuites
+	if err := xml.Unmarshal(buf.Bytes(), &val); err != nil {
+		t.Fatalf("Generated XML is not valid: %v", err)
+	}
+
+	// Verify we have 2 testcases
+	if len(val.TestSuites) != 1 {
+		t.Errorf("Expected 1 testsuite, got %d", len(val.TestSuites))
+	}
+	if len(val.TestSuites[0].TestCases) != 2 {
+		t.Errorf("Expected 2 testcases, got %d", len(val.TestSuites[0].TestCases))
+	}
+
+	// Verify first testcase has failure
+	if val.TestSuites[0].TestCases[0].Name != "TestFoo#01" {
+		t.Errorf("Expected first testcase name 'TestFoo#01', got '%s'", val.TestSuites[0].TestCases[0].Name)
+	}
+	if val.TestSuites[0].TestCases[0].Failure == nil {
+		t.Error("Expected first testcase to have failure")
+	}
+
+	// Verify second testcase passes
+	if val.TestSuites[0].TestCases[1].Name != "TestFoo#02" {
+		t.Errorf("Expected second testcase name 'TestFoo#02', got '%s'", val.TestSuites[0].TestCases[1].Name)
+	}
+	if val.TestSuites[0].TestCases[1].Failure != nil {
+		t.Error("Expected second testcase to not have failure")
+	}
+}
+
+func TestWriteXML_MultiExecutionBothFail(t *testing.T) {
+	// Test -count=2 scenario where both executions fail
+	state := results.NewState()
+	run := results.NewRun(1)
+	state.Runs = append(state.Runs, run)
+	state.CurrentRun = run
+
+	pkgName := "github.com/example/pkg"
+	pkg := &results.PackageResult{
+		Name:      pkgName,
+		Status:    results.StatusFailed,
+		StartTime: time.Date(2023, 1, 1, 10, 0, 0, 0, time.UTC),
+		Elapsed:   500 * time.Millisecond,
+		TestOrder: []string{"TestFoo"},
+	}
+	pkg.Counts.Failed = 2 // Both executions failed
+	run.Packages[pkgName] = pkg
+	run.PackageOrder = append(run.PackageOrder, pkgName)
+
+	// Create test result with 2 failed executions
+	tr := results.NewTestResult(pkgName, "TestFoo")
+	// First execution - failed
+	tr.Executions[0].Status = results.StatusFailed
+	tr.Executions[0].Elapsed = 100 * time.Millisecond
+	tr.Executions[0].Output = []string{"FAIL: first failure"}
+	tr.Executions[0].SummaryLine = "--- FAIL: TestFoo (0.10s)"
+	// Second execution - also failed
+	tr.AppendExecution()
+	tr.Latest().Status = results.StatusFailed
+	tr.Latest().Elapsed = 200 * time.Millisecond
+	tr.Latest().Output = []string{"FAIL: second failure"}
+	tr.Latest().SummaryLine = "--- FAIL: TestFoo (0.20s)"
+
+	run.TestResults[pkgName+"/TestFoo"] = tr
+
+	var buf bytes.Buffer
+	err := WriteXML(&buf, state)
+	if err != nil {
+		t.Fatalf("WriteXML failed: %v", err)
+	}
+
+	output := buf.String()
+
+	// Should have 2 testcases
+	if !strings.Contains(output, `tests="2"`) {
+		t.Error("Expected 2 tests in output")
+	}
+	if !strings.Contains(output, `failures="2"`) {
+		t.Error("Expected 2 failures in output")
+	}
+
+	// XML Validation
+	var val JUnitTestSuites
+	if err := xml.Unmarshal(buf.Bytes(), &val); err != nil {
+		t.Fatalf("Generated XML is not valid: %v", err)
+	}
+
+	// Verify we have 2 testcases with failures
+	if len(val.TestSuites[0].TestCases) != 2 {
+		t.Errorf("Expected 2 testcases, got %d", len(val.TestSuites[0].TestCases))
+	}
+	if val.TestSuites[0].TestCases[0].Failure == nil {
+		t.Error("Expected first testcase to have failure")
+	}
+	if val.TestSuites[0].TestCases[1].Failure == nil {
+		t.Error("Expected second testcase to have failure")
+	}
+	// Verify both failures have different content
+	if !strings.Contains(val.TestSuites[0].TestCases[0].Failure.Content, "first failure") {
+		t.Error("Expected first failure to contain 'first failure'")
+	}
+	if !strings.Contains(val.TestSuites[0].TestCases[1].Failure.Content, "second failure") {
+		t.Error("Expected second failure to contain 'second failure'")
+	}
+}
+
+func TestWriteXML_MultiExecutionSubtest(t *testing.T) {
+	// Test multi-execution subtest naming
+	state := results.NewState()
+	run := results.NewRun(1)
+	state.Runs = append(state.Runs, run)
+	state.CurrentRun = run
+
+	pkgName := "github.com/example/pkg"
+	pkg := &results.PackageResult{
+		Name:      pkgName,
+		Status:    results.StatusFailed,
+		StartTime: time.Date(2023, 1, 1, 10, 0, 0, 0, time.UTC),
+		Elapsed:   500 * time.Millisecond,
+		TestOrder: []string{"TestFoo/sub"}, // Use full subtest name in TestOrder
+	}
+	pkg.Counts.Failed = 2
+	run.Packages[pkgName] = pkg
+	run.PackageOrder = append(run.PackageOrder, pkgName)
+
+	// Create subtest with 2 executions: TestFoo/sub
+	tr := results.NewTestResult(pkgName, "TestFoo/sub")
+	// First execution - failed
+	tr.Executions[0].Status = results.StatusFailed
+	tr.Executions[0].Elapsed = 100 * time.Millisecond
+	tr.Executions[0].Output = []string{"FAIL: subtest failed"}
+	// Second execution - passed
+	tr.AppendExecution()
+	tr.Latest().Status = results.StatusPassed
+	tr.Latest().Elapsed = 150 * time.Millisecond
+
+	run.TestResults[pkgName+"/TestFoo/sub"] = tr
+
+	var buf bytes.Buffer
+	err := WriteXML(&buf, state)
+	if err != nil {
+		t.Fatalf("WriteXML failed: %v", err)
+	}
+
+	output := buf.String()
+
+	// Subtest should use TestFoo#02/sub format (suffix on parent, not on subtest name)
+	if !strings.Contains(output, `name="TestFoo#01/sub"`) {
+		t.Error("Expected first subtest to have #01 suffix on parent")
+	}
+	if !strings.Contains(output, `name="TestFoo#02/sub"`) {
+		t.Error("Expected second subtest to have #02 suffix on parent")
+	}
+
+	// XML Validation
+	var val JUnitTestSuites
+	if err := xml.Unmarshal(buf.Bytes(), &val); err != nil {
+		t.Fatalf("Generated XML is not valid: %v", err)
+	}
+
+	// Verify testcase names
+	if val.TestSuites[0].TestCases[0].Name != "TestFoo#01/sub" {
+		t.Errorf("Expected first testcase name 'TestFoo#01/sub', got '%s'", val.TestSuites[0].TestCases[0].Name)
+	}
+	if val.TestSuites[0].TestCases[1].Name != "TestFoo#02/sub" {
+		t.Errorf("Expected second testcase name 'TestFoo#02/sub', got '%s'", val.TestSuites[0].TestCases[1].Name)
 	}
 }

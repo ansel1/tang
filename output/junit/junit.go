@@ -139,50 +139,52 @@ func WriteXML(w io.Writer, state *results.State) error {
 
 			// Add tests in order
 			for _, testName := range pkgResult.TestOrder {
-				// The test name in pkgResult.TestOrder is usually the full name "TestName",
-				// but TestResults map keys are "pkgname/TestName" or just "TestName"?
-				// Let's check how TestResults are keyed in results/model.go or collector.go.
-				// Looking at results/model.go: TestResults map[string]*TestResult // "package/testname" -> TestResult
-
 				lookupKey := pkgName + "/" + testName
 				testResult, ok := run.TestResults[lookupKey]
-
-				// Fallback: sometimes the key might just be the testName if there's ambiguity in my understanding,
-				// but based on `collector.go` usually it keys by full path.
-				// However, `PackageResult.TestOrder` likely stores just the test name relative to package.
-				// Let's verify `results` logic later if needed, but `pkgName/testName` is the standard pattern in this codebase.
 
 				if !ok {
 					// Should not happen if data integrity is maintained
 					continue
 				}
 
-				testCase := JUnitTestCase{
-					Name:      testResult.Name,
-					ClassName: pkgResult.Name,
-					Time:      fmt.Sprintf("%.3f", testResult.Elapsed.Seconds()),
-				}
+				// Iterate over all executions and emit one testcase per execution
+				for i, exec := range testResult.Executions {
+					iteration := i + 1
+					totalExecutions := len(testResult.Executions)
 
-				switch testResult.Status {
-				case results.StatusFailed:
-					// Join output lines for the failure message
-					content := ""
-					if len(testResult.Output) > 0 {
-						// Simple join, or maybe pick the last line as message?
-						// Usually the output contains the failure details.
-						content = fmt.Sprintf("%v", testResult.Output)
-					}
-					testCase.Failure = &JUnitFailure{
-						Message: "Failed",
-						Content: content,
-					}
-				case results.StatusSkipped:
-					testCase.Skipped = &JUnitSkipped{
-						Message: "Skipped",
-					}
-				}
+					// Use centralized naming helper
+					name := results.ExecutionDisplayName(testResult.Name, iteration, totalExecutions)
 
-				suite.TestCases = append(suite.TestCases, testCase)
+					testCase := JUnitTestCase{
+						Name:      name,
+						ClassName: pkgResult.Name,
+						Time:      fmt.Sprintf("%.3f", exec.Elapsed.Seconds()),
+					}
+
+					switch exec.Status {
+					case results.StatusFailed:
+						// Join output lines for the failure message with newlines to preserve formatting
+						content := ""
+						if len(exec.Output) > 0 {
+							// Include the summary line when useful
+							output := exec.Output
+							if exec.SummaryLine != "" {
+								output = append(output, exec.SummaryLine)
+							}
+							content = strings.Join(output, "\n")
+						}
+						testCase.Failure = &JUnitFailure{
+							Message: "Failed",
+							Content: content,
+						}
+					case results.StatusSkipped:
+						testCase.Skipped = &JUnitSkipped{
+							Message: "Skipped",
+						}
+					}
+
+					suite.TestCases = append(suite.TestCases, testCase)
+				}
 			}
 
 			suites.TestSuites = append(suites.TestSuites, suite)

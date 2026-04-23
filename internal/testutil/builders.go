@@ -32,31 +32,49 @@ func WithRunStatus(s results.Status) ModelOpt {
 // TestOpt configures a test added by WithTest.
 type TestOpt func(t *results.TestResult)
 
+// TIterations adds multiple executions to a test result.
+// This is useful for creating test fixtures with -count=N scenarios.
+func TIterations(iterations int) TestOpt {
+	return func(t *results.TestResult) {
+		for i := 1; i < iterations; i++ {
+			t.AppendExecution()
+		}
+	}
+}
+
+// TAddExecution adds an additional execution to a test result.
+// This is useful for creating test fixtures with -count=N scenarios.
+func TAddExecution() TestOpt {
+	return func(t *results.TestResult) {
+		t.AppendExecution()
+	}
+}
+
 // TStatus sets the test status.
 func TStatus(s results.Status) TestOpt {
 	return func(t *results.TestResult) {
-		t.Status = s
+		t.Latest().Status = s
 	}
 }
 
 // TElapsed sets the test elapsed duration.
 func TElapsed(d time.Duration) TestOpt {
 	return func(t *results.TestResult) {
-		t.Elapsed = d
+		t.Latest().Elapsed = d
 	}
 }
 
 // TSummaryLine sets the summary line (e.g. "--- PASS: TestFoo (0.05s)").
 func TSummaryLine(s string) TestOpt {
 	return func(t *results.TestResult) {
-		t.SummaryLine = s
+		t.Latest().SummaryLine = s
 	}
 }
 
 // TOutput sets the test output lines.
 func TOutput(lines ...string) TestOpt {
 	return func(t *results.TestResult) {
-		t.Output = lines
+		t.Latest().Output = lines
 	}
 }
 
@@ -155,15 +173,11 @@ func WithPackage(name string, opts ...PkgOpt) ModelOpt {
 
 		// Wire up tests.
 		for _, ts := range ps.tests {
-			tr := &results.TestResult{
-				Package:        name,
-				Name:           ts.name,
-				Status:         results.StatusRunning, // default
-				StartTime:      now,
-				WallStartTime:  now,
-				LastResumeTime: now,
-				Output:         make([]string, 0),
-			}
+			tr := results.NewTestResult(name, ts.name)
+			tr.Latest().StartTime = now
+			tr.Latest().WallStartTime = now
+			tr.Latest().LastResumeTime = now
+
 			for _, to := range ts.opts {
 				to(tr)
 			}
@@ -174,7 +188,7 @@ func WithPackage(name string, opts ...PkgOpt) ModelOpt {
 			run.TestResults[testKey] = tr
 
 			// Update counts.
-			switch tr.Status {
+			switch tr.Status() {
 			case results.StatusPassed:
 				pkg.Counts.Passed++
 				run.Counts.Passed++
