@@ -123,7 +123,7 @@ func TestTangTestSubcommand(t *testing.T) {
 		require.Equal(t, 0, exitCode)
 		require.Empty(t, stderr)
 		require.Contains(t, stdout, "github.com/ansel1/tang")
-		require.Contains(t, stdout, "PASS")
+		require.Contains(t, stdout, "ok")
 	})
 
 	t.Run("supports verbose output", func(t *testing.T) {
@@ -170,6 +170,6 @@ func TestTangPipeModeRegression(t *testing.T) {
 	require.NoError(t, goTestCmd.Wait())
 	require.NoError(t, tangCmd.Wait())
 	require.Contains(t, tangStdout.String(), "github.com/ansel1/tang")
-	require.Contains(t, tangStdout.String(), "PASS")
+	require.Contains(t, tangStdout.String(), "ok")
 	require.Empty(t, tangStderr.String())
 }
