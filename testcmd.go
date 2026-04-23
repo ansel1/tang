@@ -41,10 +41,10 @@ func validatePreTestArgs(args []string) error {
 		}
 
 		if flagName == "f" {
-			return errors.New("Error: -f is not compatible with 'test' subcommand")
+			return errors.New("error: -f is not compatible with 'test' subcommand")
 		}
 		if flagName == "replay" {
-			return errors.New("Error: -replay is not compatible with 'test' subcommand")
+			return errors.New("error: -replay is not compatible with 'test' subcommand")
 		}
 		if flagName == "rate" {
 			if flagValue == "" && i+1 < len(args) {
@@ -54,7 +54,7 @@ func validatePreTestArgs(args []string) error {
 			if flagValue != "" {
 				rate, err := strconv.ParseFloat(flagValue, 64)
 				if err == nil && rate != 1.0 {
-					return errors.New("Error: -rate is not compatible with 'test' subcommand")
+					return errors.New("error: -rate is not compatible with 'test' subcommand")
 				}
 			}
 		}
@@ -129,12 +129,12 @@ func startGoTest(goTestArgs []string) (*goTestProcess, error) {
 	configureProcessGroup(cmd)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("Error creating stdout pipe: %w", err)
+		return nil, fmt.Errorf("error creating stdout pipe: %w", err)
 	}
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("Error starting go test: %w", err)
+		return nil, fmt.Errorf("error starting go test: %w", err)
 	}
 
 	return &goTestProcess{cmd: cmd, stdout: stdout}, nil

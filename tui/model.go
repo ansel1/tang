@@ -362,9 +362,10 @@ func (m *Model) renderRun(run *results.Run) string {
 				// 2. Failed
 				// 3. Passed/Skipped/Paused (Lowest)
 				priority := 3
-				if test.Status == results.StatusRunning {
+				switch test.Status {
+				case results.StatusRunning:
 					priority = 1
-				} else if test.Status == results.StatusFailed {
+				case results.StatusFailed:
 					priority = 2
 				}
 

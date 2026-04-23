@@ -695,4 +695,3 @@ func TestClassifyPackageOutput(t *testing.T) {
 		})
 	}
 }
-
