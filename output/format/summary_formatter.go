@@ -67,7 +67,7 @@ func NewSummaryFormatter(width int, noColor bool, opts ...SummaryOptions) *Summa
 		f.boldSkip = lipgloss.NewStyle().Foreground(lipgloss.Color("3")).Bold(true)
 		f.boldSlow = lipgloss.NewStyle().Foreground(lipgloss.Color("4")).Bold(true)
 		f.boldPass = lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Bold(true)
-		f.dimStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+		f.dimStyle = lipgloss.NewStyle().Faint(true)
 		f.boldWhite = lipgloss.NewStyle().Foreground(lipgloss.Color("15")).Bold(true)
 	}
 
