@@ -53,6 +53,11 @@ type Model struct {
 	brightSlow    lipgloss.Style
 	brightNeutral lipgloss.Style
 
+	// dimStyle renders text with the terminal's Faint SGR attribute. Used to
+	// de-emphasize secondary content such as captured test output lines so
+	// primary content (test names, statuses) dominates visually.
+	dimStyle lipgloss.Style
+
 	SlowThreshold time.Duration
 
 	// Replay state
@@ -95,6 +100,7 @@ func NewModel(replayMode bool, replayRate float64, collector *results.Collector)
 		brightSkip:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("11")),
 		brightSlow:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12")),
 		brightNeutral:  lipgloss.NewStyle().Bold(true),
+		dimStyle:       lipgloss.NewStyle().Faint(true),
 		SlowThreshold:  DefaultSlowThreshold,
 		spinner:        s,
 		frozenSpinner:  sf,
@@ -600,8 +606,22 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 		if maxLines <= 0 {
 			break
 		}
-		line := logIndent + outputLine
-		b.WriteString(ensureReset(truncateLine(line, m.TerminalWidth)))
+		// Build and truncate the raw line first. truncateLine is not
+		// ANSI-aware, so styling must be applied *after* truncation to
+		// avoid escape sequences being counted toward width or sliced
+		// mid-sequence. Split the truncated line back into indent and
+		// payload so only the captured output content is rendered with
+		// the faint style, matching design Decision 2.
+		truncated := truncateLine(logIndent+outputLine, m.TerminalWidth)
+		var styled string
+		if strings.HasPrefix(truncated, logIndent) {
+			payload := truncated[len(logIndent):]
+			styled = logIndent + m.dimStyle.Render(payload)
+		} else {
+			// Truncation cut into the indent; style what remains.
+			styled = m.dimStyle.Render(truncated)
+		}
+		b.WriteString(ensureReset(styled))
 		b.WriteString("\n")
 
 		maxLines--
