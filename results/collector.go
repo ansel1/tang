@@ -198,7 +198,10 @@ func (c *Collector) handleTestEvent(event parser.TestEvent) {
 //     is stored in SummaryLine (overwriting any previous value).
 //   - Bare "PASS" or "FAIL" lines (which `go test` emits before the summary
 //     line) are dropped.
-//   - Anything else (panics, flag errors, coverage, TestMain output, ...) is
+//   - Bare "coverage: X% of statements" lines are dropped because the same
+//     information is already included in the summary line and the final
+//     summary table, so showing it as package output is redundant.
+//   - Anything else (panics, flag errors, TestMain output, ...) is
 //     appended to OutputLines.
 func classifyPackageOutput(pkg *PackageResult, output string) {
 	trimmed := strings.TrimSpace(output)
@@ -210,6 +213,9 @@ func classifyPackageOutput(pkg *PackageResult, output string) {
 		return
 	}
 	if trimmed == "PASS" || trimmed == "FAIL" {
+		return
+	}
+	if strings.HasPrefix(trimmed, "coverage:") && strings.HasSuffix(trimmed, "of statements") {
 		return
 	}
 	pkg.OutputLines = append(pkg.OutputLines, output)

@@ -625,3 +625,74 @@ func TestCollectorBuildOnlyRunFinalizes(t *testing.T) {
 		t.Errorf("Expected run status StatusPassed (no failed tests, no running pkgs), got %s", run.Status)
 	}
 }
+
+func TestClassifyPackageOutput(t *testing.T) {
+	tests := []struct {
+		name            string
+		output          string
+		wantSummaryLine string
+		wantOutputLines []string
+	}{
+		{
+			name:            "ok summary line stored in SummaryLine",
+			output:          "ok  \tgithub.com/foo/bar\t0.123s\n",
+			wantSummaryLine: "ok  \tgithub.com/foo/bar\t0.123s\n",
+		},
+		{
+			name:            "ok summary line with coverage stored in SummaryLine",
+			output:          "ok  \tgithub.com/foo/bar\t0.123s\tcoverage: 87.5% of statements\n",
+			wantSummaryLine: "ok  \tgithub.com/foo/bar\t0.123s\tcoverage: 87.5% of statements\n",
+		},
+		{
+			name:            "FAIL summary line stored in SummaryLine",
+			output:          "FAIL\tgithub.com/foo/bar\t0.123s\n",
+			wantSummaryLine: "FAIL\tgithub.com/foo/bar\t0.123s\n",
+		},
+		{
+			name:   "bare PASS is dropped",
+			output: "PASS\n",
+		},
+		{
+			name:   "bare FAIL is dropped",
+			output: "FAIL\n",
+		},
+		{
+			name:   "bare coverage line is dropped (redundant with SummaryLine and final table)",
+			output: "coverage: 97.8% of statements\n",
+		},
+		{
+			name:   "bare coverage line with leading tab is dropped",
+			output: "\tcoverage: 42.0% of statements\n",
+		},
+		{
+			name:            "panic output is appended to OutputLines",
+			output:          "panic: something bad\n",
+			wantOutputLines: []string{"panic: something bad\n"},
+		},
+		{
+			name:            "TestMain output is appended to OutputLines",
+			output:          "setup complete\n",
+			wantOutputLines: []string{"setup complete\n"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pkg := &PackageResult{}
+			classifyPackageOutput(pkg, tt.output)
+
+			if pkg.SummaryLine != tt.wantSummaryLine {
+				t.Errorf("SummaryLine = %q, want %q", pkg.SummaryLine, tt.wantSummaryLine)
+			}
+			if len(pkg.OutputLines) != len(tt.wantOutputLines) {
+				t.Fatalf("OutputLines length = %d, want %d (got %q)", len(pkg.OutputLines), len(tt.wantOutputLines), pkg.OutputLines)
+			}
+			for i, line := range tt.wantOutputLines {
+				if pkg.OutputLines[i] != line {
+					t.Errorf("OutputLines[%d] = %q, want %q", i, pkg.OutputLines[i], line)
+				}
+			}
+		})
+	}
+}
+
