@@ -1,6 +1,7 @@
 set unstable
 
 # Go related variables
+binary_name := "tang"
 gobase := justfile_directory()
 gobin := gobase / "bin"
 GO_TEST := env("GO_TEST", if which("tang") != "" { "tang test" } else { "go test" })
@@ -14,7 +15,7 @@ all: tidy fmt build test lint
 
 # Build the binary
 build:
-    go build -o {{ gobin }}/ .
+    go build -o {{ gobin }}/{{ binary_name }} .
 
 # Run the application
 run:
@@ -43,4 +44,4 @@ tidy:
 
 # Install the binary
 install:
-    go install ./cmd/tang
+    go build -o $(go env GOPATH)/bin/{{ binary_name }} .
