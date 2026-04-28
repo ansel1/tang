@@ -477,7 +477,9 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		case "FAIL":
 			statusStr = f.boldFail.Render(fmt.Sprintf("%-*s", maxStatusLen, pl.statusWord))
 		case "ok":
-			statusStr = f.boldPass.Render(fmt.Sprintf("%-*s", maxStatusLen, pl.statusWord))
+			// "ok" is rendered without color (just bold) so the summary
+			// isn't a wall of green; FAIL/? still get a color highlight.
+			statusStr = f.boldWhite.Render(fmt.Sprintf("%-*s", maxStatusLen, pl.statusWord))
 		case "?":
 			statusStr = f.boldSkip.Render(fmt.Sprintf("%-*s", maxStatusLen, pl.statusWord))
 		}
@@ -494,12 +496,9 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		hasCounts := pl.pkg.Counts.Passed > 0 || pl.pkg.Counts.Failed > 0 || pl.pkg.Counts.Skipped > 0
 		countsStr := ""
 		if hasCounts {
-			passedStr := fmt.Sprintf("%*s", maxPassedLen+1, fmt.Sprintf("%s%d", SymbolPass, pl.pkg.Counts.Passed))
-			if pl.pkg.Counts.Passed > 0 {
-				passedStr = f.passStyle.Render(passedStr)
-			} else {
-				passedStr = f.neutralStyle.Render(passedStr)
-			}
+			// Passing test count renders without color; only failures and
+			// skips get a color highlight.
+			passedStr := f.neutralStyle.Render(fmt.Sprintf("%*s", maxPassedLen+1, fmt.Sprintf("%s%d", SymbolPass, pl.pkg.Counts.Passed)))
 
 			failedStr := fmt.Sprintf("%*s", maxFailedLen+1, fmt.Sprintf("%s%d", SymbolFail, pl.pkg.Counts.Failed))
 			if pl.pkg.Counts.Failed > 0 {
@@ -541,12 +540,8 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 
 	pkgLabel := fmt.Sprintf("(%d packages)", summary.PackageCount)
 
-	passedStr := fmt.Sprintf("%*s", maxPassedLen+1, fmt.Sprintf("%s%d", SymbolPass, summary.PassedTests))
-	if summary.PassedTests > 0 {
-		passedStr = f.passStyle.Render(passedStr)
-	} else {
-		passedStr = f.neutralStyle.Render(passedStr)
-	}
+	// Total passing test count renders without color.
+	passedStr := f.neutralStyle.Render(fmt.Sprintf("%*s", maxPassedLen+1, fmt.Sprintf("%s%d", SymbolPass, summary.PassedTests)))
 
 	failedStr := fmt.Sprintf("%*s", maxFailedLen+1, fmt.Sprintf("%s%d", SymbolFail, summary.FailedTests))
 	if summary.FailedTests > 0 {

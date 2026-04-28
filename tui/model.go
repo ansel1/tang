@@ -477,17 +477,14 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 
 	running := pkg.Status == results.StatusRunning || pkg.Status == results.StatusInterrupted
 
-	passColor, failColor, skipColor, neutralColor := m.passStyle, m.failStyle, m.skipStyle, m.neutralStyle
+	// Passing test count is rendered without color (only failures and skips
+	// get a color highlight) so the pass color is no longer needed here.
+	failColor, skipColor, neutralColor := m.failStyle, m.skipStyle, m.neutralStyle
 	if running {
-		passColor, failColor, skipColor, neutralColor = m.brightPass, m.brightFail, m.brightSkip, m.brightNeutral
+		failColor, skipColor, neutralColor = m.brightFail, m.brightSkip, m.brightNeutral
 	}
 
-	passedStr := fmt.Sprintf("%*s", wPassed+1, fmt.Sprintf("✓%d", pkg.Counts.Passed))
-	if pkg.Counts.Passed > 0 {
-		passedStr = passColor.Render(passedStr)
-	} else {
-		passedStr = neutralColor.Render(passedStr)
-	}
+	passedStr := neutralColor.Render(fmt.Sprintf("%*s", wPassed+1, fmt.Sprintf("✓%d", pkg.Counts.Passed)))
 
 	failedStr := fmt.Sprintf("%*s", wFailed+1, fmt.Sprintf("✗%d", pkg.Counts.Failed))
 	if pkg.Counts.Failed > 0 {
@@ -671,7 +668,10 @@ func (m *Model) getStatusPrefix(status results.Status, hasFailures bool) string 
 		}
 		return m.passStyle.Render(spinnerView) + " "
 	case results.StatusPassed:
-		return m.passStyle.Render("✓") + " "
+		// The finished-package gutter icon for passing packages renders in
+		// the terminal default color so a successful run isn't a wall of
+		// green; failures and skips keep their color highlight.
+		return "✓ "
 	case results.StatusFailed:
 		return m.failStyle.Render("✗") + " "
 	case results.StatusSkipped:
@@ -682,6 +682,8 @@ func (m *Model) getStatusPrefix(status results.Status, hasFailures bool) string 
 		if hasFailures {
 			return m.failStyle.Render(m.frozenSpinner.View()) + " "
 		}
+		// Frozen spinner stays green so a paused-but-passing package is
+		// still recognizable as such.
 		return m.passStyle.Render(m.frozenSpinner.View()) + " "
 	default:
 		return "  "
@@ -749,17 +751,14 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wRunning
 		leftPart = statusLabel
 	}
 
-	passColor, failColor, skipColor, neutralColor := m.passStyle, m.failStyle, m.skipStyle, m.neutralStyle
+	// Passing test count is rendered without color (only failures and skips
+	// get a color highlight) so the pass color is no longer needed here.
+	failColor, skipColor, neutralColor := m.failStyle, m.skipStyle, m.neutralStyle
 	if running {
-		passColor, failColor, skipColor, neutralColor = m.brightPass, m.brightFail, m.brightSkip, m.brightNeutral
+		failColor, skipColor, neutralColor = m.brightFail, m.brightSkip, m.brightNeutral
 	}
 
-	passedStr := fmt.Sprintf("%*s", wPassed+1, fmt.Sprintf("✓%d", run.Counts.Passed))
-	if run.Counts.Passed > 0 {
-		passedStr = passColor.Render(passedStr)
-	} else {
-		passedStr = neutralColor.Render(passedStr)
-	}
+	passedStr := neutralColor.Render(fmt.Sprintf("%*s", wPassed+1, fmt.Sprintf("✓%d", run.Counts.Passed)))
 
 	failedStr := fmt.Sprintf("%*s", wFailed+1, fmt.Sprintf("✗%d", run.Counts.Failed))
 	if run.Counts.Failed > 0 {
