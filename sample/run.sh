@@ -24,7 +24,7 @@ cd "$SCRIPT_DIR"
 
 # Build tang from source so we always use the latest version.
 TANG_ROOT="$(dirname "$SCRIPT_DIR")"
-make -C "$TANG_ROOT" build
+just build
 TANG="$TANG_ROOT/bin/tang"
 
 # Separate script args from tang args at "--".
