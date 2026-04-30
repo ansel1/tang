@@ -10,6 +10,7 @@ import (
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 	"github.com/ansel1/tang/results"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // DefaultSlowThreshold is the fallback threshold used when none is specified.
@@ -58,6 +59,8 @@ type Model struct {
 	// primary content (test names, statuses) dominates visually.
 	dimStyle lipgloss.Style
 
+	darkStyle lipgloss.Style
+
 	SlowThreshold time.Duration
 
 	// Replay state
@@ -101,6 +104,7 @@ func NewModel(replayMode bool, replayRate float64, collector *results.Collector)
 		brightSlow:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12")),
 		brightNeutral:  lipgloss.NewStyle().Bold(true),
 		dimStyle:       lipgloss.NewStyle().Faint(true),
+		darkStyle:      lipgloss.NewStyle().Foreground(lipgloss.BrightBlack),
 		SlowThreshold:  DefaultSlowThreshold,
 		spinner:        s,
 		frozenSpinner:  sf,
@@ -254,10 +258,7 @@ func truncateLine(line string, width int) string {
 	if width <= 0 {
 		return ""
 	}
-	if len(line) <= width {
-		return line
-	}
-	return line[:width]
+	return ansi.Truncate(line, width, "…")
 }
 
 // renderRun renders the TUI for a specific run
@@ -347,19 +348,8 @@ func (m *Model) renderRun(run *results.Run) string {
 				testKey := pkgName + "/" + testName
 				test := run.TestResults[testKey]
 
-				// line for summary
+				// Each test now only needs 1 line (output is inline)
 				lineCount := 1
-
-				// Only show output for actively running tests
-				if test.Status() == results.StatusRunning {
-					// Update output lines (take last N lines)
-					n := len(test.Output())
-					if n < MaxOutputLines {
-						lineCount += n
-					} else {
-						lineCount += MaxOutputLines
-					}
-				}
 
 				// Priority:
 				// 1. Running (Highest)
@@ -574,7 +564,7 @@ func stripSummaryStatusWord(summary string) string {
 }
 
 // renderTest renders a test and its output lines
-func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLines int) {
+func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, _ int) {
 	// Render test summary line
 	summary := m.formatTestSummary(test)
 
@@ -584,8 +574,17 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 
 	prefix := "  "
 
-	if test.Running() {
+	// For running tests, show the last output line inline after the test name
+	if test.Status() == results.StatusRunning {
 		summary = m.brightStyle.Render(summary)
+
+		output := test.Output()
+		if len(output) > 0 {
+			lastLine := output[len(output)-1]
+			lastLine = strings.TrimSpace(lastLine)
+			summary += " " + m.darkStyle.Render(lastLine)
+		}
+
 		elapsedVal = m.brightStyle.Render(elapsedVal)
 	} else {
 		style := m.testStyle(test)
@@ -596,39 +595,6 @@ func (m *Model) renderTest(b *strings.Builder, test *results.TestResult, maxLine
 	}
 
 	m.renderAlignedLine(b, summary, elapsedVal, prefix)
-	maxLines--
-
-	// Render output lines
-	output := test.Output()
-	l := len(output)
-	if l > MaxOutputLines {
-		l = MaxOutputLines
-	}
-	logIndent := prefix + testIndent(test.Name)
-	for _, outputLine := range output[len(output)-l:] {
-		if maxLines <= 0 {
-			break
-		}
-		// Build and truncate the raw line first. truncateLine is not
-		// ANSI-aware, so styling must be applied *after* truncation to
-		// avoid escape sequences being counted toward width or sliced
-		// mid-sequence. Split the truncated line back into indent and
-		// payload so only the captured output content is rendered with
-		// the faint style, matching design Decision 2.
-		truncated := truncateLine(logIndent+outputLine, m.TerminalWidth)
-		var styled string
-		if strings.HasPrefix(truncated, logIndent) {
-			payload := truncated[len(logIndent):]
-			styled = logIndent + m.dimStyle.Render(payload)
-		} else {
-			// Truncation cut into the indent; style what remains.
-			styled = m.dimStyle.Render(truncated)
-		}
-		b.WriteString(ensureReset(styled))
-		b.WriteString("\n")
-
-		maxLines--
-	}
 }
 
 func (m *Model) testStyle(test *results.TestResult) *lipgloss.Style {
@@ -700,8 +666,8 @@ func (m *Model) renderAlignedLine(b *strings.Builder, left, right, prefix string
 		return
 	}
 
-	rightWidth := lipgloss.Width(right)
-	leftWidth := lipgloss.Width(fullLeft)
+	rightWidth := ansi.StringWidth(right)
+	leftWidth := ansi.StringWidth(fullLeft)
 
 	availableWidth := m.TerminalWidth - rightWidth - 2
 	if availableWidth < 0 {

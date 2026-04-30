@@ -9,9 +9,9 @@ import (
 	"github.com/ansel1/tang/results"
 )
 
-// TestFaintOutputLine verifies that captured test output lines are rendered
-// with lipgloss Faint styling (the "dim" SGR attribute, ESC[2m) so that log
-// lines are visually de-emphasized relative to test name/status lines.
+// TestFaintOutputLine verifies that for running tests, the output is inline
+// on the same line as the test name, and the entire line is in bright style
+// (not faint) since it's now part of the test line.
 func TestFaintOutputLine(t *testing.T) {
 	collector := results.NewCollector()
 	m := NewModel(false, 1.0, collector)
@@ -48,41 +48,34 @@ func TestFaintOutputLine(t *testing.T) {
 
 	output := m.String()
 
-	// Locate the rendered output line.
+	// For running tests, the output is inline on the same line as the test name.
+	// Find the line that contains both the test name and the output.
 	var foundLine string
 	for _, line := range strings.Split(output, "\n") {
-		if strings.Contains(line, "hello log line") {
+		if strings.Contains(line, "TestFaint") && strings.Contains(line, "hello log line") {
 			foundLine = line
 			break
 		}
 	}
 	if foundLine == "" {
-		t.Fatal("could not find output line in rendered view")
+		t.Fatal("could not find test line with output in rendered view")
 	}
 
-	// The rendered payload must include the expected faint SGR produced by
-	// the model's dimStyle. Compare via lipgloss.Render so we pick up
-	// whatever escape sequence lipgloss chooses for Faint(true) on the
-	// active renderer.
-	expected := lipgloss.NewStyle().Faint(true).Render("hello log line")
-	if !strings.Contains(foundLine, expected) {
-		t.Errorf("expected output line to contain faint-rendered payload %q, got: %q", expected, foundLine)
+	// The line should contain the "=== CONT" prefix and be in bright style
+	if !strings.Contains(foundLine, "=== CONT") {
+		t.Errorf("expected line to contain === CONT prefix, got: %q", foundLine)
 	}
 
-	// Header line (test name) must NOT be wrapped in the faint style.
-	var headerLine string
-	for _, line := range strings.Split(output, "\n") {
-		if strings.Contains(line, "=== RUN   TestFaint") {
-			headerLine = line
-			break
-		}
+	// Check for bright white bold style (\x1b[1;97m)
+	const brightWhiteBold = "\x1b[1;97m"
+	if !strings.Contains(foundLine, brightWhiteBold) {
+		t.Errorf("expected line to be in bright white bold style, got: %q", foundLine)
 	}
-	if headerLine == "" {
-		t.Fatal("could not find test header line in rendered view")
-	}
-	faintHeader := lipgloss.NewStyle().Faint(true).Render("=== RUN   TestFaint")
-	if strings.Contains(headerLine, faintHeader) {
-		t.Errorf("test header line must not be faint-styled, got: %q", headerLine)
+
+	// The output should NOT be faint-styled (it's now part of the test line)
+	faintStyle := lipgloss.NewStyle().Faint(true).Render("hello log line")
+	if strings.Contains(foundLine, faintStyle) {
+		t.Errorf("output should not be faint-styled for running tests, got: %q", foundLine)
 	}
 }
 

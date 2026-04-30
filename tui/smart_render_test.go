@@ -128,21 +128,24 @@ func TestSmartRendering(t *testing.T) {
 	// Now reduce height to force elision
 	// We need to elide low priority first.
 	// Priority: Running (1), Failed (2), Passed (3)
-	// Lines: t3(2), t2(3), t1(1), t4(1)
+	// Lines (with inline output): t3(1), t2(1), t1(1), t4(1)
 
 	// Set height to allow Headers + Summary + Separator + 2 lines
 	// Total = 4 + 2 = 6 lines.
 	// Available for tests = 2 lines.
-	// Should show: t3 (Running, 2 lines) -> Takes all 2.
-	// t2 (Failed), t1 (Passed), t4 (Passed) should be hidden.
+	// With inline output, each test needs 1 line.
+	// Priority allocation: Running(1) -> 1 line, Failed(2) -> 1 line, Passed(3) -> 0 lines.
+	// Should show: TestRunning and TestFailed (both fit in 2 lines).
+	// TestPassed and TestPassed2 should be hidden.
 
 	m.TerminalHeight = 4 + 2 // 6 lines total
 	output = m.String()
 	if !strings.Contains(output, "TestRunning") {
 		t.Error("Expected TestRunning to be visible with height 6 (priority 1)")
 	}
-	if strings.Contains(output, "TestFailed") {
-		t.Error("Expected TestFailed to be elided with height 6 (priority 2 vs 1)")
+	// With inline output, both TestRunning and TestFailed fit in 2 lines
+	if !strings.Contains(output, "TestFailed") {
+		t.Error("Expected TestFailed to be visible with height 6 (fits alongside TestRunning)")
 	}
 	if strings.Contains(output, "TestPassed") {
 		t.Error("Expected TestPassed to be elided with height 6")
@@ -161,24 +164,19 @@ func TestSmartRendering(t *testing.T) {
 	pkg1.Counts.Running++
 	run.Counts.Running++
 
-	// Available = 2 lines.
-	// Should show: t5 (Running, Newer) -> Takes 1 line (no output).
-	// Wait, t5 has no output, so 1 line.
-	// t3 (Running, Older) -> Needs 2 lines.
-	// If we allocate t5 first (1 line), we have 1 line left.
-	// t3 needs 2 lines. It might get 1 line (truncated) or 0 if logic requires full fit?
-	// Logic: if availableLines >= len(lines) -> full. else if availableLines > 0 -> partial.
-	// So t5 gets 1 line. 1 left. t3 gets 1 line (Summary).
+	// With inline output, each running test needs only 1 line.
+	// Available = 2 lines. Both TestRunningNew and TestRunning can fit.
 
 	output = m.String()
 	if !strings.Contains(output, "TestRunningNew") {
 		t.Error("Expected TestRunningNew (newer) to be visible")
 	}
 	if !strings.Contains(output, "TestRunning") {
-		t.Error("Expected TestRunning (older) to be partially visible")
+		t.Error("Expected TestRunning (older) to be visible (both fit with inline output)")
 	}
-	if strings.Contains(output, "doing work") {
-		t.Error("Expected TestRunning output to be elided (only summary fits)")
+	// With inline output, TestRunning can show its output since it fits on one line
+	if !strings.Contains(output, "doing work") {
+		t.Error("Expected TestRunning output to be visible (fits inline)")
 	}
 
 	// Test Recency with Failed tests
@@ -274,10 +272,10 @@ func TestPausedTestPriority(t *testing.T) {
 		t.Error("Expected TestActive to be visible with plenty of space")
 	}
 
-	// Constrain to fit only TestActive (2 lines: summary + output).
+	// Constrain to fit only TestActive (1 line: summary with inline output).
 	// Fixed lines: summary(1) + separator(1) + pkg header(1) = 3.
-	// Available = TerminalHeight - 3 = 2. TestActive uses 2, TestPaused gets nothing.
-	m.TerminalHeight = 5
+	// Available = TerminalHeight - 3 = 1. TestActive uses 1, TestPaused gets nothing.
+	m.TerminalHeight = 4
 	output = m.String()
 	if !strings.Contains(output, "TestActive") {
 		t.Error("Expected TestActive (running) to be visible over paused test")

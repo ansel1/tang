@@ -338,7 +338,8 @@ func TestBoldRunningEntities(t *testing.T) {
 		t.Errorf("Expected running package name to be bright white bold.\nGot:\n%s", output)
 	}
 
-	if !strings.Contains(output, brightWhiteBold+"  === RUN   TestRunning") {
+	// The test line should be in bright style, check for the test name with bright style
+	if !strings.Contains(output, brightWhiteBold+"TestRunning") {
 		t.Errorf("Expected running test summary to be bright white bold.\nGot:\n%s", output)
 	}
 
