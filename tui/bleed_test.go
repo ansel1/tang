@@ -39,7 +39,7 @@ func TestFaintOutputLine(t *testing.T) {
 
 	test := results.NewTestResult("pkg1", "TestFaint")
 	test.Latest().Status = results.StatusRunning
-	test.Latest().SummaryLine = "=== RUN   TestFaint"
+	test.Latest().SummaryLine = "=== CONT  TestFaint"
 	test.Latest().Output = []string{"hello log line"}
 	test.Latest().StartTime = time.Now()
 	test.Latest().LastResumeTime = time.Now()

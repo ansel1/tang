@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"charm.land/lipgloss/v2"
 	"github.com/ansel1/tang/results"
@@ -498,21 +499,9 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		if hasCounts {
 			// Passing test count renders without color; only failures and
 			// skips get a color highlight.
-			passedStr := f.neutralStyle.Render(fmt.Sprintf("%*s", maxPassedLen+1, fmt.Sprintf("%s%d", SymbolPass, pl.pkg.Counts.Passed)))
-
-			failedStr := fmt.Sprintf("%*s", maxFailedLen+1, fmt.Sprintf("%s%d", SymbolFail, pl.pkg.Counts.Failed))
-			if pl.pkg.Counts.Failed > 0 {
-				failedStr = f.failStyle.Render(failedStr)
-			} else {
-				failedStr = f.neutralStyle.Render(failedStr)
-			}
-
-			skippedStr := fmt.Sprintf("%*s", maxSkippedLen+1, fmt.Sprintf("%s%d", SymbolSkip, pl.pkg.Counts.Skipped))
-			if pl.pkg.Counts.Skipped > 0 {
-				skippedStr = f.skipStyle.Render(skippedStr)
-			} else {
-				skippedStr = f.neutralStyle.Render(skippedStr)
-			}
+			passedStr := formatCount(pl.pkg.Counts.Passed, maxPassedLen+1, SymbolPass, f.neutralStyle, true)
+			failedStr := formatCount(pl.pkg.Counts.Failed, maxFailedLen+1, SymbolFail, f.failStyle, true)
+			skippedStr := formatCount(pl.pkg.Counts.Skipped, maxSkippedLen+1, SymbolSkip, f.skipStyle, true)
 
 			total := pl.pkg.Counts.Passed + pl.pkg.Counts.Failed + pl.pkg.Counts.Skipped
 			totalStr := f.neutralStyle.Render(fmt.Sprintf("%*d", maxTotalLen, total))
@@ -541,21 +530,23 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 	pkgLabel := fmt.Sprintf("(%d packages)", summary.PackageCount)
 
 	// Total passing test count renders without color.
-	passedStr := f.neutralStyle.Render(fmt.Sprintf("%*s", maxPassedLen+1, fmt.Sprintf("%s%d", SymbolPass, summary.PassedTests)))
+	passedStr := formatCount(summary.PassedTests, maxPassedLen+1, SymbolPass, f.neutralStyle, false)
 
-	failedStr := fmt.Sprintf("%*s", maxFailedLen+1, fmt.Sprintf("%s%d", SymbolFail, summary.FailedTests))
+	var failColorForSummary lipgloss.Style
 	if summary.FailedTests > 0 {
-		failedStr = f.failStyle.Render(failedStr)
+		failColorForSummary = f.failStyle
 	} else {
-		failedStr = f.neutralStyle.Render(failedStr)
+		failColorForSummary = f.neutralStyle
 	}
+	failedStr := formatCount(summary.FailedTests, maxFailedLen+1, SymbolFail, failColorForSummary, false)
 
-	skippedStr := fmt.Sprintf("%*s", maxSkippedLen+1, fmt.Sprintf("%s%d", SymbolSkip, summary.SkippedTests))
+	var skipColorForSummary lipgloss.Style
 	if summary.SkippedTests > 0 {
-		skippedStr = f.skipStyle.Render(skippedStr)
+		skipColorForSummary = f.skipStyle
 	} else {
-		skippedStr = f.neutralStyle.Render(skippedStr)
+		skipColorForSummary = f.neutralStyle
 	}
+	skippedStr := formatCount(summary.SkippedTests, maxSkippedLen+1, SymbolSkip, skipColorForSummary, false)
 
 	totalStr := f.neutralStyle.Render(fmt.Sprintf("%*d", maxTotalLen, summary.TotalTests))
 	countsStr := fmt.Sprintf("(%s %s %s) %s", passedStr, failedStr, skippedStr, totalStr)
@@ -563,4 +554,14 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 
 	labelWidth := maxStatusLen + 4 + maxNameExtraLen
 	fmt.Fprintf(sb, "%-*s  %s  %s\n", labelWidth, pkgLabel, countsStr, elapsed)
+}
+
+func formatCount(count int, width int, prefix string, style lipgloss.Style, hideZero bool) string {
+	if count == 0 && hideZero {
+		raw := fmt.Sprintf("%*s", width, fmt.Sprintf("%s%d", prefix, count))
+		runeLen := utf8.RuneCountInString(raw)
+		return strings.Repeat(" ", runeLen)
+	}
+	raw := fmt.Sprintf("%*s", width, fmt.Sprintf("%s%d", prefix, count))
+	return style.Render(raw)
 }

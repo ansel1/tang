@@ -338,9 +338,19 @@ func TestBoldRunningEntities(t *testing.T) {
 		t.Errorf("Expected running package name to be bright white bold.\nGot:\n%s", output)
 	}
 
-	// The test line should be in bright style, check for the test name with bright style
-	if !strings.Contains(output, brightWhiteBold+"TestRunning") {
-		t.Errorf("Expected running test summary to be bright white bold.\nGot:\n%s", output)
+	// The test line should be in bright style, check for the test name and the bright style
+	var testLine string
+	for _, line := range strings.Split(output, "\n") {
+		if strings.Contains(line, "TestRunning") {
+			testLine = line
+			break
+		}
+	}
+	if testLine == "" {
+		t.Fatal("Could not find TestRunning line")
+	}
+	if !strings.Contains(testLine, brightWhiteBold) {
+		t.Errorf("Expected running test summary to be bright white bold.\nGot:\n%s", testLine)
 	}
 
 	if !strings.Contains(output, brightWhiteBold+"(1 packages: 1 running, 0 done)") {

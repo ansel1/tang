@@ -65,3 +65,57 @@ func TestPackageSummaryLastOutput(t *testing.T) {
 		t.Errorf("Finished package line should not include the 'ok' status word; gutter icon replaces it.\nGot:\n%s", output)
 	}
 }
+
+func TestPackageSummaryNoTestsOmitCounters(t *testing.T) {
+	collector := results.NewCollector()
+	m := NewModel(false, 1.0, collector)
+	m.TerminalWidth = 80
+
+	now := time.Now()
+
+	events := []engine.Event{
+		{
+			Type: engine.EventTest,
+			TestEvent: parser.TestEvent{
+				Time:    now,
+				Package: "github.com/test/notests",
+				Action:  "output",
+				Output:  "?   \tgithub.com/test/notests\t[no test files]\n",
+			},
+		},
+		{
+			Type: engine.EventTest,
+			TestEvent: parser.TestEvent{
+				Time:    now.Add(100 * time.Millisecond),
+				Package: "github.com/test/notests",
+				Action:  "skip",
+				Elapsed: 0.0,
+			},
+		},
+		{Type: engine.EventComplete},
+	}
+
+	for _, evt := range events {
+		collector.Push(evt)
+	}
+
+	output := viewLatest(m)
+	lines := strings.Split(output, "\n")
+
+	var packageLine string
+	for _, line := range lines {
+		if strings.Contains(line, "github.com/test/notests") {
+			packageLine = line
+			break
+		}
+	}
+
+	if packageLine == "" {
+		t.Fatal("Could not find package summary line in output")
+	}
+
+	if strings.Contains(packageLine, "(") || strings.Contains(packageLine, ")") {
+		t.Errorf("Expected package line to omit counters (no parentheses), but got: %q", packageLine)
+	}
+}
+

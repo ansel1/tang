@@ -414,3 +414,43 @@ func TestSummaryFormatterSymbols(t *testing.T) {
 		t.Error("Expected fail symbol")
 	}
 }
+
+func TestSummaryFormatterNoTestsOmitCounters(t *testing.T) {
+	formatter := NewSummaryFormatter(80, false)
+
+	pkg1 := &results.PackageResult{
+		Name:    "github.com/user/project/pkg1",
+		Status:  results.StatusSkipped,
+		Elapsed: 0,
+	}
+
+	summary := &Summary{
+		Packages:     []*results.PackageResult{pkg1},
+		TotalTests:   0,
+		PassedTests:  0,
+		FailedTests:  0,
+		SkippedTests: 0,
+		TotalTime:    0,
+		PackageCount: 1,
+	}
+
+	output := formatter.Format(summary)
+	lines := strings.Split(output, "\n")
+
+	var packageLine string
+	for _, line := range lines {
+		if strings.Contains(line, "github.com/user/project/pkg1") {
+			packageLine = line
+			break
+		}
+	}
+
+	if packageLine == "" {
+		t.Fatal("Could not find package summary line in output")
+	}
+
+	if strings.Contains(packageLine, "(") || strings.Contains(packageLine, ")") {
+		t.Errorf("Expected summary package line to omit counters (no parentheses), but got: %q", packageLine)
+	}
+}
+
