@@ -13,6 +13,20 @@ import (
 	"github.com/ansel1/tang/results"
 )
 
+// SimpleOutput renders engine events as plain text, reconstructing
+// `go test` style output from the test2json event stream.
+//
+// One package at a time is "focused": its output streams incrementally to
+// the writer while other packages buffer. When the focused package finishes,
+// any other completed packages are flushed, then a new focus is picked
+// from the remaining running packages (the one with the most buffered
+// output).
+//
+// In verbose mode, all test output is streamed for the focused package.
+// In non-verbose mode, test failure output is streamed as each test fails.
+//
+// Usage: call Init once, then ProcessEvent for each event (after pushing it
+// to the collector), then Flush and WriteRunSummaries when a run finishes.
 type SimpleOutput struct {
 	writer         io.Writer
 	collector      *results.Collector
@@ -21,6 +35,10 @@ type SimpleOutput struct {
 	verbose        bool
 	width          int
 	noColor        bool
+
+	// Number of leading runs in collector.State().Runs that have already
+	// been summarized by WriteRunSummaries. Not reset by Init.
+	summarizedRuns int
 
 	// Per-event state (initialized by Init, used by ProcessEvent)
 	writers                   map[string]*packageWriter
@@ -107,7 +125,7 @@ func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold ti
 }
 
 // Init initializes the per-event processing state. Must be called before
-// ProcessEvent. It is called automatically by ProcessEvents.
+// ProcessEvent.
 func (s *SimpleOutput) Init() {
 	s.writers = make(map[string]*packageWriter)
 	s.pkgSummaryLine = make(map[string]string)
@@ -196,28 +214,6 @@ func (s *SimpleOutput) Flush() {
 		s.flushPackage(pkg, s.writers, s.pkgSummaryLine)
 	}
 	s.completedQueue = s.completedQueue[:0]
-}
-
-// ProcessEvents consumes engine events and writes output progressively.
-//
-// One package at a time is "focused": its output streams incrementally to
-// stdout while other packages buffer. When the focused package finishes,
-// any other completed packages are flushed, then a new focus is picked
-// from the remaining running packages (the one with the most buffered
-// output).
-//
-// In verbose mode, all test output is streamed for the focused package.
-// In non-verbose mode, test failure output is streamed as each test fails.
-func (s *SimpleOutput) ProcessEvents(events <-chan engine.Event) error {
-	s.Init()
-
-	for evt := range events {
-		s.collector.Push(evt)
-		s.ProcessEvent(evt)
-	}
-
-	s.Flush()
-	return s.writeSummary()
 }
 
 func (s *SimpleOutput) handlePackageLevelEvent(
@@ -341,20 +337,31 @@ func (s *SimpleOutput) emitNonVerboseChildren(
 	}
 }
 
-func (s *SimpleOutput) writeSummary() error {
+// WriteRunSummaries writes a summary block for every finished run that has
+// not yet been summarized. The in-progress run (if any) is not summarized.
+// Safe to call repeatedly; each run is summarized at most once.
+func (s *SimpleOutput) WriteRunSummaries() {
 	if s.collector == nil {
-		return nil
+		return
 	}
 
 	state := s.collector.State()
-	if len(state.Runs) == 0 {
-		return nil
+	for s.summarizedRuns < len(state.Runs) {
+		run := state.Runs[s.summarizedRuns]
+		if run == state.CurrentRun {
+			// Still in progress; summarize once it finishes.
+			break
+		}
+		s.writeRunSummary(run)
+		s.summarizedRuns++
 	}
+}
 
-	run := state.Runs[len(state.Runs)-1]
+// writeRunSummary writes the summary block for a single run.
+func (s *SimpleOutput) writeRunSummary(run *results.Run) {
 	summary := format.ComputeSummary(run, s.slowThreshold)
 	if summary == nil {
-		return nil
+		return
 	}
 
 	summaryText := format.NewSummaryFormatter(s.width, s.noColor, s.summaryOptions).Format(summary)
@@ -362,8 +369,6 @@ func (s *SimpleOutput) writeSummary() error {
 		_, _ = fmt.Fprintln(s.writer)
 	}
 	_, _ = fmt.Fprintln(s.writer, summaryText)
-
-	return nil
 }
 
 // handleVerboseTestOutput processes a test-level output event in verbose mode.

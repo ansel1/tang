@@ -11,7 +11,6 @@ import (
 	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var baseTime = time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
@@ -43,14 +42,21 @@ func failingPackageEvents(pkg string) []engine.Event {
 	}
 }
 
-func sendEvents(events []engine.Event) <-chan engine.Event {
-	ch := make(chan engine.Event, len(events)+1)
+// processEvents drives a SimpleOutput the same way the main event loop
+// does: push each event to the collector, render it, then flush and write
+// run summaries at the end of the stream. An EventComplete is appended to
+// finish the run.
+func processEvents(simple *SimpleOutput, collector *results.Collector, events []engine.Event) {
+	simple.Init()
+
+	events = append(events, engine.Event{Type: engine.EventComplete})
 	for _, evt := range events {
-		ch <- evt
+		collector.Push(evt)
+		simple.ProcessEvent(evt)
 	}
-	ch <- engine.Event{Type: engine.EventComplete}
-	close(ch)
-	return ch
+
+	simple.Flush()
+	simple.WriteRunSummaries()
 }
 
 func TestSimpleOutput_Verbose_PassingTest(t *testing.T) {
@@ -58,8 +64,7 @@ func TestSimpleOutput_Verbose_PassingTest(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true, 80, false)
 
-	err := simple.ProcessEvents(sendEvents(passingPackageEvents("example.com/pkg")))
-	require.NoError(t, err)
+	processEvents(simple, collector, passingPackageEvents("example.com/pkg"))
 
 	output := buf.String()
 	assert.Contains(t, output, "=== RUN   TestFoo")
@@ -73,8 +78,7 @@ func TestSimpleOutput_Verbose_FailedTest(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true, 80, false)
 
-	err := simple.ProcessEvents(sendEvents(failingPackageEvents("example.com/pkg")))
-	require.NoError(t, err)
+	processEvents(simple, collector, failingPackageEvents("example.com/pkg"))
 
 	output := buf.String()
 	assert.Contains(t, output, "=== RUN   TestFail")
@@ -89,8 +93,7 @@ func TestSimpleOutput_NonVerbose_PassingTest(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
 
-	err := simple.ProcessEvents(sendEvents(passingPackageEvents("example.com/pkg")))
-	require.NoError(t, err)
+	processEvents(simple, collector, passingPackageEvents("example.com/pkg"))
 
 	output := buf.String()
 	assert.NotContains(t, output, "=== RUN")
@@ -104,8 +107,7 @@ func TestSimpleOutput_NonVerbose_FailedTest(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
 
-	err := simple.ProcessEvents(sendEvents(failingPackageEvents("example.com/pkg")))
-	require.NoError(t, err)
+	processEvents(simple, collector, failingPackageEvents("example.com/pkg"))
 
 	output := buf.String()
 	assert.NotContains(t, output, "=== RUN")
@@ -132,8 +134,7 @@ func TestSimpleOutput_NonVerbose_BuildError(t *testing.T) {
 	}
 	events = append(events, passingPackageEvents("example.com/ok")...)
 
-	err := simple.ProcessEvents(sendEvents(events))
-	require.NoError(t, err)
+	processEvents(simple, collector, events)
 
 	output := buf.String()
 	assert.Contains(t, output, "# example.com/broken")
@@ -151,8 +152,7 @@ func TestSimpleOutput_RawLines(t *testing.T) {
 		{Type: engine.EventRawLine, RawLine: []byte("Another raw line")},
 	}
 
-	err := simple.ProcessEvents(sendEvents(events))
-	require.NoError(t, err)
+	processEvents(simple, collector, events)
 
 	output := buf.String()
 	assert.Contains(t, output, "This is a raw line")
@@ -193,8 +193,7 @@ func TestSimpleOutput_NonVerbose_BadFlag(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
 
-	err := simple.ProcessEvents(sendEvents(badFlagEvents("example.com/pkg")))
-	require.NoError(t, err)
+	processEvents(simple, collector, badFlagEvents("example.com/pkg"))
 
 	output := buf.String()
 	assert.Contains(t, output, "flag provided but not defined: -badflag")
@@ -208,8 +207,7 @@ func TestSimpleOutput_NonVerbose_TestMainPanic(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
 
-	err := simple.ProcessEvents(sendEvents(testMainPanicEvents("example.com/pkg")))
-	require.NoError(t, err)
+	processEvents(simple, collector, testMainPanicEvents("example.com/pkg"))
 
 	output := buf.String()
 	assert.Contains(t, output, "panic: TestMain setup failed")
@@ -223,8 +221,7 @@ func TestSimpleOutput_Verbose_BadFlag(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true, 80, false)
 
-	err := simple.ProcessEvents(sendEvents(badFlagEvents("example.com/pkg")))
-	require.NoError(t, err)
+	processEvents(simple, collector, badFlagEvents("example.com/pkg"))
 
 	output := buf.String()
 	assert.Contains(t, output, "flag provided but not defined: -badflag")
@@ -285,8 +282,7 @@ func TestSimpleOutput_MultiExecutionBothFail(t *testing.T) {
 	var buf bytes.Buffer
 	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, true, 80, false)
 
-	err := simple.ProcessEvents(sendEvents(events))
-	require.NoError(t, err)
+	processEvents(simple, collector, events)
 
 	output := buf.String()
 

@@ -15,7 +15,7 @@ import (
 // It IS thread-safe.
 // It detects run boundaries using the heuristic:
 // - Run starts: Any test or build event when no current run exists
-// - Run finishes: Running package count drops to 0
+// - Run finishes: Explicitly via Finish(), triggered by raw input lines, EventComplete, or explicit calls
 type Collector struct {
 	mu            sync.Mutex
 	state         *State

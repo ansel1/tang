@@ -253,148 +253,49 @@ func run() int {
 		IncludeSlow:    *includeSlow,
 	}
 
-	if skipLive {
-		simple := output.NewSimpleOutput(os.Stdout, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
-		if err := simple.ProcessEvents(engineEvents); err != nil {
-			fmt.Fprintf(os.Stderr, "Error processing events: %v\n", err)
-			return 1
-		}
-		if simple.HasFailures() || interrupted.Load() {
-			exitCode = 1
-		}
-	} else {
-		var p *tea.Program
-		var pDone chan struct{}
-		var eventCount int
+	// A single SimpleOutput renders output identically in both modes. It
+	// writes into a buffer which the event loop dumps to stdout whenever the
+	// TUI is not on screen (in notty mode, that's after every event).
+	var outputBuf bytes.Buffer
+	simple := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
 
-		// SimpleOutput is only used in verbose live mode to replay test output
-		// after the TUI closes. In non-verbose mode the summary alone is the
-		// final report.
-		var outputBuf bytes.Buffer
-		var simpleOut *output.SimpleOutput
-		if *verbose {
-			simpleOut = output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
-			simpleOut.Init()
-		}
-
-		printSummary := func() {
-			collector.Finish()
-
-			if simpleOut != nil {
-				simpleOut.Flush()
-				if outputBuf.Len() > 0 {
-					fmt.Print(outputBuf.String())
-				}
+	// In live mode, the event loop starts (and restarts) the TUI via this
+	// callback. In notty mode it stays nil and output streams directly.
+	var startTUI func() tuiController
+	if !skipLive {
+		startTUI = func() tuiController {
+			m := tui.NewModel(*replay, *rate, collector)
+			m.SlowThreshold = *slowThreshold
+			m.OnInterrupt = triggerShutdown
+			var progOpts []tea.ProgramOption
+			progOpts = append(progOpts, tea.WithColorProfile(profile))
+			if columnsOverride > 0 {
+				progOpts = append(progOpts, tea.WithFilter(func(_ tea.Model, msg tea.Msg) tea.Msg {
+					if ws, ok := msg.(tea.WindowSizeMsg); ok {
+						ws.Width = columnsOverride
+						return ws
+					}
+					return msg
+				}))
 			}
+			p := tea.NewProgram(m, progOpts...)
+			done := make(chan struct{})
 
-			lastRun := collector.State().MostRecentRun()
-			if lastRun != nil {
-				for _, line := range lastRun.NonTestOutput {
-					fmt.Print(line)
+			go func() {
+				if _, err := p.Run(); err != nil {
+					fmt.Fprintf(os.Stderr, "Error running live UI: %v\n", err)
 				}
-				summary := format.ComputeSummary(lastRun, *slowThreshold)
-				if summary != nil {
-					summaryText := format.NewSummaryFormatter(termWidth, noColor, summaryOpts).Format(summary)
-					if len(lastRun.NonTestOutput) > 0 || summary.HasTestDetailsWithOptions(summaryOpts) {
-						fmt.Print("\n")
-					}
-					fmt.Println(summaryText)
-				}
-			}
+				close(done)
+			}()
+
+			return &teaController{program: p, doneCh: done}
 		}
+	}
 
-	EventLoop:
-		for evt := range engineEvents {
-			collector.Push(evt)
-			if simpleOut != nil && evt.Type != engine.EventRawLine {
-				simpleOut.ProcessEvent(evt)
-			}
+	runEventLoop(engineEvents, collector, simple, &outputBuf, os.Stdout, startTUI)
 
-			if p == nil {
-				if collector.State().CurrentRun != nil {
-					m := tui.NewModel(*replay, *rate, collector)
-					m.SlowThreshold = *slowThreshold
-					m.OnInterrupt = triggerShutdown
-					var progOpts []tea.ProgramOption
-					progOpts = append(progOpts, tea.WithColorProfile(profile))
-					if columnsOverride > 0 {
-						progOpts = append(progOpts, tea.WithFilter(func(_ tea.Model, msg tea.Msg) tea.Msg {
-							if ws, ok := msg.(tea.WindowSizeMsg); ok {
-								ws.Width = columnsOverride
-								return ws
-							}
-							return msg
-						}))
-					}
-					p = tea.NewProgram(m, progOpts...)
-					pDone = make(chan struct{})
-
-					go func() {
-						if _, err := p.Run(); err != nil {
-							fmt.Fprintf(os.Stderr, "Error running live UI: %v\n", err)
-						}
-						close(pDone)
-					}()
-				} else {
-					if evt.Type == engine.EventRawLine {
-						fmt.Println(string(evt.RawLine))
-					}
-				}
-			} else {
-				select {
-				case <-pDone:
-					printSummary()
-					p = nil
-					pDone = nil
-					break EventLoop
-				default:
-				}
-
-				collector.Lock()
-				currentRun := collector.State().CurrentRun
-				collector.Unlock()
-
-				if currentRun == nil {
-					p.Send(tui.QuitMsg{})
-					<-pDone
-					p = nil
-					pDone = nil
-
-					printSummary()
-
-					if simpleOut != nil {
-						outputBuf.Reset()
-						simpleOut.Init()
-					}
-
-					if evt.Type == engine.EventRawLine {
-						fmt.Println(string(evt.RawLine))
-					}
-				} else {
-					eventCount++
-					if eventCount%50 == 0 {
-						p.Send(tui.RepaintMsg{})
-					}
-				}
-			}
-		}
-
-		if p != nil {
-			p.Send(tui.QuitMsg{})
-			<-pDone
-			printSummary()
-		}
-
-		if interrupted.Load() {
-			exitCode = 1
-		}
-
-		for _, run := range collector.State().Runs {
-			if run.Counts.Failed > 0 {
-				exitCode = 1
-				break
-			}
-		}
+	if simple.HasFailures() || interrupted.Load() {
+		exitCode = 1
 	}
 
 	if goTestCmd != nil {

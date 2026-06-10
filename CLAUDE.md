@@ -11,3 +11,12 @@ future agents from having the same issue.
 > Review the changes the agent makes to this files.  This tells you things about 
 > this project which aren't friendly to the way agents work.  You should consider
 > adjusting the project to make the instructions here unnecessary.
+
+## Confusion points
+
+- `sample/` is a **separate Go module** (its own `go.mod`). Running
+  `tang test ./sample/...` from the repo root fails with "main module does
+  not contain package". Run tang from inside `sample/` to use those fixture
+  packages. (`sample/broken/` and `testdata2/keys/` also intentionally
+  contain code that does not compile, so `go vet ./...`-style commands that
+  traverse them will report errors that are not real problems.)

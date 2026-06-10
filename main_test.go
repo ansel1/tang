@@ -159,9 +159,12 @@ func TestTangPipeModeRegression(t *testing.T) {
 	require.NoError(t, err)
 	tangCmd.Stdin = pipeReader
 
+	// Each command needs its own buffer: os/exec copies stderr on a
+	// per-command goroutine, and bytes.Buffer is not thread-safe.
 	var tangStdout bytes.Buffer
 	var tangStderr bytes.Buffer
-	goTestCmd.Stderr = &tangStderr
+	var goTestStderr bytes.Buffer
+	goTestCmd.Stderr = &goTestStderr
 	tangCmd.Stdout = &tangStdout
 	tangCmd.Stderr = &tangStderr
 
@@ -172,4 +175,5 @@ func TestTangPipeModeRegression(t *testing.T) {
 	require.Contains(t, tangStdout.String(), "github.com/ansel1/tang")
 	require.Contains(t, tangStdout.String(), "ok")
 	require.Empty(t, tangStderr.String())
+	require.Empty(t, goTestStderr.String())
 }

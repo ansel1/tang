@@ -2,14 +2,14 @@
 
 ## Overview
 
-`tang` is a command-line tool for summarizing Go test results in real-time. It processes the JSON output from `go test -json` and presents it either through an interactive live display or as simple text output. The tool uses a pipeline architecture where a single active consumer drives a passive state collector.
+`tang` is a command-line tool for summarizing Go test results in real-time. It processes the JSON output from `go test -json` and presents it either through an interactive live display or as simple text output. The tool uses a pipeline architecture where a single event loop drives a passive state collector and a single text renderer.
 
 **Key Design Principles:**
-- **Pipeline Processing**: Linear flow from Engine -> Event Stream -> Consumer -> Collector
+- **Pipeline Processing**: Linear flow from Engine -> Event Stream -> Event Loop -> Collector + Renderer
 - **Separation of Concerns**: Parsing, state management, and presentation are decoupled
 - **Passive State Reconstitution**: The `results` package rebuilds test state from events
-- **Consumer Ownership**: The active consumer (TUI or Simple Output) owns the update loop
-- **Extensibility**: New output formats can be added as new consumers
+- **One Canonical Renderer**: `output.SimpleOutput` renders the text output in *both* modes; live mode only adds a TUI on top of it
+- **Mode Equivalence**: After tang exits, the terminal contents are identical whether the live TUI was used or not
 
 ## System Architecture
 
@@ -45,40 +45,41 @@
         └──────┬───────┘
                │
                ▼
-      (One Active Consumer)
       ┌────────────────────┐
-      │                    │
-┌─────▼────┐          ┌────▼─────┐
-│  Live    │   OR     │  Simple  │
-│ (Model)  │          │  Output  │
-└─────┬────┘          └────┬─────┘
-      │                    │
-      │   Push Events      │
-      └─────────┬──────────┘
-                │
-                ▼
-      ┌────────────────────┐
-      │  Results Collector │
-      │  (results package) │
-      │                    │
-      │   Full State       │
-      │   Model            │
-      └─────────┬──────────┘
-                │
-                ▼
-      ┌────────────────────┐
-      │ Summary Formatter  │
-      └─────────┬──────────┘
-                │
-                ▼
-         Final Output
+      │    Event Loop      │
+      │  (eventloop.go)    │
+      └──┬───────┬──────┬──┘
+         │       │      │
+         │ Push  │Render│ (live mode only)
+         ▼       ▼      ▼
+┌────────────┐ ┌────────┐ ┌──────────┐
+│  Results   │ │ Simple │ │ Live TUI │
+│ Collector  │ │ Output │ │ (Model)  │
+│ (results)  │ │        │ │          │
+└────────────┘ └───┬────┘ └────┬─────┘
+       ▲           │           │
+       │ Read      │ buffer    │ reads collector,
+       └───────────┼───────────┘ owns screen while
+                   │             a run is active
+                   ▼
+       stdout (dumped whenever the
+        TUI is not on screen)
 ```
+
+In both modes, all rendering flows through one `output.SimpleOutput`, which
+writes into a buffer. The event loop dumps the buffer to stdout after every
+event while no TUI is on screen. In notty mode there is never a TUI, so
+output effectively streams directly. In live mode the buffer accumulates
+while the TUI owns the screen and is dumped when the TUI closes (at the end
+of each run). A summary block is written through the same renderer after
+every run.
 
 ### Package Structure
 
 ```
 tang/
 ├── main.go              # Entry point, CLI flag parsing, pipeline wiring
+├── eventloop.go         # Unified event loop driving collector, renderer, TUI
 ├── engine/              # Event processing and streaming
 │   ├── engine.go        # Core engine implementation
 │   └── engine_test.go   # Engine tests
@@ -157,40 +158,59 @@ This package contains the domain model and the logic to build it.
 - **Passive Design**: Puts control in the hands of the consumer (TUI/Simple), simplifying threading.
 - **Detailed State**: Tracks everything needed for the final summary and TUI display.
 
-### 3. Live Display (`tui/model.go`)
+### 3. Event Loop (`eventloop.go`)
+
+**Responsibility:** The single active consumer, shared by both modes
+
+`runEventLoop` owns the engine channel and, for each event:
+- Pushes it to the `results.Collector`.
+- Renders it through the `output.SimpleOutput` (into a buffer).
+- Dumps the buffer to stdout if no TUI is on screen.
+- Detects run boundaries (the collector finishes a run on raw lines and
+  stream completion) and writes a summary after every run.
+- In live mode, starts the TUI when a run starts and quits it when the run
+  finishes; if the user quits the TUI, the partial run is finished and
+  summarized and remaining events are discarded (break-and-summarize).
+
+The TUI is abstracted behind the `tuiController` interface so the loop can
+be tested without a terminal (see `eventloop_test.go`, which asserts that
+notty and live modes produce byte-identical output).
+
+### 4. Live Display (`tui/model.go`)
 
 **Responsibility:** Interactive terminal interface using Bubbletea
 
-The live display is an **active consumer** that:
-- Runs the Bubbletea event loop.
-- Receives events from the engine channel (batched for performance).
-- Pushes events into the `results.Collector`.
-- Reads state from the `results.Collector` to render the UI.
+The live display:
+- Runs the Bubbletea event loop while a run is active.
+- Reads state from the `results.Collector` to render the UI (it does not
+  push events; the event loop does).
+- Receives periodic `RepaintMsg`s from the event loop.
+- Renders inline (no alt screen) and clears its render on exit, so the
+  scrollback left behind is only what the event loop printed.
 
-**Key Design Decisions:**
-- **Batch Processing**: Groups engine events to reduce render cycles (`EngineEventBatchMsg`).
-- **Single-Threaded Update**: The `Update()` method is the single writer to the collector.
-- **View Logic**: Renders the current run state from the collector.
+### 5. Simple Output (`output/simple.go`)
 
-### 4. Simple Output (`output/simple.go`)
+**Responsibility:** Canonical plain text rendering in both modes
 
-**Responsibility:** Plain text output for `-notty` mode
-
-The simple output is an alternative **active consumer** that:
-- Reads from the engine channel in a loop.
-- Pushes events to the `results.Collector`.
-- buffer buffering output lines or streaming them to stdout.
-- Prints the summary at the end.
+`SimpleOutput` reconstructs `go test`-style text output from events:
+- One package at a time is "focused" and streams; others buffer.
+- Verbose mode reconstructs `go test -v` output (including `=== NAME`
+  injection and subtest grouping); non-verbose mode emits failures only.
+- Raw (non-JSON) lines are rendered inline, in stream order.
+- `WriteRunSummaries` writes a summary block for each finished run exactly
+  once.
 
 **Design Decisions:**
-- **Shared Logic**: Uses the same `results.Collector` as the live display.
-- **Polymorphism**: `main.go` chooses between live display and Simple Output based on flags.
+- **Always On**: Runs in both notty and live modes; the only difference is
+  where its writer's bytes end up (streamed vs. buffered until TUI close).
+- **Caller-Driven**: `Init`/`ProcessEvent`/`Flush`/`WriteRunSummaries` are
+  called by the event loop, which also owns `collector.Push`.
 
-### 5. Summary Formatter (`output/format/summary.go`)
+### 6. Summary Formatter (`output/format/summary.go`)
 
 **Responsibility:** Generate the text summary
 
-- Shared by both live display and Simple Output.
+- Used by `SimpleOutput.WriteRunSummaries` (both modes) and the TUI.
 - Computes statistics (slow tests, pass/fail counts).
 - Formats the "OVERALL RESULTS" block.
 - Handles colorization (red/green/yellow) via Lipgloss.
@@ -201,25 +221,21 @@ The simple output is an alternative **active consumer** that:
 
 1. **Input**: Lines read from stdin or file.
 2. **Engine**: Parses lines -> `engine.Event` channel.
-3. **Main**: Wires the channel to the chosen consumer.
-    - **Live Mode**: Channel -> `tui.Model` (via Bubbletea)
-    - **Simple Mode**: Channel -> `output.SimpleOutput`
-4. **Consumer**:
-    - Receives Event.
-    - Calls `collector.Push(event)`.
-    - `Collector` updates `State`.
-    - Consumer renders output based on new `State`.
+3. **Event Loop** (`runEventLoop`), per event:
+    - Calls `collector.Push(event)`; `Collector` updates `State`.
+    - Calls `simple.ProcessEvent(event)` to render into the buffer.
+    - Dumps the buffer to stdout if no TUI is on screen.
+    - On run boundaries: quits the TUI (live mode), flushes, and writes the
+      run summary.
 
 ### Thread-Safety
 
-The architecture relies on **confinement** rather than locking for the primary data path:
-
-- The `results.Collector` is **NOT thread-safe**.
-- It is designed to be owned by a single active consumer.
-- **Live Mode**: The Bubbletea `Update` loop allows exclusive access to the collector.
-- **Simple Mode**: The `ProcessEvents` loop has exclusive access.
-
-*Note: The live display does read from the collector in its `View()` method. In Bubbletea, `View` is technically concurrent with `Update`, but in practice, they are often coordinated. If strict concurrency safety is needed between Update and View, a lock would be added to the Model, not the Collector.*
+- Events are pushed to the collector only by the event loop goroutine.
+- The live TUI reads collector state from its own goroutine; reads and
+  writes are coordinated via the collector's mutex (`Lock`/`Unlock`,
+  internal locking in `Push`).
+- The output buffer is confined to the event loop goroutine; the TUI never
+  touches it.
 
 ## Key Design Decisions
 
