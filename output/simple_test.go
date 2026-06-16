@@ -271,6 +271,60 @@ func TestSimpleOutput_NonVerbose_TestMainPanic(t *testing.T) {
 	assert.True(t, simple.HasFailures())
 }
 
+// TestSimpleOutput_NonVerbose_SummaryLineTrailingNewline guards the refactor
+// that sources the package summary line from the collector. The collector
+// stores PackageResult.SummaryLine with its trailing newline stripped, so
+// pkgSummaryText must re-add it; this asserts the exact terminated line (the
+// other tests only check a prefix and would miss a dropped newline).
+func TestSimpleOutput_NonVerbose_SummaryLineTrailingNewline(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
+
+	processEvents(simple, collector, passingPackageEvents("example.com/pkg"))
+
+	assert.Contains(t, buf.String(), "ok  \texample.com/pkg\t0.100s\n")
+}
+
+// TestSimpleOutput_NonVerbose_TwoPackageFlush drives two failing packages so
+// that one streams while the other buffers and is later dumped via
+// flushPackage. It pins that each package's summary line (sourced from the
+// collector) appears exactly once, with its trailing newline.
+func TestSimpleOutput_NonVerbose_TwoPackageFlush(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
+
+	events := append(failingPackageEvents("example.com/a"), failingPackageEvents("example.com/b")...)
+	processEvents(simple, collector, events)
+
+	output := buf.String()
+	for _, pkg := range []string{"example.com/a", "example.com/b"} {
+		summary := "FAIL\t" + pkg + "\t0.100s\n"
+		assert.Equal(t, 1, strings.Count(output, summary),
+			"summary line for %s should appear exactly once with its trailing newline", pkg)
+	}
+}
+
+// TestRenderFailedTest pins the shared failure-rendering helper used by both
+// the normal per-fail-event path (header + depth indent) and the interrupted
+// crash path (raw output, no header, no indent).
+func TestRenderFailedTest(t *testing.T) {
+	tr := results.NewTestResult("pkg", "TestX")
+	tr.Latest().SummaryLine = "--- FAIL: TestX (0.00s)"
+	tr.Latest().Output = []string{"x_test.go:5: boom", "more"}
+
+	assert.Equal(t,
+		[]string{"    --- FAIL: TestX (0.00s)\n", "    x_test.go:5: boom\n", "    more\n"},
+		renderFailedTest(tr, "    ", true))
+
+	assert.Equal(t,
+		[]string{"x_test.go:5: boom\n", "more\n"},
+		renderFailedTest(tr, "", false))
+
+	assert.Nil(t, renderFailedTest(nil, "", false))
+}
+
 func TestSimpleOutput_Verbose_BadFlag(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer

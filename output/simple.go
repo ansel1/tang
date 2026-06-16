@@ -42,7 +42,6 @@ type SimpleOutput struct {
 
 	// Per-event state (initialized by Init, used by ProcessEvent)
 	writers                   map[string]*packageWriter
-	pkgSummaryLine            map[string]string
 	lastActiveTest            map[string]string
 	pendingResults            map[string]map[string][]pendingResult
 	pendingNonVerboseFailures map[string]map[string][]pendingNonVerboseFailure
@@ -128,7 +127,6 @@ func NewSimpleOutput(w io.Writer, collector *results.Collector, slowThreshold ti
 // ProcessEvent.
 func (s *SimpleOutput) Init() {
 	s.writers = make(map[string]*packageWriter)
-	s.pkgSummaryLine = make(map[string]string)
 	s.lastActiveTest = make(map[string]string)
 	s.pendingResults = make(map[string]map[string][]pendingResult)
 	s.pendingNonVerboseFailures = make(map[string]map[string][]pendingNonVerboseFailure)
@@ -161,7 +159,7 @@ func (s *SimpleOutput) ProcessEvent(evt engine.Event) {
 				s.handleNonVerboseTestFailure(te, s.writers)
 			}
 		} else {
-			completedPkg := s.handlePackageLevelEvent(te, s.writers, s.pkgSummaryLine)
+			completedPkg := s.handlePackageLevelEvent(te, s.writers)
 			if completedPkg != "" {
 				if !s.verbose {
 					s.emitInterruptedFailures(completedPkg)
@@ -184,10 +182,7 @@ func (s *SimpleOutput) ProcessEvent(evt engine.Event) {
 	if s.focusedPkg != "" {
 		if idx := slices.Index(s.completedQueue, s.focusedPkg); idx >= 0 {
 			// Write focused package's summary line
-			if line, ok := s.pkgSummaryLine[s.focusedPkg]; ok {
-				_, _ = fmt.Fprint(s.writer, line)
-				delete(s.pkgSummaryLine, s.focusedPkg)
-			}
+			_, _ = fmt.Fprint(s.writer, s.pkgSummaryText(s.focusedPkg))
 			delete(s.writers, s.focusedPkg)
 
 			// Remove focused pkg from queue
@@ -195,7 +190,7 @@ func (s *SimpleOutput) ProcessEvent(evt engine.Event) {
 
 			// Flush all other completed packages (dump their buffers)
 			for _, pkg := range s.completedQueue {
-				s.flushPackage(pkg, s.writers, s.pkgSummaryLine)
+				s.flushPackage(pkg, s.writers)
 			}
 			s.completedQueue = s.completedQueue[:0]
 
@@ -214,7 +209,7 @@ func (s *SimpleOutput) ProcessEvent(evt engine.Event) {
 // run finishes). It does NOT write the summary.
 func (s *SimpleOutput) Flush() {
 	for _, pkg := range s.completedQueue {
-		s.flushPackage(pkg, s.writers, s.pkgSummaryLine)
+		s.flushPackage(pkg, s.writers)
 	}
 	s.completedQueue = s.completedQueue[:0]
 }
@@ -222,7 +217,6 @@ func (s *SimpleOutput) Flush() {
 func (s *SimpleOutput) handlePackageLevelEvent(
 	te parser.TestEvent,
 	writers map[string]*packageWriter,
-	pkgSummaryLine map[string]string,
 ) (completedPkg string) {
 	switch te.Action {
 	case "output":
@@ -235,7 +229,8 @@ func (s *SimpleOutput) handlePackageLevelEvent(
 					strings.HasPrefix(trimmed, "FAIL") ||
 					strings.HasPrefix(trimmed, "?"))
 			if isSummaryLine {
-				pkgSummaryLine[te.Package] = te.Output
+				// Sourced from the collector at package completion (see
+				// pkgSummaryText); skip it here so it isn't streamed inline.
 			} else if !s.verbose && trimmed == "PASS" {
 				// `go test` omits the bare "PASS" line in non-verbose mode;
 				// match that behavior. Bare "FAIL" lines are kept.
@@ -250,20 +245,37 @@ func (s *SimpleOutput) handlePackageLevelEvent(
 	return
 }
 
+// pkgSummaryText returns the package's summary line (e.g. "ok\tpkg\ttime")
+// terminated by a newline, ready to emit at package completion. The collector
+// stores PackageResult.SummaryLine with its trailing newline stripped, so it is
+// re-added here. Returns "" if there is no summary line (e.g. an interrupted
+// run that never reached the package result).
+func (s *SimpleOutput) pkgSummaryText(pkg string) string {
+	if s.collector == nil {
+		return ""
+	}
+	state := s.collector.State()
+	if len(state.Runs) == 0 {
+		return ""
+	}
+	run := state.Runs[len(state.Runs)-1]
+	pr := run.Packages[pkg]
+	if pr == nil || pr.SummaryLine == "" {
+		return ""
+	}
+	return pr.SummaryLine + "\n"
+}
+
 func (s *SimpleOutput) flushPackage(
 	pkgName string,
 	writers map[string]*packageWriter,
-	pkgSummaryLine map[string]string,
 ) {
 	if w := writers[pkgName]; w != nil {
 		w.flush(s.writer)
 	}
 
-	if line, ok := pkgSummaryLine[pkgName]; ok {
-		_, _ = fmt.Fprint(s.writer, line)
-	}
+	_, _ = fmt.Fprint(s.writer, s.pkgSummaryText(pkgName))
 
-	delete(pkgSummaryLine, pkgName)
 	delete(writers, pkgName)
 }
 
@@ -288,15 +300,7 @@ func (s *SimpleOutput) handleNonVerboseTestFailure(
 
 	// Format the output lines for this test
 	depth := strings.Count(te.Test, "/")
-	indent := strings.Repeat("    ", depth)
-	var lines []string
-	summaryLine := tr.SummaryLine()
-	if summaryLine != "" {
-		lines = append(lines, fmt.Sprintf("%s%s\n", indent, summaryLine))
-	}
-	for _, line := range tr.Output() {
-		lines = append(lines, fmt.Sprintf("%s%s\n", indent, line))
-	}
+	lines := renderFailedTest(tr, strings.Repeat("    ", depth), true)
 
 	if strings.Contains(te.Test, "/") {
 		// Subtest: buffer under immediate parent for grouped emission
@@ -316,6 +320,29 @@ func (s *SimpleOutput) handleNonVerboseTestFailure(
 		}
 		s.emitNonVerboseChildren(writers, te.Package, te.Test)
 	}
+}
+
+// renderFailedTest builds the rendered lines (each terminated by "\n") for one
+// failed test execution, read from collector state.
+//
+// indent is "" for raw/interrupted output (matching how `go test` dumps a crash
+// block verbatim) or "    "*depth for normal failures. includeSummary emits the
+// test's "--- FAIL"/"--- SKIP" header; it must be false for interrupted tests,
+// whose SummaryLine is a stale "=== CONT" line rather than a result line.
+func renderFailedTest(tr *results.TestResult, indent string, includeSummary bool) []string {
+	if tr == nil {
+		return nil
+	}
+	var lines []string
+	if includeSummary {
+		if summaryLine := tr.SummaryLine(); summaryLine != "" {
+			lines = append(lines, fmt.Sprintf("%s%s\n", indent, summaryLine))
+		}
+	}
+	for _, line := range tr.Output() {
+		lines = append(lines, fmt.Sprintf("%s%s\n", indent, line))
+	}
+	return lines
 }
 
 // emitInterruptedFailures streams the output of tests that were interrupted
@@ -353,8 +380,8 @@ func (s *SimpleOutput) emitInterruptedFailures(pkg string) {
 		if tr == nil || !tr.Interrupted() {
 			continue
 		}
-		for _, line := range tr.Output() {
-			w.appendLine(line + "\n")
+		for _, line := range renderFailedTest(tr, "", false) {
+			w.appendLine(line)
 		}
 	}
 }
