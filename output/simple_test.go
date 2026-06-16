@@ -188,6 +188,61 @@ func testMainPanicEvents(pkg string) []engine.Event {
 	}
 }
 
+// parallelCrashEvents simulates `go test -json` when a parallel subtest
+// triggers an unrecoverable runtime fatal (e.g. concurrent map writes). The
+// crash kills the binary: the fatal output is attributed to the running
+// subtest as test-level output, but no test ever receives a "fail" event —
+// only the package does. Other parallel tests are left interrupted.
+func parallelCrashEvents(pkg string) []engine.Event {
+	return []engine.Event{
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "start", Package: pkg}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "run", Package: pkg, Test: "TestParallel"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestParallel", Output: "=== RUN   TestParallel\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "run", Package: pkg, Test: "TestParallel/crash"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestParallel/crash", Output: "=== RUN   TestParallel/crash\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "run", Package: pkg, Test: "TestParallel/sibling"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestParallel/sibling", Output: "=== RUN   TestParallel/sibling\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestParallel/crash", Output: "    crash_test.go:10: triggering concurrent map writes...\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestParallel/crash", Output: "fatal error: concurrent map writes\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestParallel/crash", Output: "\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestParallel/crash", Output: "goroutine 6 [running]:\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Test: "TestParallel/crash", Output: "\tcrash.go:40 +0x50\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "output", Package: pkg, Output: "FAIL\t" + pkg + "\t0.100s\n"}},
+		{Type: engine.EventTest, TestEvent: parser.TestEvent{Time: baseTime, Action: "fail", Package: pkg, Elapsed: 0.1}},
+	}
+}
+
+// TestSimpleOutput_NonVerbose_ParallelCrash verifies that the crash output of
+// a test interrupted by a runtime fatal is streamed live, even though the test
+// never receives its own "fail" event. Without this, the fatal block would
+// only appear in the summary, not the realtime output (matching `go test`).
+func TestSimpleOutput_NonVerbose_ParallelCrash(t *testing.T) {
+	collector := results.NewCollector()
+	var buf bytes.Buffer
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
+
+	processEvents(simple, collector, parallelCrashEvents("example.com/pkg"))
+
+	output := buf.String()
+
+	// The realtime portion is everything before the summary block.
+	realtime, _, _ := strings.Cut(output, "=== example.com/pkg")
+
+	assert.Contains(t, realtime, "fatal error: concurrent map writes",
+		"crash output should stream live, not just in the summary")
+	assert.Contains(t, realtime, "goroutine 6 [running]:")
+	assert.Contains(t, realtime, "crash.go:40 +0x50")
+
+	// The fatal block must appear exactly once in the realtime stream (no
+	// double-emit), and the crash output must precede the package summary line.
+	assert.Equal(t, 1, strings.Count(realtime, "fatal error: concurrent map writes"))
+	fatalIdx := strings.Index(realtime, "fatal error: concurrent map writes")
+	summaryIdx := strings.Index(realtime, "FAIL\texample.com/pkg")
+	assert.GreaterOrEqual(t, summaryIdx, 0, "package summary line should be in realtime output")
+	assert.Less(t, fatalIdx, summaryIdx, "crash output should come before the package summary line")
+	assert.True(t, simple.HasFailures())
+}
+
 func TestSimpleOutput_NonVerbose_BadFlag(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer

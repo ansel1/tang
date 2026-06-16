@@ -163,6 +163,9 @@ func (s *SimpleOutput) ProcessEvent(evt engine.Event) {
 		} else {
 			completedPkg := s.handlePackageLevelEvent(te, s.writers, s.pkgSummaryLine)
 			if completedPkg != "" {
+				if !s.verbose {
+					s.emitInterruptedFailures(completedPkg)
+				}
 				s.completedQueue = append(s.completedQueue, completedPkg)
 			}
 		}
@@ -312,6 +315,47 @@ func (s *SimpleOutput) handleNonVerboseTestFailure(
 			w.appendLine(line)
 		}
 		s.emitNonVerboseChildren(writers, te.Package, te.Test)
+	}
+}
+
+// emitInterruptedFailures streams the output of tests that were interrupted
+// by an unrecoverable crash (a panic or runtime fatal such as "concurrent
+// map writes") when their package finishes.
+//
+// Such a crash kills the test binary, so the interrupted tests never receive
+// a test-level "fail" event — only the package does. That means
+// handleNonVerboseTestFailure never runs for them, and the crash output
+// (which `go test` prints to the package's stream) would otherwise be missing
+// from the live, non-verbose output even though it appears in the summary.
+//
+// The collector identifies these tests via failInterruptedTests, marking them
+// Interrupted and preserving the crash-bearing test's output (other
+// interrupted tests have their output cleared). We emit that output verbatim,
+// matching how `go test` dumps the raw crash block. Verbose mode already
+// streams all test output, so this is only called when not verbose.
+func (s *SimpleOutput) emitInterruptedFailures(pkg string) {
+	if s.collector == nil {
+		return
+	}
+	state := s.collector.State()
+	if len(state.Runs) == 0 {
+		return
+	}
+	run := state.Runs[len(state.Runs)-1]
+	pkgResult := run.Packages[pkg]
+	if pkgResult == nil {
+		return
+	}
+
+	w := getWriter(s.writers, pkg)
+	for _, testName := range pkgResult.TestOrder {
+		tr := run.TestResults[pkg+"/"+testName]
+		if tr == nil || !tr.Interrupted() {
+			continue
+		}
+		for _, line := range tr.Output() {
+			w.appendLine(line + "\n")
+		}
 	}
 }
 
