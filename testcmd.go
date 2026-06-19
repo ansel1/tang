@@ -11,7 +11,7 @@ import (
 )
 
 var valueTangFlags = map[string]bool{
-	"f": true, "outfile": true, "jsonfile": true, "junitfile": true,
+	"f": true, "outfile": true, "jsonfile": true, "junitfile": true, "textfile": true,
 	"slow-threshold": true, "rate": true,
 }
 

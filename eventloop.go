@@ -29,14 +29,16 @@ type teaController struct {
 func (t *teaController) Send(msg tea.Msg)      { t.program.Send(msg) }
 func (t *teaController) Done() <-chan struct{} { return t.doneCh }
 
-// runEventLoop consumes engine events and renders output through a single
+// runEventLoop consumes engine events and renders stdout through a single
 // SimpleOutput, in both notty and live modes.
 //
-// All rendering goes through simple, which writes into buf. After each
+// Stdout rendering goes through simple, which writes into buf. After each
 // event, if no TUI is on screen, buf is dumped to stdout. So notty mode
 // effectively streams directly, and live mode diverts output to the buffer
 // only while the TUI owns the screen, dumping it when the TUI closes. This
-// makes the final terminal contents identical in both modes.
+// makes the final terminal contents identical in both modes. Any extra
+// outputs are driven through the same renderer lifecycle without stdout's
+// TUI-aware buffering.
 //
 // startTUI is nil in notty mode. In live mode it starts the TUI program,
 // which is quit whenever a run finishes and restarted when a new run
@@ -51,8 +53,14 @@ func runEventLoop(
 	buf *bytes.Buffer,
 	stdout io.Writer,
 	startTUI func() tuiController,
+	extraOutputs ...*output.SimpleOutput,
 ) {
 	simple.Init()
+	for _, extra := range extraOutputs {
+		if extra != nil {
+			extra.Init()
+		}
+	}
 
 	flushBuf := func() {
 		if buf.Len() > 0 {
@@ -66,6 +74,12 @@ func runEventLoop(
 	finishRun := func() {
 		simple.Flush()
 		simple.WriteRunSummaries()
+		for _, extra := range extraOutputs {
+			if extra != nil {
+				extra.Flush()
+				extra.WriteRunSummaries()
+			}
+		}
 	}
 
 	currentRun := func() *results.Run {
@@ -111,6 +125,11 @@ EventLoop:
 		}
 
 		simple.ProcessEvent(evt)
+		for _, extra := range extraOutputs {
+			if extra != nil {
+				extra.ProcessEvent(evt)
+			}
+		}
 
 		if p == nil {
 			flushBuf()

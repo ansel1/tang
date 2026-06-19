@@ -66,13 +66,14 @@
         TUI is not on screen)
 ```
 
-In both modes, all rendering flows through one `output.SimpleOutput`, which
+In both modes, stdout rendering flows through one `output.SimpleOutput`, which
 writes into a buffer. The event loop dumps the buffer to stdout after every
 event while no TUI is on screen. In notty mode there is never a TUI, so
 output effectively streams directly. In live mode the buffer accumulates
 while the TUI owns the screen and is dumped when the TUI closes (at the end
-of each run). A summary block is written through the same renderer after
-every run.
+of each run). Additional text output sinks, such as `-textfile`, use their
+own `SimpleOutput` instances driven by the same event loop. A summary block
+is written through the same renderer lifecycle after every run.
 
 ### Package Structure
 
@@ -165,6 +166,7 @@ This package contains the domain model and the logic to build it.
 `runEventLoop` owns the engine channel and, for each event:
 - Pushes it to the `results.Collector`.
 - Renders it through the `output.SimpleOutput` (into a buffer).
+- Renders any extra text sinks through their own `SimpleOutput` instances.
 - Dumps the buffer to stdout if no TUI is on screen.
 - Detects run boundaries (the collector finishes a run on raw lines and
   stream completion) and writes a summary after every run.

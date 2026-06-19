@@ -77,6 +77,11 @@ func rawLine(line string) engine.Event {
 // EventComplete, like a real engine stream) and returns what was written to
 // stdout. startTUI may be nil (notty mode) or a fake TUI factory (live mode).
 func driveEventLoop(events []engine.Event, verbose bool, startTUI func() tuiController) string {
+	stdout, _ := driveEventLoopWithExtra(events, verbose, startTUI)
+	return stdout
+}
+
+func driveEventLoopWithExtra(events []engine.Event, verbose bool, startTUI func() tuiController) (string, string) {
 	ch := make(chan engine.Event, len(events)+1)
 	for _, evt := range events {
 		ch <- evt
@@ -87,10 +92,12 @@ func driveEventLoop(events []engine.Event, verbose bool, startTUI func() tuiCont
 	collector := results.NewCollector()
 	var buf bytes.Buffer
 	var stdout bytes.Buffer
+	var extra bytes.Buffer
 	simple := output.NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, verbose, 80, true)
+	extraOutput := output.NewSimpleOutput(&extra, collector, 10*time.Second, format.SummaryOptions{}, verbose, 80, true)
 
-	runEventLoop(ch, collector, simple, &buf, &stdout, startTUI)
-	return stdout.String()
+	runEventLoop(ch, collector, simple, &buf, &stdout, startTUI, extraOutput)
+	return stdout.String(), extra.String()
 }
 
 // TestRunEventLoop_NottyLiveEquivalence verifies the core promise of the
@@ -116,6 +123,22 @@ func TestRunEventLoop_NottyLiveEquivalence(t *testing.T) {
 				assert.NotEmpty(t, notty)
 			})
 		}
+	}
+}
+
+func TestRunEventLoop_ExtraOutputLiveEquivalence(t *testing.T) {
+	events := append(passingPkgEvents("example.com/pkg1"),
+		rawLine("--- run boundary ---"))
+	events = append(events, failingPkgEvents("example.com/pkg2")...)
+
+	for _, verbose := range []bool{false, true} {
+		t.Run(fmt.Sprintf("verbose=%v", verbose), func(t *testing.T) {
+			nottyStdout := driveEventLoop(events, verbose, nil)
+			liveStdout, liveExtra := driveEventLoopWithExtra(events, verbose, func() tuiController { return newFakeTUI() })
+
+			assert.Equal(t, nottyStdout, liveStdout)
+			assert.Equal(t, nottyStdout, liveExtra)
+		})
 	}
 }
 

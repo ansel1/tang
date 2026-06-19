@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -89,6 +91,11 @@ func buildTangBinary(t *testing.T) string {
 
 func runTangCommand(t *testing.T, tangBinary string, args ...string) (int, string, string) {
 	t.Helper()
+	return runTangCommandWithStdin(t, tangBinary, "", args...)
+}
+
+func runTangCommandWithStdin(t *testing.T, tangBinary string, stdin string, args ...string) (int, string, string) {
+	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -96,6 +103,9 @@ func runTangCommand(t *testing.T, tangBinary string, args ...string) (int, strin
 	cmd := exec.CommandContext(ctx, tangBinary, args...)
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
+	if stdin != "" {
+		cmd.Stdin = strings.NewReader(stdin)
+	}
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
@@ -115,6 +125,106 @@ func runTangCommand(t *testing.T, tangBinary string, args ...string) (int, strin
 	return exitErr.ExitCode(), stdout.String(), stderr.String()
 }
 
+func TestTextfileFlag(t *testing.T) {
+	tangBinary := buildTangBinary(t)
+	tmpDir := t.TempDir()
+	textfile := filepath.Join(tmpDir, "tang.txt")
+
+	input := `{"Time":"2025-11-01T15:43:02.993511-05:00","Action":"start","Package":"github.com/example/test"}
+{"Time":"2025-11-01T15:43:02.993565-05:00","Action":"run","Package":"github.com/example/test","Test":"TestExample"}
+{"Time":"2025-11-01T15:43:02.993570-05:00","Action":"output","Package":"github.com/example/test","Test":"TestExample","Output":"=== RUN   TestExample\n"}
+{"Time":"2025-11-01T15:43:02.993575-05:00","Action":"output","Package":"github.com/example/test","Test":"TestExample","Output":"    example_test.go:10: verbose log\n"}
+{"Time":"2025-11-01T15:43:02.993579-05:00","Action":"pass","Package":"github.com/example/test","Test":"TestExample","Elapsed":0.001}
+{"Time":"2025-11-01T15:43:02.993585-05:00","Action":"output","Package":"github.com/example/test","Output":"PASS\n"}
+{"Time":"2025-11-01T15:43:02.993587-05:00","Action":"output","Package":"github.com/example/test","Output":"ok  \tgithub.com/example/test\t0.002s\n"}
+{"Time":"2025-11-01T15:43:02.993590-05:00","Action":"pass","Package":"github.com/example/test","Elapsed":0.002}`
+
+	exitCode, stdout, stderr := runTangCommandWithStdin(t, tangBinary, input, "-notty", "-textfile", textfile)
+	require.Equal(t, 0, exitCode)
+	require.Empty(t, stderr)
+
+	content, err := os.ReadFile(textfile)
+	require.NoError(t, err)
+	require.Equal(t, stdout, string(content))
+	require.Contains(t, stdout, "ok  \tgithub.com/example/test")
+	require.NotContains(t, stdout, "verbose log")
+}
+
+func TestTextfileFlagVerbose(t *testing.T) {
+	tangBinary := buildTangBinary(t)
+	tmpDir := t.TempDir()
+	textfile := filepath.Join(tmpDir, "tang-verbose.txt")
+
+	input := `{"Time":"2025-11-01T15:43:02.993511-05:00","Action":"start","Package":"github.com/example/test"}
+{"Time":"2025-11-01T15:43:02.993565-05:00","Action":"run","Package":"github.com/example/test","Test":"TestExample"}
+{"Time":"2025-11-01T15:43:02.993570-05:00","Action":"output","Package":"github.com/example/test","Test":"TestExample","Output":"=== RUN   TestExample\n"}
+{"Time":"2025-11-01T15:43:02.993575-05:00","Action":"output","Package":"github.com/example/test","Test":"TestExample","Output":"    example_test.go:10: verbose log\n"}
+{"Time":"2025-11-01T15:43:02.993579-05:00","Action":"pass","Package":"github.com/example/test","Test":"TestExample","Elapsed":0.001}
+{"Time":"2025-11-01T15:43:02.993585-05:00","Action":"output","Package":"github.com/example/test","Output":"PASS\n"}
+{"Time":"2025-11-01T15:43:02.993587-05:00","Action":"output","Package":"github.com/example/test","Output":"ok  \tgithub.com/example/test\t0.002s\n"}
+{"Time":"2025-11-01T15:43:02.993590-05:00","Action":"pass","Package":"github.com/example/test","Elapsed":0.002}`
+
+	exitCode, stdout, stderr := runTangCommandWithStdin(t, tangBinary, input, "-notty", "-v", "-textfile", textfile)
+	require.Equal(t, 0, exitCode)
+	require.Empty(t, stderr)
+
+	content, err := os.ReadFile(textfile)
+	require.NoError(t, err)
+	require.Equal(t, stdout, string(content))
+	require.Contains(t, stdout, "=== RUN   TestExample")
+	require.Contains(t, stdout, "verbose log")
+}
+
+func TestTextfileRejectsDuplicateOutputPath(t *testing.T) {
+	tangBinary := buildTangBinary(t)
+	tmpDir := t.TempDir()
+	out := filepath.Join(tmpDir, "same.out")
+
+	exitCode, stdout, stderr := runTangCommand(t, tangBinary, "-notty", "-outfile", out, "-textfile", out)
+	require.Equal(t, 1, exitCode)
+	require.Empty(t, stdout)
+	require.Contains(t, stderr, "must write to different files")
+}
+
+type failingWriter struct {
+	err error
+}
+
+func (w failingWriter) Write([]byte) (int, error) {
+	return 0, w.err
+}
+
+type shortWriter struct{}
+
+func (shortWriter) Write(p []byte) (int, error) {
+	return len(p) - 1, nil
+}
+
+func TestErrorRecordingWriter(t *testing.T) {
+	t.Run("records first write error", func(t *testing.T) {
+		boom := errors.New("boom")
+		writer := &errorRecordingWriter{writer: failingWriter{err: boom}}
+
+		n, err := writer.Write([]byte("hello"))
+		require.Equal(t, 0, n)
+		require.ErrorIs(t, err, boom)
+		require.ErrorIs(t, writer.Err(), boom)
+
+		n, err = writer.Write([]byte("again"))
+		require.Equal(t, 0, n)
+		require.ErrorIs(t, err, boom)
+	})
+
+	t.Run("records short write", func(t *testing.T) {
+		writer := &errorRecordingWriter{writer: shortWriter{}}
+
+		n, err := writer.Write([]byte("hello"))
+		require.Equal(t, 4, n)
+		require.ErrorIs(t, err, io.ErrShortWrite)
+		require.ErrorIs(t, writer.Err(), io.ErrShortWrite)
+	})
+}
+
 func TestTangTestSubcommand(t *testing.T) {
 	tangBinary := buildTangBinary(t)
 
@@ -132,6 +242,18 @@ func TestTangTestSubcommand(t *testing.T) {
 		require.Empty(t, stderr)
 		require.Contains(t, stdout, "github.com/ansel1/tang")
 		require.Contains(t, stdout, "PASS")
+	})
+
+	t.Run("supports textfile output", func(t *testing.T) {
+		textfile := filepath.Join(t.TempDir(), "test-output.txt")
+		exitCode, stdout, stderr := runTangCommand(t, tangBinary, "-notty", "-textfile", textfile, "test", "-count", "1", "-run", "TestOutfileFlag", ".")
+		require.Equal(t, 0, exitCode)
+		require.Empty(t, stderr)
+
+		content, err := os.ReadFile(textfile)
+		require.NoError(t, err)
+		require.Equal(t, stdout, string(content))
+		require.Contains(t, stdout, "github.com/ansel1/tang")
 	})
 
 	t.Run("invalid package exits non zero", func(t *testing.T) {

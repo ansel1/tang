@@ -57,6 +57,7 @@ The `-v` flag after `test` is special: it enables tang's verbose output *and* is
 | `-outfile` | `""` | Save all input to the specified file |
 | `-jsonfile` | `""` | Output the raw json output to a file |
 | `-junitfile` | `""` | Output junit xml output to a file |
+| `-textfile` | `""` | Output tang's text output to a file |
 | `-include-skipped` | `false` | Include skipped tests in summary |
 | `-include-slow` | `false` | Include slow tests in summary |
 | `-slow-threshold` | `10s` | Duration threshold for slow test detection |

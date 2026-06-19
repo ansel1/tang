@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -28,6 +30,64 @@ func main() {
 	os.Exit(run())
 }
 
+type errorRecordingWriter struct {
+	writer io.Writer
+	err    error
+}
+
+func (w *errorRecordingWriter) Write(p []byte) (int, error) {
+	if w.err != nil {
+		return 0, w.err
+	}
+
+	n, err := w.writer.Write(p)
+	if err != nil {
+		w.err = err
+		return n, err
+	}
+	if n != len(p) {
+		w.err = io.ErrShortWrite
+		return n, w.err
+	}
+	return n, nil
+}
+
+func (w *errorRecordingWriter) Err() error {
+	return w.err
+}
+
+func validateDistinctOutputFiles(paths map[string]string) error {
+	type outputPath struct {
+		flag string
+		path string
+	}
+
+	var outputs []outputPath
+	for flagName, path := range paths {
+		if path == "" {
+			continue
+		}
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			return fmt.Errorf("resolving %s path: %w", flagName, err)
+		}
+		outputs = append(outputs, outputPath{flag: flagName, path: abs})
+	}
+	sort.Slice(outputs, func(i, j int) bool {
+		return outputs[i].flag < outputs[j].flag
+	})
+
+	seen := make(map[string]string)
+	for _, output := range outputs {
+		if existingFlag, ok := seen[output.path]; ok {
+			return fmt.Errorf("%s and %s must write to different files", existingFlag, output.flag)
+		}
+		seen[output.path] = output.flag
+	}
+
+	return nil
+}
+
 func run() int {
 	testIdx := scanForTestSubcommand()
 
@@ -35,6 +95,7 @@ func run() int {
 	outfile := flag.String("outfile", "", "Save all input to the specified file")
 	jsonfile := flag.String("jsonfile", "", "Save JSON events to the specified file")
 	junitfile := flag.String("junitfile", "", "Save cumulative test results to the specified JUnit XML file")
+	textfile := flag.String("textfile", "", "Save text output to the specified file")
 	notty := flag.Bool("notty", false, "Don't use live UI, output to stdout")
 	verbose := flag.Bool("v", false, "Verbose output (show all test output in -notty mode)")
 	replay := flag.Bool("replay", false, "Replay events with timing from original test run (requires -f)")
@@ -79,6 +140,16 @@ func run() int {
 
 	flag.Parse()
 
+	if err := validateDistinctOutputFiles(map[string]string{
+		"-outfile":   *outfile,
+		"-jsonfile":  *jsonfile,
+		"-junitfile": *junitfile,
+		"-textfile":  *textfile,
+	}); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		return 1
+	}
+
 	if isTestMode {
 		if *infile != "" {
 			fmt.Fprintf(os.Stderr, "Error: -f is not compatible with 'test' subcommand\n")
@@ -112,6 +183,23 @@ func run() int {
 			fmt.Fprintf(os.Stderr, "Error: -rate must be >= 0\n")
 			return 1
 		}
+	}
+
+	var textOutputFile *os.File
+	var textWriter *errorRecordingWriter
+	defer func() {
+		if textOutputFile != nil {
+			_ = textOutputFile.Close()
+		}
+	}()
+	if *textfile != "" {
+		f, err := os.Create(*textfile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error creating text file: %v\n", err)
+			return 1
+		}
+		textOutputFile = f
+		textWriter = &errorRecordingWriter{writer: f}
 	}
 
 	var inputSource io.Reader
@@ -259,6 +347,11 @@ func run() int {
 	var outputBuf bytes.Buffer
 	simple := output.NewSimpleOutput(&outputBuf, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
 
+	var textOutput *output.SimpleOutput
+	if textWriter != nil {
+		textOutput = output.NewSimpleOutput(textWriter, collector, *slowThreshold, summaryOpts, *verbose, termWidth, noColor)
+	}
+
 	// In live mode, the event loop starts (and restarts) the TUI via this
 	// callback. In notty mode it stays nil and output streams directly.
 	var startTUI func() tuiController
@@ -292,10 +385,22 @@ func run() int {
 		}
 	}
 
-	runEventLoop(engineEvents, collector, simple, &outputBuf, os.Stdout, startTUI)
+	runEventLoop(engineEvents, collector, simple, &outputBuf, os.Stdout, startTUI, textOutput)
 
 	if simple.HasFailures() || interrupted.Load() {
 		exitCode = 1
+	}
+
+	if textWriter != nil {
+		if err := textWriter.Err(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing text file: %v\n", err)
+			exitCode = 1
+		}
+		if err := textOutputFile.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error closing text file: %v\n", err)
+			exitCode = 1
+		}
+		textOutputFile = nil
 	}
 
 	if goTestCmd != nil {
