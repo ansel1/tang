@@ -453,4 +453,3 @@ func TestSummaryFormatterNoTestsOmitCounters(t *testing.T) {
 		t.Errorf("Expected summary package line to omit counters (no parentheses), but got: %q", packageLine)
 	}
 }
-

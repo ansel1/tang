@@ -1,6 +1,8 @@
 tang
 .*
 !.gitignore
+!.github/
+!.github/**
 solo.test.out
 
 local_*
