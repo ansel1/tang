@@ -1,10 +1,11 @@
 set unstable
+set lists
 
 # Go related variables
 binary_name := "tang"
 gobase := justfile_directory()
 gobin := gobase / "bin"
-GO_TEST := env("GO_TEST", if which("tang") != "" { "tang test" } else { "go test" })
+GO_TEST := env("GO_TEST", if which("tang") { "tang test" } else { "go test" })
 
 # Default: show available recipes
 default:
