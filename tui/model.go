@@ -84,10 +84,17 @@ type Model struct {
 	NonTestOutput []string
 }
 
+// dotSpinner is an 8-dot Braille spinner where one empty dot moves around the
+// box (same glyphs and FPS as spinner.Dot, without the trailing space).
+var dotSpinner = spinner.Spinner{
+	Frames: []string{"⣾", "⣽", "⣻", "⢿", "⡿", "⣟", "⣯", "⣷"},
+	FPS:    spinner.Dot.FPS,
+}
+
 // NewModel creates a new TUI model
 func NewModel(replayMode bool, replayRate float64, collector *results.Collector) *Model {
-	s := spinner.New(spinner.WithSpinner(spinner.MiniDot))
-	sf := spinner.New(spinner.WithSpinner(spinner.MiniDot))
+	s := spinner.New(spinner.WithSpinner(dotSpinner))
+	sf := spinner.New(spinner.WithSpinner(dotSpinner))
 
 	return &Model{
 		collector:      collector,

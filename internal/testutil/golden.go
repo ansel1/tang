@@ -46,8 +46,8 @@ func AssertGolden(t *testing.T, name, actual string) {
 		"golden mismatch for %s (run with -update to accept)", name)
 }
 
-// spinnerRE matches the MiniDot spinner characters.
-var spinnerRE = regexp.MustCompile("[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]")
+// spinnerRE matches the Dot spinner characters.
+var spinnerRE = regexp.MustCompile("[⣾⣽⣻⢿⡿⣟⣯⣷]")
 
 // elapsedRE matches an elapsed-time value (e.g. "1.2s", "606090.4m") that may
 // be wrapped in ANSI escape sequences (bold, color).
@@ -62,7 +62,7 @@ var elapsedRE = regexp.MustCompile(`(\s(?:\x1b\[[0-9;]*m)*)(\d+\.\d+[sm])((?:\x1
 // ScrubNonDeterministic replaces non-deterministic content so that golden
 // files can be compared stably across runs.
 //
-//   - Spinner frames (⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏) → ~
+//   - Spinner frames (⣾⣽⣻⢿⡿⣟⣯⣷) → ~
 //   - Trailing elapsed time values (\d+\.\d+[sm]) → X.Xs
 func ScrubNonDeterministic(s string) string {
 	s = spinnerRE.ReplaceAllString(s, "~")

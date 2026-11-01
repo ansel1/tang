@@ -98,3 +98,33 @@ func TestFinishedPackageGutterIcons(t *testing.T) {
 		})
 	}
 }
+
+// TestSpinnerUsesDotFrames verifies that running and paused entities render
+// the 8-dot Braille spinner (first frame "⣾") rather than the 6-dot MiniDot
+// spinner ("⠋").
+func TestSpinnerUsesDotFrames(t *testing.T) {
+	for _, status := range []results.Status{results.StatusRunning, results.StatusPaused} {
+		t.Run(status.String(), func(t *testing.T) {
+			m := testutil.BuildModel(
+				testutil.WithTermSize(80, 24),
+				testutil.WithRunStatus(results.StatusRunning),
+				testutil.WithPackage("github.com/test/pkg1",
+					testutil.PkgStatus(status),
+				),
+			)
+
+			plain := stripAnsi(m.String())
+			lines := strings.Split(plain, "\n")
+			if len(lines) < 3 {
+				t.Fatalf("expected at least 3 lines, got:\n%s", plain)
+			}
+
+			if !strings.HasPrefix(lines[0], "⣾ ") {
+				t.Errorf("expected summary line to start with 8-dot spinner %q, got %q", "⣾ ", lines[0])
+			}
+			if !strings.HasPrefix(lines[2], "⣾ github.com/test/pkg1") {
+				t.Errorf("expected package line to start with 8-dot spinner %q, got %q", "⣾ github.com/test/pkg1", lines[2])
+			}
+		})
+	}
+}
