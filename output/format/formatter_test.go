@@ -577,3 +577,85 @@ func TestSummaryFormatterHeadersAndAlignment(t *testing.T) {
 		}
 	}
 }
+
+func TestSummaryFormatterColors(t *testing.T) {
+	formatter := NewSummaryFormatter(80, false)
+
+	pkgPass := &results.PackageResult{
+		Name:        "github.com/user/project/pkgpass",
+		Status:      results.StatusPassed,
+		Elapsed:     100 * time.Millisecond,
+		SummaryLine: "ok\tgithub.com/user/project/pkgpass\t0.100s\n",
+	}
+	pkgPass.Counts.Passed = 7
+
+	pkgFail := &results.PackageResult{
+		Name:        "github.com/user/project/pkgfail",
+		Status:      results.StatusFailed,
+		Elapsed:     200 * time.Millisecond,
+		SummaryLine: "FAIL\tgithub.com/user/project/pkgfail\t0.200s\n",
+	}
+	pkgFail.Counts.Passed = 2
+	pkgFail.Counts.Failed = 1
+
+	run := results.NewRun(1)
+	run.Packages[pkgPass.Name] = pkgPass
+	run.Packages[pkgFail.Name] = pkgFail
+	run.PackageOrder = []string{pkgPass.Name, pkgFail.Name}
+
+	failTest := results.NewTestResult(pkgFail.Name, "TestBoom")
+	failTest.Latest().Status = results.StatusFailed
+	failTest.Latest().Elapsed = 50 * time.Millisecond
+	failTest.Latest().Output = []string{"boom"}
+	run.TestResults[pkgFail.Name+"/TestBoom"] = failTest
+	pkgFail.TestOrder = []string{"TestBoom"}
+
+	summary := &Summary{
+		Packages:     []*results.PackageResult{pkgPass, pkgFail},
+		TotalTests:   10,
+		PassedTests:  9,
+		FailedTests:  1,
+		SkippedTests: 0,
+		TotalTime:    200 * time.Millisecond,
+		PackageCount: 2,
+		Failures: []*TestExecutionEntry{
+			{
+				TestResult:      failTest,
+				TestExecution:   failTest.Latest(),
+				Iteration:       1,
+				TotalExecutions: 1,
+			},
+		},
+		Run: run,
+	}
+
+	output := formatter.Format(summary)
+
+	// Column headers should be colored and horizontal segments dimmed.
+	if !strings.Contains(output, formatter.dimStyle.Render("───")+" Issues ") {
+		t.Errorf("expected dimmed ─── before Issues in output:\n%s", output)
+	}
+	if !strings.Contains(output, formatter.dimStyle.Render("───")+" Summary ") {
+		t.Errorf("expected dimmed ─── before Summary in output:\n%s", output)
+	}
+	if !strings.Contains(output, formatter.passStyle.Render(SymbolPass)) {
+		t.Errorf("expected green pass symbol in header")
+	}
+	if !strings.Contains(output, formatter.failStyle.Render(SymbolFail)) {
+		t.Errorf("expected red fail symbol in header")
+	}
+	if !strings.Contains(output, formatter.skipStyle.Render(SymbolSkip)) {
+		t.Errorf("expected yellow skip symbol in header")
+	}
+
+	// Passing package status "ok" should be bold green, and passed counts green.
+	if !strings.Contains(output, formatter.boldPass.Render("ok  ")) {
+		t.Errorf("expected bold green 'ok' status prefix")
+	}
+	if !strings.Contains(output, formatter.passStyle.Render("7")) {
+		t.Errorf("expected green passed count '7'")
+	}
+	if !strings.Contains(output, formatter.passStyle.Render("9")) {
+		t.Errorf("expected green total passed count '9'")
+	}
+}

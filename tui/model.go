@@ -44,6 +44,7 @@ type Model struct {
 	passStyle    lipgloss.Style
 	failStyle    lipgloss.Style
 	skipStyle    lipgloss.Style
+	pauseStyle   lipgloss.Style
 	slowStyle    lipgloss.Style
 	neutralStyle lipgloss.Style
 
@@ -51,6 +52,7 @@ type Model struct {
 	brightFail    lipgloss.Style
 	brightPass    lipgloss.Style
 	brightSkip    lipgloss.Style
+	brightPause   lipgloss.Style
 	brightSlow    lipgloss.Style
 	brightNeutral lipgloss.Style
 
@@ -102,12 +104,14 @@ func NewModel(replayMode bool, replayRate float64, collector *results.Collector)
 		passStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("2")), // green
 		failStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("1")), // red
 		skipStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("3")), // yellow
+		pauseStyle:     lipgloss.NewStyle().Foreground(lipgloss.Color("6")), // cyan
 		slowStyle:      lipgloss.NewStyle().Foreground(lipgloss.Color("4")), // blue
 		neutralStyle:   lipgloss.NewStyle(),
 		brightStyle:    lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("15")),
 		brightFail:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("9")),
 		brightPass:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("10")),
 		brightSkip:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("11")),
+		brightPause:    lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("14")),
 		brightSlow:     lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12")),
 		brightNeutral:  lipgloss.NewStyle().Bold(true),
 		dimStyle:       lipgloss.NewStyle().Faint(true),
@@ -473,14 +477,12 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 
 	running := pkg.Status == results.StatusRunning || pkg.Status == results.StatusInterrupted
 
-	// Passing test count is rendered without color (only failures and skips
-	// get a color highlight) so the pass color is no longer needed here.
-	failColor, skipColor, neutralColor := m.failStyle, m.skipStyle, m.neutralStyle
+	passColor, failColor, skipColor, pauseColor, neutralColor := m.passStyle, m.failStyle, m.skipStyle, m.pauseStyle, m.neutralStyle
 	if running {
-		failColor, skipColor, neutralColor = m.brightFail, m.brightSkip, m.brightNeutral
+		passColor, failColor, skipColor, pauseColor, neutralColor = m.brightPass, m.brightFail, m.brightSkip, m.brightPause, m.brightNeutral
 	}
 
-	passedStr := formatCount(pkg.Counts.Passed, wPassed, neutralColor)
+	passedStr := formatCount(pkg.Counts.Passed, wPassed, passColor)
 	failedStr := formatCount(pkg.Counts.Failed, wFailed, failColor)
 	skippedStr := formatCount(pkg.Counts.Skipped, wSkipped, skipColor)
 
@@ -500,8 +502,8 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 	runPauseWidth := wRunning + 3 + wPaused + 3
 	var runPausePart string
 	if running {
-		runningStr := formatCount(pkg.Counts.Running, wRunning, neutralColor)
-		pausedStr := formatCount(pkg.Counts.Paused, wPaused, neutralColor)
+		runningStr := formatCount(pkg.Counts.Running, wRunning, m.brightStyle)
+		pausedStr := formatCount(pkg.Counts.Paused, wPaused, pauseColor)
 		runPausePart = fmt.Sprintf("%s   %s   ", runningStr, pausedStr)
 	} else {
 		runPausePart = strings.Repeat(" ", runPauseWidth)
@@ -633,10 +635,7 @@ func (m *Model) getStatusPrefix(status results.Status, hasFailures bool) string 
 		}
 		return m.passStyle.Render(spinnerView) + " "
 	case results.StatusPassed:
-		// The finished-package gutter icon for passing packages renders in
-		// the terminal default color so a successful run isn't a wall of
-		// green; failures and skips keep their color highlight.
-		return "✓ "
+		return m.passStyle.Render("✓") + " "
 	case results.StatusFailed:
 		return m.failStyle.Render("✗") + " "
 	case results.StatusSkipped:
@@ -716,36 +715,20 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wRunning
 		leftPart = statusLabel
 	}
 
-	// Passing test count is rendered without color (only failures and skips
-	// get a color highlight) so the pass color is no longer needed here.
-	failColor, skipColor, neutralColor := m.failStyle, m.skipStyle, m.neutralStyle
+	passColor, failColor, skipColor, pauseColor, neutralColor := m.passStyle, m.failStyle, m.skipStyle, m.pauseStyle, m.neutralStyle
 	if running {
-		failColor, skipColor, neutralColor = m.brightFail, m.brightSkip, m.brightNeutral
+		passColor, failColor, skipColor, pauseColor, neutralColor = m.brightPass, m.brightFail, m.brightSkip, m.brightPause, m.brightNeutral
 	}
 
-	passedStr := formatCount(run.Counts.Passed, wPassed, neutralColor)
-
-	var failColorForSummary lipgloss.Style
-	if run.Counts.Failed > 0 {
-		failColorForSummary = failColor
-	} else {
-		failColorForSummary = neutralColor
-	}
-	failedStr := formatCount(run.Counts.Failed, wFailed, failColorForSummary)
-
-	var skipColorForSummary lipgloss.Style
-	if run.Counts.Skipped > 0 {
-		skipColorForSummary = skipColor
-	} else {
-		skipColorForSummary = neutralColor
-	}
-	skippedStr := formatCount(run.Counts.Skipped, wSkipped, skipColorForSummary)
+	passedStr := formatCount(run.Counts.Passed, wPassed, passColor)
+	failedStr := formatCount(run.Counts.Failed, wFailed, failColor)
+	skippedStr := formatCount(run.Counts.Skipped, wSkipped, skipColor)
 
 	total := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped
 	totalStr := neutralColor.Render(fmt.Sprintf("%*d", wTotal, total))
 
-	runningStr := formatCount(run.Counts.Running, wRunning, neutralColor)
-	pausedStr := formatCount(run.Counts.Paused, wPaused, neutralColor)
+	runningStr := formatCount(run.Counts.Running, wRunning, m.brightStyle)
+	pausedStr := formatCount(run.Counts.Paused, wPaused, pauseColor)
 
 	elapsedVal := formatElapsedTime(m.runElapsed(run))
 	elapsedStr := fmt.Sprintf("%*s", wElapsed, elapsedVal)
@@ -761,17 +744,30 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wRunning
 	m.renderAlignedLine(b, leftPart, rightPart, prefix)
 }
 
+func (m *Model) dimRule(n int) string {
+	if n <= 0 {
+		return ""
+	}
+	return m.dimStyle.Render(strings.Repeat("─", n))
+}
+
 func (m *Model) renderSeparatorLine(b *strings.Builder, wRunning, wPaused, wPassed, wFailed, wSkipped, wTotal, wElapsed int) {
 	rightWidth := wRunning + 3 + wPaused + 3 + wPassed + 3 + wFailed + 3 + wSkipped + 3 + wTotal + 2 + wElapsed
 	leadDashes := max(0, m.TerminalWidth-rightWidth+wRunning-2)
-	line := fmt.Sprintf("%s ▶ %s ⏸ %s ✓ %s ✗ %s ∅ %s ∑ %s",
-		strings.Repeat("─", leadDashes),
-		strings.Repeat("─", wPaused),
-		strings.Repeat("─", wPassed),
-		strings.Repeat("─", wFailed),
-		strings.Repeat("─", wSkipped),
-		strings.Repeat("─", wTotal),
-		strings.Repeat("─", wElapsed+1),
+	line := fmt.Sprintf("%s %s %s %s %s %s %s %s %s %s %s %s %s",
+		m.dimRule(leadDashes),
+		m.brightStyle.Render("▶"),
+		m.dimRule(wPaused),
+		m.pauseStyle.Render("⏸"),
+		m.dimRule(wPassed),
+		m.passStyle.Render("✓"),
+		m.dimRule(wFailed),
+		m.failStyle.Render("✗"),
+		m.dimRule(wSkipped),
+		m.skipStyle.Render("∅"),
+		m.dimRule(wTotal),
+		m.neutralStyle.Render("∑"),
+		m.dimRule(wElapsed+1),
 	)
 	if ansi.StringWidth(line) > m.TerminalWidth {
 		line = truncateLine(line, m.TerminalWidth)

@@ -226,11 +226,12 @@ func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summa
 		return
 	}
 
-	issuesPrefix := LineHorizontal + LineHorizontal + LineHorizontal + " Issues "
-	issuesPrefixLen := utf8.RuneCountInString(issuesPrefix)
+	issuesPrefixPlain := LineHorizontal + LineHorizontal + LineHorizontal + " Issues "
+	issuesPrefixLen := utf8.RuneCountInString(issuesPrefixPlain)
 	issuesDashes := max(0, layout.separatorLen-issuesPrefixLen)
-	sb.WriteString(issuesPrefix)
-	sb.WriteString(strings.Repeat(LineHorizontal, issuesDashes))
+	sb.WriteString(f.dimRule(3))
+	sb.WriteString(" Issues ")
+	sb.WriteString(f.dimRule(issuesDashes))
 	sb.WriteString("\n")
 
 	for _, pkgName := range pkgOrder {
@@ -511,25 +512,32 @@ func (f *SummaryFormatter) computeTableLayout(summary *Summary) summaryTableLayo
 	}
 }
 
+func (f *SummaryFormatter) dimRule(n int) string {
+	if n <= 0 {
+		return ""
+	}
+	return f.dimStyle.Render(strings.Repeat(LineHorizontal, n))
+}
+
 func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Summary, layout summaryTableLayout) {
 	if len(layout.lines) == 0 {
 		return
 	}
 
-	summaryPrefix := LineHorizontal + LineHorizontal + LineHorizontal + " Summary "
-	summaryPrefixLen := utf8.RuneCountInString(summaryPrefix)
+	summaryPrefixPlain := LineHorizontal + LineHorizontal + LineHorizontal + " Summary "
+	summaryPrefixLen := utf8.RuneCountInString(summaryPrefixPlain)
 	leadDashes := max(0, layout.labelWidth+layout.maxPassedLen-summaryPrefixLen)
-	fmt.Fprintf(sb, "%s%s %s %s %s %s %s %s %s %s\n",
-		summaryPrefix,
-		strings.Repeat(LineHorizontal, leadDashes),
-		SymbolPass,
-		strings.Repeat(LineHorizontal, layout.maxFailedLen),
-		SymbolFail,
-		strings.Repeat(LineHorizontal, layout.maxSkippedLen),
-		SymbolSkip,
-		strings.Repeat(LineHorizontal, layout.maxTotalLen),
-		SymbolTotal,
-		strings.Repeat(LineHorizontal, layout.maxElapsedLen+1),
+	fmt.Fprintf(sb, "%s Summary %s %s %s %s %s %s %s %s %s\n",
+		f.dimRule(3),
+		f.dimRule(leadDashes),
+		f.passStyle.Render(SymbolPass),
+		f.dimRule(layout.maxFailedLen),
+		f.failStyle.Render(SymbolFail),
+		f.dimRule(layout.maxSkippedLen),
+		f.skipStyle.Render(SymbolSkip),
+		f.dimRule(layout.maxTotalLen),
+		f.neutralStyle.Render(SymbolTotal),
+		f.dimRule(layout.maxElapsedLen+1),
 	)
 
 	for _, pl := range layout.lines {
@@ -538,9 +546,7 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		case "FAIL":
 			statusStr = f.boldFail.Render(fmt.Sprintf("%-*s", layout.maxStatusLen, pl.statusWord))
 		case "ok":
-			// "ok" is rendered without color (just bold) so the summary
-			// isn't a wall of green; FAIL/? still get a color highlight.
-			statusStr = f.boldWhite.Render(fmt.Sprintf("%-*s", layout.maxStatusLen, pl.statusWord))
+			statusStr = f.boldPass.Render(fmt.Sprintf("%-*s", layout.maxStatusLen, pl.statusWord))
 		case "?":
 			statusStr = f.boldSkip.Render(fmt.Sprintf("%-*s", layout.maxStatusLen, pl.statusWord))
 		}
@@ -557,9 +563,7 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		hasCounts := pl.pkg.Counts.Passed > 0 || pl.pkg.Counts.Failed > 0 || pl.pkg.Counts.Skipped > 0
 		countsStr := ""
 		if hasCounts {
-			// Passing test count renders without color; only failures and
-			// skips get a color highlight.
-			passedStr := formatCount(pl.pkg.Counts.Passed, layout.maxPassedLen, f.neutralStyle, true)
+			passedStr := formatCount(pl.pkg.Counts.Passed, layout.maxPassedLen, f.passStyle, true)
 			failedStr := formatCount(pl.pkg.Counts.Failed, layout.maxFailedLen, f.failStyle, true)
 			skippedStr := formatCount(pl.pkg.Counts.Skipped, layout.maxSkippedLen, f.skipStyle, true)
 
@@ -584,11 +588,16 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		}
 	}
 
-	sb.WriteString(strings.Repeat(LineHorizontal, layout.separatorLen))
+	sb.WriteString(f.dimRule(layout.separatorLen))
 	sb.WriteString("\n")
 
-	// Total passing test count renders without color.
-	passedStr := formatCount(summary.PassedTests, layout.maxPassedLen, f.neutralStyle, false)
+	var passColorForSummary lipgloss.Style
+	if summary.PassedTests > 0 {
+		passColorForSummary = f.passStyle
+	} else {
+		passColorForSummary = f.neutralStyle
+	}
+	passedStr := formatCount(summary.PassedTests, layout.maxPassedLen, passColorForSummary, false)
 
 	var failColorForSummary lipgloss.Style
 	if summary.FailedTests > 0 {

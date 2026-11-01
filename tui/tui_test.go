@@ -10,6 +10,7 @@ import (
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // ScriptBlock represents a test block with input, expected output, and match type
@@ -154,6 +155,7 @@ func TestHierarchicalRendering(t *testing.T) {
 	}
 
 	output := viewLatest(m)
+	plain := ansi.Strip(output)
 
 	// Verify key aspects of the output
 	tests := []struct {
@@ -166,8 +168,8 @@ func TestHierarchicalRendering(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		if !strings.Contains(output, test.contains) {
-			t.Errorf("Expected output to contain '%s' (%s).\nGot:\n%s", test.contains, test.name, output)
+		if !strings.Contains(plain, test.contains) {
+			t.Errorf("Expected output to contain '%s' (%s).\nGot:\n%s", test.contains, test.name, plain)
 		}
 	}
 

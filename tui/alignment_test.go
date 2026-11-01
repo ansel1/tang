@@ -9,6 +9,7 @@ import (
 	"github.com/ansel1/tang/engine"
 	"github.com/ansel1/tang/parser"
 	"github.com/ansel1/tang/results"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func TestAlignment(t *testing.T) {
@@ -71,7 +72,7 @@ func TestAlignment(t *testing.T) {
 	}
 
 	// Verify the package summary line contains the expected test count
-	if !strings.Contains(summaryLine, "1           1") {
+	if !strings.Contains(ansi.Strip(summaryLine), "1           1") {
 		t.Errorf("Summary line missing counts: %q", summaryLine)
 	}
 
