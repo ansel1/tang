@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ansel1/tang/results"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func TestSmartRendering(t *testing.T) {
@@ -346,13 +347,10 @@ func TestMultiExecutionTUI(t *testing.T) {
 		t.Error("Expected TestFoo to be visible")
 	}
 
-	// Check cumulative counts are displayed (should see both passed and running)
-	// The counts should show: 1 passed, 1 running, 1 failed
-	if !strings.Contains(output, "✓1") {
-		t.Error("Expected to see 1 passed count")
-	}
-	if !strings.Contains(output, "✗1") {
-		t.Error("Expected to see 1 failed count")
+	// Check cumulative counts are displayed (should see running=1, passed=1, failed=1, total=2)
+	stripped := ansi.Strip(output)
+	if !strings.Contains(stripped, "1       1   1       2") {
+		t.Errorf("Expected to see cumulative counts '1       1   1       2' in output, got:\n%s", stripped)
 	}
 
 	// Running count should not be negative

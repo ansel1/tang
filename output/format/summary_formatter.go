@@ -78,8 +78,9 @@ func NewSummaryFormatter(width int, noColor bool, opts ...SummaryOptions) *Summa
 
 func (f *SummaryFormatter) Format(summary *Summary) string {
 	var sb strings.Builder
-	f.formatTestDetails(&sb, summary)
-	f.formatPackageSummary(&sb, summary)
+	layout := f.computeTableLayout(summary)
+	f.formatTestDetails(&sb, summary, layout)
+	f.formatPackageSummary(&sb, summary, layout)
 	return sb.String()
 }
 
@@ -90,7 +91,7 @@ type packageIssue struct {
 	pkg      *results.PackageResult
 }
 
-func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summary) {
+func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summary, layout summaryTableLayout) {
 	type pkgData struct {
 		issues []packageIssue
 	}
@@ -225,6 +226,13 @@ func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summa
 		return
 	}
 
+	issuesPrefix := LineHorizontal + LineHorizontal + LineHorizontal + " Issues "
+	issuesPrefixLen := utf8.RuneCountInString(issuesPrefix)
+	issuesDashes := max(0, layout.separatorLen-issuesPrefixLen)
+	sb.WriteString(issuesPrefix)
+	sb.WriteString(strings.Repeat(LineHorizontal, issuesDashes))
+	sb.WriteString("\n")
+
 	for _, pkgName := range pkgOrder {
 		pd := pkgMap[pkgName]
 
@@ -356,32 +364,43 @@ func (f *SummaryFormatter) formatBuildIssue(sb *strings.Builder, pkg *results.Pa
 	}
 }
 
-func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Summary) {
-	if len(summary.Packages) == 0 {
-		return
-	}
+type pkgLine struct {
+	statusWord   string
+	name         string
+	extra        string
+	showDuration bool
+	pkg          *results.PackageResult
+}
 
-	type pkgLine struct {
-		statusWord   string
-		name         string
-		extra        string
-		showDuration bool
-		pkg          *results.PackageResult
+type summaryTableLayout struct {
+	lines           []pkgLine
+	pkgLabel        string
+	maxStatusLen    int
+	maxNameExtraLen int
+	maxPassedLen    int
+	maxFailedLen    int
+	maxSkippedLen   int
+	maxTotalLen     int
+	maxElapsedLen   int
+	labelWidth      int
+	countsWidth     int
+	lineWidth       int
+	separatorLen    int
+}
+
+func (f *SummaryFormatter) computeTableLayout(summary *Summary) summaryTableLayout {
+	if len(summary.Packages) == 0 {
+		return summaryTableLayout{separatorLen: f.width}
 	}
 
 	lines := make([]pkgLine, 0, len(summary.Packages))
 
 	maxStatusLen := 0
 	maxNameExtraLen := 0
-	maxPassedLen := 0
-	maxFailedLen := 0
-	maxSkippedLen := 0
-	maxTotalLen := 0
-
-	maxPassedLen = len(fmt.Sprintf("%d", summary.PassedTests))
-	maxFailedLen = len(fmt.Sprintf("%d", summary.FailedTests))
-	maxSkippedLen = len(fmt.Sprintf("%d", summary.SkippedTests))
-	maxTotalLen = len(fmt.Sprintf("%d", summary.TotalTests))
+	maxPassedLen := len(fmt.Sprintf("%d", summary.PassedTests))
+	maxFailedLen := len(fmt.Sprintf("%d", summary.FailedTests))
+	maxSkippedLen := len(fmt.Sprintf("%d", summary.SkippedTests))
+	maxTotalLen := len(fmt.Sprintf("%d", summary.TotalTests))
 
 	for _, pkg := range summary.Packages {
 		pl := pkgLine{pkg: pkg}
@@ -463,26 +482,67 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		maxElapsedLen = el
 	}
 
-	// (✓NN ✗NN ∅NN) NN
-	// parens=2, 3 symbols (multi-byte but 1 display col each), 2 inner spaces, 1 outer space
-	countsWidth := 2 + 3 + 2 + maxPassedLen + maxFailedLen + maxSkippedLen + 1 + maxTotalLen
-	lineWidth := maxStatusLen + 4 + maxNameExtraLen + 2 + countsWidth + 2 + maxElapsedLen
-	separatorLen := lineWidth
-	if f.width > separatorLen {
-		separatorLen = f.width
+	pkgLabel := fmt.Sprintf("(%d packages)", summary.PackageCount)
+	summaryPrefixLen := utf8.RuneCountInString(LineHorizontal + LineHorizontal + LineHorizontal + " Summary ")
+	minLabelWidth := max(len(pkgLabel), summaryPrefixLen)
+	if maxStatusLen+4+maxNameExtraLen < minLabelWidth {
+		maxNameExtraLen = minLabelWidth - maxStatusLen - 4
+	}
+	labelWidth := maxStatusLen + 4 + maxNameExtraLen
+
+	// NN   NN   NN   NN (4 count columns separated by 3 spaces so " ─ <icon>" fits above each gap)
+	countsWidth := maxPassedLen + 3 + maxFailedLen + 3 + maxSkippedLen + 3 + maxTotalLen
+	lineWidth := labelWidth + 2 + countsWidth + 2 + maxElapsedLen
+
+	return summaryTableLayout{
+		lines:           lines,
+		pkgLabel:        pkgLabel,
+		maxStatusLen:    maxStatusLen,
+		maxNameExtraLen: maxNameExtraLen,
+		maxPassedLen:    maxPassedLen,
+		maxFailedLen:    maxFailedLen,
+		maxSkippedLen:   maxSkippedLen,
+		maxTotalLen:     maxTotalLen,
+		maxElapsedLen:   maxElapsedLen,
+		labelWidth:      labelWidth,
+		countsWidth:     countsWidth,
+		lineWidth:       lineWidth,
+		separatorLen:    lineWidth,
+	}
+}
+
+func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Summary, layout summaryTableLayout) {
+	if len(layout.lines) == 0 {
+		return
 	}
 
-	for _, pl := range lines {
+	summaryPrefix := LineHorizontal + LineHorizontal + LineHorizontal + " Summary "
+	summaryPrefixLen := utf8.RuneCountInString(summaryPrefix)
+	leadDashes := max(0, layout.labelWidth+layout.maxPassedLen-summaryPrefixLen)
+	fmt.Fprintf(sb, "%s%s %s %s %s %s %s %s %s %s\n",
+		summaryPrefix,
+		strings.Repeat(LineHorizontal, leadDashes),
+		SymbolPass,
+		strings.Repeat(LineHorizontal, layout.maxFailedLen),
+		SymbolFail,
+		strings.Repeat(LineHorizontal, layout.maxSkippedLen),
+		SymbolSkip,
+		strings.Repeat(LineHorizontal, layout.maxTotalLen),
+		SymbolTotal,
+		strings.Repeat(LineHorizontal, layout.maxElapsedLen+1),
+	)
+
+	for _, pl := range layout.lines {
 		var statusStr string
 		switch pl.statusWord {
 		case "FAIL":
-			statusStr = f.boldFail.Render(fmt.Sprintf("%-*s", maxStatusLen, pl.statusWord))
+			statusStr = f.boldFail.Render(fmt.Sprintf("%-*s", layout.maxStatusLen, pl.statusWord))
 		case "ok":
 			// "ok" is rendered without color (just bold) so the summary
 			// isn't a wall of green; FAIL/? still get a color highlight.
-			statusStr = f.boldWhite.Render(fmt.Sprintf("%-*s", maxStatusLen, pl.statusWord))
+			statusStr = f.boldWhite.Render(fmt.Sprintf("%-*s", layout.maxStatusLen, pl.statusWord))
 		case "?":
-			statusStr = f.boldSkip.Render(fmt.Sprintf("%-*s", maxStatusLen, pl.statusWord))
+			statusStr = f.boldSkip.Render(fmt.Sprintf("%-*s", layout.maxStatusLen, pl.statusWord))
 		}
 
 		nameExtra := pl.name
@@ -492,45 +552,43 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 
 		// Package name+info renders in the terminal's default foreground; the
 		// color-coded status word (FAIL/ok/?) alone signals package status.
-		paddedNameExtra := fmt.Sprintf("%-*s", maxNameExtraLen, nameExtra)
+		paddedNameExtra := fmt.Sprintf("%-*s", layout.maxNameExtraLen, nameExtra)
 
 		hasCounts := pl.pkg.Counts.Passed > 0 || pl.pkg.Counts.Failed > 0 || pl.pkg.Counts.Skipped > 0
 		countsStr := ""
 		if hasCounts {
 			// Passing test count renders without color; only failures and
 			// skips get a color highlight.
-			passedStr := formatCount(pl.pkg.Counts.Passed, maxPassedLen+1, SymbolPass, f.neutralStyle, true)
-			failedStr := formatCount(pl.pkg.Counts.Failed, maxFailedLen+1, SymbolFail, f.failStyle, true)
-			skippedStr := formatCount(pl.pkg.Counts.Skipped, maxSkippedLen+1, SymbolSkip, f.skipStyle, true)
+			passedStr := formatCount(pl.pkg.Counts.Passed, layout.maxPassedLen, f.neutralStyle, true)
+			failedStr := formatCount(pl.pkg.Counts.Failed, layout.maxFailedLen, f.failStyle, true)
+			skippedStr := formatCount(pl.pkg.Counts.Skipped, layout.maxSkippedLen, f.skipStyle, true)
 
 			total := pl.pkg.Counts.Passed + pl.pkg.Counts.Failed + pl.pkg.Counts.Skipped
-			totalStr := f.neutralStyle.Render(fmt.Sprintf("%*d", maxTotalLen, total))
+			totalStr := f.neutralStyle.Render(fmt.Sprintf("%*d", layout.maxTotalLen, total))
 
-			countsStr = fmt.Sprintf("(%s %s %s) %s", passedStr, failedStr, skippedStr, totalStr)
+			countsStr = fmt.Sprintf("%s   %s   %s   %s", passedStr, failedStr, skippedStr, totalStr)
 		}
 
 		elapsed := ""
 		if pl.showDuration {
-			elapsed = fmt.Sprintf("  %*s", maxElapsedLen, formatDuration(pl.pkg.Elapsed))
+			elapsed = fmt.Sprintf("  %*s", layout.maxElapsedLen, formatDuration(pl.pkg.Elapsed))
 		}
 
 		if countsStr != "" {
 			fmt.Fprintf(sb, "%s    %s  %s%s\n",
 				statusStr, paddedNameExtra, countsStr, elapsed)
 		} else {
-			emptyCounts := strings.Repeat(" ", countsWidth)
+			emptyCounts := strings.Repeat(" ", layout.countsWidth)
 			fmt.Fprintf(sb, "%s    %s  %s%s\n",
 				statusStr, paddedNameExtra, emptyCounts, elapsed)
 		}
 	}
 
-	sb.WriteString(strings.Repeat("-", separatorLen))
+	sb.WriteString(strings.Repeat(LineHorizontal, layout.separatorLen))
 	sb.WriteString("\n")
 
-	pkgLabel := fmt.Sprintf("(%d packages)", summary.PackageCount)
-
 	// Total passing test count renders without color.
-	passedStr := formatCount(summary.PassedTests, maxPassedLen+1, SymbolPass, f.neutralStyle, false)
+	passedStr := formatCount(summary.PassedTests, layout.maxPassedLen, f.neutralStyle, false)
 
 	var failColorForSummary lipgloss.Style
 	if summary.FailedTests > 0 {
@@ -538,7 +596,7 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 	} else {
 		failColorForSummary = f.neutralStyle
 	}
-	failedStr := formatCount(summary.FailedTests, maxFailedLen+1, SymbolFail, failColorForSummary, false)
+	failedStr := formatCount(summary.FailedTests, layout.maxFailedLen, failColorForSummary, false)
 
 	var skipColorForSummary lipgloss.Style
 	if summary.SkippedTests > 0 {
@@ -546,22 +604,19 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 	} else {
 		skipColorForSummary = f.neutralStyle
 	}
-	skippedStr := formatCount(summary.SkippedTests, maxSkippedLen+1, SymbolSkip, skipColorForSummary, false)
+	skippedStr := formatCount(summary.SkippedTests, layout.maxSkippedLen, skipColorForSummary, false)
 
-	totalStr := f.neutralStyle.Render(fmt.Sprintf("%*d", maxTotalLen, summary.TotalTests))
-	countsStr := fmt.Sprintf("(%s %s %s) %s", passedStr, failedStr, skippedStr, totalStr)
-	elapsed := fmt.Sprintf("%*s", maxElapsedLen, formatDuration(summary.TotalTime))
+	totalStr := f.neutralStyle.Render(fmt.Sprintf("%*d", layout.maxTotalLen, summary.TotalTests))
+	countsStr := fmt.Sprintf("%s   %s   %s   %s", passedStr, failedStr, skippedStr, totalStr)
+	elapsed := fmt.Sprintf("%*s", layout.maxElapsedLen, formatDuration(summary.TotalTime))
 
-	labelWidth := maxStatusLen + 4 + maxNameExtraLen
-	fmt.Fprintf(sb, "%-*s  %s  %s\n", labelWidth, pkgLabel, countsStr, elapsed)
+	fmt.Fprintf(sb, "%-*s  %s  %s\n", layout.labelWidth, layout.pkgLabel, countsStr, elapsed)
 }
 
-func formatCount(count int, width int, prefix string, style lipgloss.Style, hideZero bool) string {
+func formatCount(count int, width int, style lipgloss.Style, hideZero bool) string {
 	if count == 0 && hideZero {
-		raw := fmt.Sprintf("%*s", width, fmt.Sprintf("%s%d", prefix, count))
-		runeLen := utf8.RuneCountInString(raw)
-		return strings.Repeat(" ", runeLen)
+		return strings.Repeat(" ", width)
 	}
-	raw := fmt.Sprintf("%*s", width, fmt.Sprintf("%s%d", prefix, count))
+	raw := fmt.Sprintf("%*d", width, count)
 	return style.Render(raw)
 }

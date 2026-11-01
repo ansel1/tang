@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/ansel1/tang/results"
 )
@@ -451,5 +452,128 @@ func TestSummaryFormatterNoTestsOmitCounters(t *testing.T) {
 
 	if strings.Contains(packageLine, "(") || strings.Contains(packageLine, ")") {
 		t.Errorf("Expected summary package line to omit counters (no parentheses), but got: %q", packageLine)
+	}
+}
+
+func TestSummaryFormatterHeadersAndAlignment(t *testing.T) {
+	formatter := NewSummaryFormatter(120, true)
+
+	pkg1 := &results.PackageResult{
+		Name:        "gitlab.protectv.local/ncryptify/stemcell",
+		Status:      results.StatusFailed,
+		Elapsed:     453 * time.Millisecond,
+		SummaryLine: "FAIL\tgitlab.protectv.local/ncryptify/stemcell\t0.453s\n",
+	}
+	pkg1.Counts.Passed = 124
+	pkg1.Counts.Failed = 3
+	pkg1.Counts.Skipped = 12
+
+	pkg2 := &results.PackageResult{
+		Name:        "gitlab.protectv.local/ncryptify/stemcell/cmd/stemcell",
+		Status:      results.StatusSkipped,
+		Elapsed:     0,
+		SummaryLine: "?\tgitlab.protectv.local/ncryptify/stemcell/cmd/stemcell\t[no test files]\n",
+	}
+
+	run := results.NewRun(1)
+	run.Packages[pkg1.Name] = pkg1
+	run.Packages[pkg2.Name] = pkg2
+	run.PackageOrder = []string{pkg1.Name, pkg2.Name}
+
+	failTest := results.NewTestResult(pkg1.Name, "TestSomething")
+	failTest.Latest().Status = results.StatusFailed
+	failTest.Latest().Elapsed = 120 * time.Millisecond
+	failTest.Latest().Output = []string{"something_test.go:42: boom"}
+	run.TestResults[pkg1.Name+"/TestSomething"] = failTest
+	pkg1.TestOrder = []string{"TestSomething"}
+
+	summary := &Summary{
+		Packages:     []*results.PackageResult{pkg1, pkg2},
+		TotalTests:   139,
+		PassedTests:  124,
+		FailedTests:  3,
+		SkippedTests: 12,
+		TotalTime:    453358 * time.Microsecond,
+		PackageCount: 2,
+		Failures: []*TestExecutionEntry{
+			{
+				TestResult:      failTest,
+				TestExecution:   failTest.Latest(),
+				Iteration:       1,
+				TotalExecutions: 1,
+			},
+		},
+		Run: run,
+	}
+
+	output := formatter.Format(summary)
+	lines := strings.Split(strings.TrimRight(output, "\n"), "\n")
+
+	var issuesHeader, summaryHeader, pkg1Line, bottomSep, totalsLine string
+	for _, line := range lines {
+		switch {
+		case strings.HasPrefix(line, "─── Issues "):
+			issuesHeader = line
+		case strings.HasPrefix(line, "─── Summary "):
+			summaryHeader = line
+		case strings.HasPrefix(line, "FAIL"):
+			pkg1Line = line
+		case line != "" && strings.Trim(line, LineHorizontal) == "":
+			bottomSep = line
+		case strings.HasPrefix(line, "(2 packages)"):
+			totalsLine = line
+		}
+	}
+
+	if issuesHeader == "" {
+		t.Fatalf("expected Issues header in output:\n%s", output)
+	}
+	if summaryHeader == "" {
+		t.Fatalf("expected Summary header in output:\n%s", output)
+	}
+	if bottomSep == "" {
+		t.Fatalf("expected bottom separator line in output:\n%s", output)
+	}
+
+	// Verify table-width rule sizing across Issues header, Summary header, bottom separator, and data rows.
+	tableWidth := utf8.RuneCountInString(totalsLine)
+	for name, line := range map[string]string{
+		"issuesHeader":  issuesHeader,
+		"summaryHeader": summaryHeader,
+		"pkg1Line":      pkg1Line,
+		"bottomSep":     bottomSep,
+	} {
+		if got := utf8.RuneCountInString(line); got != tableWidth {
+			t.Errorf("%s rune width = %d, want %d (table width)\nline: %q", name, got, tableWidth, line)
+		}
+	}
+
+	// Verify column header symbols align with the rightmost digit of each count column.
+	runeIndex := func(s, sub string) int {
+		byteIdx := strings.Index(s, sub)
+		if byteIdx < 0 {
+			return -1
+		}
+		return utf8.RuneCountInString(s[:byteIdx])
+	}
+	headerRunes := []rune(summaryHeader)
+	totalsRunes := []rune(totalsLine)
+	for sym, expectedUnitDigit := range map[string]rune{
+		SymbolPass:  '4', // 124
+		SymbolFail:  '3', // 3
+		SymbolSkip:  '2', // 12
+		SymbolTotal: '9', // 139
+	} {
+		col := runeIndex(summaryHeader, sym)
+		if col < 0 {
+			t.Fatalf("missing symbol %s in summaryHeader %q", sym, summaryHeader)
+		}
+		if headerRunes[col] != []rune(sym)[0] {
+			t.Fatalf("unexpected rune at col %d", col)
+		}
+		if totalsRunes[col] != expectedUnitDigit {
+			t.Errorf("under %s (col %d): got %q in totals line, want %q\nheader: %s\ntotals: %s",
+				sym, col, string(totalsRunes[col]), string(expectedUnitDigit), summaryHeader, totalsLine)
+		}
 	}
 }

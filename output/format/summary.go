@@ -25,9 +25,12 @@ func formatDuration(d time.Duration) string {
 
 // Symbol constants for test results
 const (
-	SymbolPass = "✓"
-	SymbolFail = "✗"
-	SymbolSkip = "∅"
+	SymbolPass  = "✓"
+	SymbolFail  = "✗"
+	SymbolSkip  = "∅"
+	SymbolTotal = "∑"
+
+	LineHorizontal = "─"
 )
 
 // Indentation constants

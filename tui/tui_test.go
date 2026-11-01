@@ -161,8 +161,8 @@ func TestHierarchicalRendering(t *testing.T) {
 		contains string
 	}{
 		{"Package name", "github.com/test/pkg1"},
-		{"Pass count", "✓1"},
-		{"Separator line", "--------"},
+		{"Pass count", "1           1"},
+		{"Separator line", "▶ ─ ⏸ ─ ✓ ─ ✗ ─ ∅ ─ ∑"},
 	}
 
 	for _, test := range tests {

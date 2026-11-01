@@ -71,14 +71,15 @@ func TestAlignment(t *testing.T) {
 	}
 
 	// Verify the package summary line contains the expected test count
-	if !strings.Contains(summaryLine, "✓1") {
+	if !strings.Contains(summaryLine, "1           1") {
 		t.Errorf("Summary line missing counts: %q", summaryLine)
 	}
 
 	// Check the visual width using lipgloss.Width, which correctly handles ANSI codes
-	visualWidth := lipgloss.Width(summaryLine)
-
-	if visualWidth > m.TerminalWidth {
-		t.Errorf("Summary line visual width %d exceeds terminal width %d. Line: %q", visualWidth, m.TerminalWidth, summaryLine)
+	for _, line := range lines {
+		visualWidth := lipgloss.Width(line)
+		if visualWidth > m.TerminalWidth {
+			t.Errorf("Line visual width %d exceeds terminal width %d. Line: %q", visualWidth, m.TerminalWidth, line)
+		}
 	}
 }

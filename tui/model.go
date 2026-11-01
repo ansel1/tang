@@ -5,7 +5,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"charm.land/bubbles/v2/spinner"
 	tea "charm.land/bubbletea/v2"
@@ -437,8 +436,7 @@ func (m *Model) renderRun(run *results.Run) string {
 
 	// Add separator line
 	if len(run.PackageOrder) > 0 {
-		b.WriteString(strings.Repeat("-", m.TerminalWidth))
-		b.WriteString("\n")
+		m.renderSeparatorLine(&b, maxRunning, maxPaused, maxPassed, maxFailed, maxSkipped, maxTotal, maxElapsed)
 	}
 
 	// Render packages
@@ -482,9 +480,9 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 		failColor, skipColor, neutralColor = m.brightFail, m.brightSkip, m.brightNeutral
 	}
 
-	passedStr := formatCount(pkg.Counts.Passed, wPassed+1, "✓", neutralColor)
-	failedStr := formatCount(pkg.Counts.Failed, wFailed+1, "✗", failColor)
-	skippedStr := formatCount(pkg.Counts.Skipped, wSkipped+1, "∅", skipColor)
+	passedStr := formatCount(pkg.Counts.Passed, wPassed, neutralColor)
+	failedStr := formatCount(pkg.Counts.Failed, wFailed, failColor)
+	skippedStr := formatCount(pkg.Counts.Skipped, wSkipped, skipColor)
 
 	total := pkg.Counts.Passed + pkg.Counts.Failed + pkg.Counts.Skipped
 	totalStr := neutralColor.Render(fmt.Sprintf("%*d", wTotal, total))
@@ -498,20 +496,20 @@ func (m *Model) renderPackageHeader(b *strings.Builder, pkg *results.PackageResu
 	}
 
 	// Running/paused columns only shown for running packages; blank-padded otherwise
-	// Display width: icon(1) + digits(wN) per column, plus 1 space between + 1 trailing space
-	runPauseWidth := 1 + wRunning + 1 + 1 + wPaused + 1
+	// Display width: digits(wN) per column, plus 3 spaces after each
+	runPauseWidth := wRunning + 3 + wPaused + 3
 	var runPausePart string
 	if running {
-		runningStr := formatCount(pkg.Counts.Running, wRunning+1, "▶", neutralColor)
-		pausedStr := formatCount(pkg.Counts.Paused, wPaused+1, "⏸", neutralColor)
-		runPausePart = fmt.Sprintf("%s %s ", runningStr, pausedStr)
+		runningStr := formatCount(pkg.Counts.Running, wRunning, neutralColor)
+		pausedStr := formatCount(pkg.Counts.Paused, wPaused, neutralColor)
+		runPausePart = fmt.Sprintf("%s   %s   ", runningStr, pausedStr)
 	} else {
 		runPausePart = strings.Repeat(" ", runPauseWidth)
 	}
 
 	hasTests := pkg.Counts.Passed > 0 || pkg.Counts.Failed > 0 || pkg.Counts.Skipped > 0 || pkg.Counts.Running > 0 || pkg.Counts.Paused > 0
 	if hasTests {
-		rightPart = fmt.Sprintf("%s(%s %s %s) %s %s", runPausePart, passedStr, failedStr, skippedStr, totalStr, elapsedStr)
+		rightPart = fmt.Sprintf("%s%s   %s   %s   %s  %s", runPausePart, passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 	} else {
 		rightPart = elapsedStr
 	}
@@ -725,7 +723,7 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wRunning
 		failColor, skipColor, neutralColor = m.brightFail, m.brightSkip, m.brightNeutral
 	}
 
-	passedStr := formatCount(run.Counts.Passed, wPassed+1, "✓", neutralColor)
+	passedStr := formatCount(run.Counts.Passed, wPassed, neutralColor)
 
 	var failColorForSummary lipgloss.Style
 	if run.Counts.Failed > 0 {
@@ -733,7 +731,7 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wRunning
 	} else {
 		failColorForSummary = neutralColor
 	}
-	failedStr := formatCount(run.Counts.Failed, wFailed+1, "✗", failColorForSummary)
+	failedStr := formatCount(run.Counts.Failed, wFailed, failColorForSummary)
 
 	var skipColorForSummary lipgloss.Style
 	if run.Counts.Skipped > 0 {
@@ -741,18 +739,18 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wRunning
 	} else {
 		skipColorForSummary = neutralColor
 	}
-	skippedStr := formatCount(run.Counts.Skipped, wSkipped+1, "∅", skipColorForSummary)
+	skippedStr := formatCount(run.Counts.Skipped, wSkipped, skipColorForSummary)
 
 	total := run.Counts.Passed + run.Counts.Failed + run.Counts.Skipped
 	totalStr := neutralColor.Render(fmt.Sprintf("%*d", wTotal, total))
 
-	runningStr := formatCount(run.Counts.Running, wRunning+1, "▶", neutralColor)
-	pausedStr := formatCount(run.Counts.Paused, wPaused+1, "⏸", neutralColor)
+	runningStr := formatCount(run.Counts.Running, wRunning, neutralColor)
+	pausedStr := formatCount(run.Counts.Paused, wPaused, neutralColor)
 
 	elapsedVal := formatElapsedTime(m.runElapsed(run))
 	elapsedStr := fmt.Sprintf("%*s", wElapsed, elapsedVal)
 
-	rightPart = fmt.Sprintf("%s %s (%s %s %s) %s %s", runningStr, pausedStr, passedStr, failedStr, skippedStr, totalStr, elapsedStr)
+	rightPart = fmt.Sprintf("%s   %s   %s   %s   %s   %s  %s", runningStr, pausedStr, passedStr, failedStr, skippedStr, totalStr, elapsedStr)
 
 	prefix := m.getStatusPrefix(run.Status, run.Counts.Failed > 0)
 	if running {
@@ -763,12 +761,29 @@ func (m *Model) renderSummaryLine(b *strings.Builder, run *results.Run, wRunning
 	m.renderAlignedLine(b, leftPart, rightPart, prefix)
 }
 
-func formatCount(count int, width int, prefix string, style lipgloss.Style) string {
-	if count == 0 {
-		raw := fmt.Sprintf("%*s", width, fmt.Sprintf("%s%d", prefix, count))
-		runeLen := utf8.RuneCountInString(raw)
-		return strings.Repeat(" ", runeLen)
+func (m *Model) renderSeparatorLine(b *strings.Builder, wRunning, wPaused, wPassed, wFailed, wSkipped, wTotal, wElapsed int) {
+	rightWidth := wRunning + 3 + wPaused + 3 + wPassed + 3 + wFailed + 3 + wSkipped + 3 + wTotal + 2 + wElapsed
+	leadDashes := max(0, m.TerminalWidth-rightWidth+wRunning-2)
+	line := fmt.Sprintf("%s ▶ %s ⏸ %s ✓ %s ✗ %s ∅ %s ∑ %s",
+		strings.Repeat("─", leadDashes),
+		strings.Repeat("─", wPaused),
+		strings.Repeat("─", wPassed),
+		strings.Repeat("─", wFailed),
+		strings.Repeat("─", wSkipped),
+		strings.Repeat("─", wTotal),
+		strings.Repeat("─", wElapsed+1),
+	)
+	if ansi.StringWidth(line) > m.TerminalWidth {
+		line = truncateLine(line, m.TerminalWidth)
 	}
-	raw := fmt.Sprintf("%*s", width, fmt.Sprintf("%s%d", prefix, count))
+	b.WriteString(line)
+	b.WriteString("\n")
+}
+
+func formatCount(count int, width int, style lipgloss.Style) string {
+	if count == 0 {
+		return strings.Repeat(" ", width)
+	}
+	raw := fmt.Sprintf("%*d", width, count)
 	return style.Render(raw)
 }
