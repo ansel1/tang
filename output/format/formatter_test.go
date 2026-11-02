@@ -509,24 +509,24 @@ func TestSummaryFormatterHeadersAndAlignment(t *testing.T) {
 	output := formatter.Format(summary)
 	lines := strings.Split(strings.TrimRight(output, "\n"), "\n")
 
-	var issuesHeader, summaryHeader, pkg1Line, bottomSep, totalsLine string
+	var messagesHeader, summaryHeader, pkg1Line, bottomSep, totalsLine string
 	for _, line := range lines {
 		switch {
-		case strings.HasPrefix(line, "─── Issues "):
-			issuesHeader = line
+		case strings.HasPrefix(line, "─── Messages "):
+			messagesHeader = line
 		case strings.HasPrefix(line, "─── Summary "):
 			summaryHeader = line
 		case strings.HasPrefix(line, "FAIL"):
 			pkg1Line = line
-		case line != "" && strings.Trim(line, LineHorizontal) == "":
+		case strings.HasPrefix(line, "────"):
 			bottomSep = line
 		case strings.HasPrefix(line, "(2 packages)"):
 			totalsLine = line
 		}
 	}
 
-	if issuesHeader == "" {
-		t.Fatalf("expected Issues header in output:\n%s", output)
+	if messagesHeader == "" {
+		t.Fatalf("expected Messages header in output:\n%s", output)
 	}
 	if summaryHeader == "" {
 		t.Fatalf("expected Summary header in output:\n%s", output)
@@ -535,20 +535,20 @@ func TestSummaryFormatterHeadersAndAlignment(t *testing.T) {
 		t.Fatalf("expected bottom separator line in output:\n%s", output)
 	}
 
-	// Verify table-width rule sizing across Issues header, Summary header, bottom separator, and data rows.
+	// Verify table-width rule sizing across Messages header, Summary header, bottom separator, and data rows.
 	tableWidth := utf8.RuneCountInString(totalsLine)
 	for name, line := range map[string]string{
-		"issuesHeader":  issuesHeader,
-		"summaryHeader": summaryHeader,
-		"pkg1Line":      pkg1Line,
-		"bottomSep":     bottomSep,
+		"messagesHeader": messagesHeader,
+		"summaryHeader":  summaryHeader,
+		"pkg1Line":       pkg1Line,
+		"bottomSep":      bottomSep,
 	} {
 		if got := utf8.RuneCountInString(line); got != tableWidth {
 			t.Errorf("%s rune width = %d, want %d (table width)\nline: %q", name, got, tableWidth, line)
 		}
 	}
 
-	// Verify column header symbols align with the rightmost digit of each count column.
+	// Verify column header symbols align with the rightmost character of each column in both summaryHeader and bottomSep.
 	runeIndex := func(s, sub string) int {
 		byteIdx := strings.Index(s, sub)
 		if byteIdx < 0 {
@@ -557,12 +557,14 @@ func TestSummaryFormatterHeadersAndAlignment(t *testing.T) {
 		return utf8.RuneCountInString(s[:byteIdx])
 	}
 	headerRunes := []rune(summaryHeader)
+	bottomRunes := []rune(bottomSep)
 	totalsRunes := []rune(totalsLine)
-	for sym, expectedUnitDigit := range map[string]rune{
+	for sym, expectedUnitChar := range map[string]rune{
 		SymbolPass:  '4', // 124
 		SymbolFail:  '3', // 3
 		SymbolSkip:  '2', // 12
 		SymbolTotal: '9', // 139
+		SymbolTime:  's', // 453.358ms
 	} {
 		col := runeIndex(summaryHeader, sym)
 		if col < 0 {
@@ -571,9 +573,13 @@ func TestSummaryFormatterHeadersAndAlignment(t *testing.T) {
 		if headerRunes[col] != []rune(sym)[0] {
 			t.Fatalf("unexpected rune at col %d", col)
 		}
-		if totalsRunes[col] != expectedUnitDigit {
+		if bottomRunes[col] != []rune(sym)[0] {
+			t.Errorf("bottomSep missing %s at col %d: got %q\nheader: %s\nbottom: %s",
+				sym, col, string(bottomRunes[col]), summaryHeader, bottomSep)
+		}
+		if totalsRunes[col] != expectedUnitChar {
 			t.Errorf("under %s (col %d): got %q in totals line, want %q\nheader: %s\ntotals: %s",
-				sym, col, string(totalsRunes[col]), string(expectedUnitDigit), summaryHeader, totalsLine)
+				sym, col, string(totalsRunes[col]), string(expectedUnitChar), summaryHeader, totalsLine)
 		}
 	}
 }
@@ -632,8 +638,8 @@ func TestSummaryFormatterColors(t *testing.T) {
 	output := formatter.Format(summary)
 
 	// Column headers should be colored and horizontal segments dimmed.
-	if !strings.Contains(output, formatter.dimStyle.Render("───")+" Issues ") {
-		t.Errorf("expected dimmed ─── before Issues in output:\n%s", output)
+	if !strings.Contains(output, formatter.dimStyle.Render("───")+" Messages ") {
+		t.Errorf("expected dimmed ─── before Messages in output:\n%s", output)
 	}
 	if !strings.Contains(output, formatter.dimStyle.Render("───")+" Summary ") {
 		t.Errorf("expected dimmed ─── before Summary in output:\n%s", output)
@@ -657,5 +663,206 @@ func TestSummaryFormatterColors(t *testing.T) {
 	}
 	if !strings.Contains(output, formatter.passStyle.Render("9")) {
 		t.Errorf("expected green total passed count '9'")
+	}
+}
+
+func TestSummaryFormatterHeadersCappedAtTerminalWidth(t *testing.T) {
+	const termWidth = 80
+	formatter := NewSummaryFormatter(termWidth, true)
+
+	shortPkg := &results.PackageResult{
+		Name:        "github.com/user/project/short",
+		Status:      results.StatusFailed,
+		Elapsed:     453 * time.Millisecond,
+		SummaryLine: "FAIL\tgithub.com/user/project/short\t0.453s\n",
+	}
+	shortPkg.Counts.Passed = 10
+	shortPkg.Counts.Failed = 1
+
+	longPkg := &results.PackageResult{
+		Name:        "github.com/user/project/very/deeply/nested/subpackage/with/a/long/import/path",
+		Status:      results.StatusSkipped,
+		Elapsed:     0,
+		SummaryLine: "?\tgithub.com/user/project/very/deeply/nested/subpackage/with/a/long/import/path\t[no test files]\n",
+	}
+
+	run := results.NewRun(1)
+	run.Packages[shortPkg.Name] = shortPkg
+	run.Packages[longPkg.Name] = longPkg
+	run.PackageOrder = []string{shortPkg.Name, longPkg.Name}
+
+	failTest := results.NewTestResult(shortPkg.Name, "TestSomething")
+	failTest.Latest().Status = results.StatusFailed
+	failTest.Latest().Elapsed = 120 * time.Millisecond
+	failTest.Latest().Output = []string{"boom"}
+	run.TestResults[shortPkg.Name+"/TestSomething"] = failTest
+	shortPkg.TestOrder = []string{"TestSomething"}
+
+	summary := &Summary{
+		Packages:     []*results.PackageResult{shortPkg, longPkg},
+		TotalTests:   11,
+		PassedTests:  10,
+		FailedTests:  1,
+		SkippedTests: 0,
+		TotalTime:    453 * time.Millisecond,
+		PackageCount: 2,
+		Failures: []*TestExecutionEntry{
+			{
+				TestResult:      failTest,
+				TestExecution:   failTest.Latest(),
+				Iteration:       1,
+				TotalExecutions: 1,
+			},
+		},
+		Run: run,
+	}
+
+	output := formatter.Format(summary)
+	lines := strings.Split(strings.TrimRight(output, "\n"), "\n")
+
+	var messagesHeader, summaryHeader, shortPkgLine, skippedLine, bottomSep, totalsLine string
+	for _, line := range lines {
+		switch {
+		case strings.HasPrefix(line, "─── Messages "):
+			messagesHeader = line
+		case strings.HasPrefix(line, "─── Summary "):
+			summaryHeader = line
+		case strings.HasPrefix(line, "FAIL"):
+			shortPkgLine = line
+		case strings.HasPrefix(line, "?"):
+			skippedLine = line
+		case strings.HasPrefix(line, "────"):
+			bottomSep = line
+		case strings.HasPrefix(line, "(2 packages)"):
+			totalsLine = line
+		}
+	}
+
+	for name, line := range map[string]string{
+		"messagesHeader": messagesHeader,
+		"summaryHeader":  summaryHeader,
+		"shortPkgLine":   shortPkgLine,
+		"bottomSep":      bottomSep,
+		"totalsLine":     totalsLine,
+	} {
+		if got := utf8.RuneCountInString(line); got != termWidth {
+			t.Errorf("%s rune width = %d, want %d (termWidth)\nline: %q", name, got, termWidth, line)
+		}
+	}
+
+	// Redundant duration token from SummaryLine ("0.453s") should be stripped from the label,
+	// leaving only the formatted rightmost duration column ("453ms").
+	if strings.Contains(shortPkgLine, "0.453s") {
+		t.Errorf("expected redundant SummaryLine duration '0.453s' to be stripped from shortPkgLine: %q", shortPkgLine)
+	}
+
+	// Long skipped package should be truncated with an ellipsis on a single line.
+	if !strings.Contains(skippedLine, "…") {
+		t.Errorf("expected long skipped package line to be truncated with '…', got %q", skippedLine)
+	}
+	if got := utf8.RuneCountInString(skippedLine); got > termWidth {
+		t.Errorf("skippedLine rune width = %d, want <= %d: %q", got, termWidth, skippedLine)
+	}
+}
+
+func TestSummaryFormatterLongPackageTruncatedAndCappedAt150(t *testing.T) {
+	// Even on a wide 200-column terminal, summary lines and Messages header are capped at 150 chars.
+	formatter := NewSummaryFormatter(200, true)
+
+	shortPkg := &results.PackageResult{
+		Name:        "pkg/short",
+		Status:      results.StatusFailed,
+		Elapsed:     123 * time.Millisecond,
+		SummaryLine: "FAIL\tpkg/short\t0.123s\tcoverage: 87.5% of statements\n",
+	}
+	shortPkg.Counts.Passed = 4
+	shortPkg.Counts.Failed = 1
+
+	longPkg := &results.PackageResult{
+		Name:        "github.com/user/project/very/deeply/nested/subpackage/with/an/extremely/long/import/path/that/exceeds/one/hundred/and/fifty/columns/in/the/summary/table",
+		Status:      results.StatusPassed,
+		Elapsed:     450 * time.Millisecond,
+		SummaryLine: "ok\tgithub.com/user/project/very/deeply/nested/subpackage/with/an/extremely/long/import/path/that/exceeds/one/hundred/and/fifty/columns/in/the/summary/table\t0.450s\n",
+	}
+	longPkg.Counts.Passed = 12
+	longPkg.Counts.Skipped = 1
+
+	run := results.NewRun(1)
+	run.Packages[shortPkg.Name] = shortPkg
+	run.Packages[longPkg.Name] = longPkg
+	run.PackageOrder = []string{shortPkg.Name, longPkg.Name}
+
+	failTest := results.NewTestResult(shortPkg.Name, "TestSomething")
+	failTest.Latest().Status = results.StatusFailed
+	failTest.Latest().Elapsed = 50 * time.Millisecond
+	failTest.Latest().Output = []string{"boom"}
+	run.TestResults[shortPkg.Name+"/TestSomething"] = failTest
+	shortPkg.TestOrder = []string{"TestSomething"}
+
+	summary := &Summary{
+		Packages:     []*results.PackageResult{shortPkg, longPkg},
+		TotalTests:   18,
+		PassedTests:  16,
+		FailedTests:  1,
+		SkippedTests: 1,
+		TotalTime:    573 * time.Millisecond,
+		PackageCount: 2,
+		Failures: []*TestExecutionEntry{
+			{
+				TestResult:      failTest,
+				TestExecution:   failTest.Latest(),
+				Iteration:       1,
+				TotalExecutions: 1,
+			},
+		},
+		Run: run,
+	}
+
+	output := formatter.Format(summary)
+	lines := strings.Split(strings.TrimRight(output, "\n"), "\n")
+
+	var messagesHeader, summaryHeader, shortPkgLine, longPkgLine, bottomSep, totalsLine string
+	for _, line := range lines {
+		switch {
+		case strings.HasPrefix(line, "─── Messages "):
+			messagesHeader = line
+		case strings.HasPrefix(line, "─── Summary "):
+			summaryHeader = line
+		case strings.HasPrefix(line, "FAIL"):
+			shortPkgLine = line
+		case strings.HasPrefix(line, "ok"):
+			longPkgLine = line
+		case strings.HasPrefix(line, "────"):
+			bottomSep = line
+		case strings.HasPrefix(line, "(2 packages)"):
+			totalsLine = line
+		}
+	}
+
+	// Coverage annotation should be preserved while 0.123s is stripped.
+	if !strings.Contains(shortPkgLine, "coverage: 87.5% of statements") {
+		t.Errorf("expected coverage annotation to be preserved in shortPkgLine: %q", shortPkgLine)
+	}
+	if strings.Contains(shortPkgLine, "0.123s") {
+		t.Errorf("expected redundant duration '0.123s' to be stripped in shortPkgLine: %q", shortPkgLine)
+	}
+
+	// Long package should be truncated on a single line with "…".
+	if !strings.Contains(longPkgLine, "…") {
+		t.Errorf("expected longPkgLine to be truncated with '…', got %q", longPkgLine)
+	}
+
+	// Messages header and all Summary lines should be capped at 150 chars.
+	for name, line := range map[string]string{
+		"messagesHeader": messagesHeader,
+		"summaryHeader":  summaryHeader,
+		"shortPkgLine":   shortPkgLine,
+		"longPkgLine":    longPkgLine,
+		"bottomSep":      bottomSep,
+		"totalsLine":     totalsLine,
+	} {
+		if got := utf8.RuneCountInString(line); got != 150 {
+			t.Errorf("%s rune width = %d, want 150\nline: %q", name, got, line)
+		}
 	}
 }

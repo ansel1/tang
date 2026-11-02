@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"charm.land/lipgloss/v2"
@@ -226,12 +227,12 @@ func (f *SummaryFormatter) formatTestDetails(sb *strings.Builder, summary *Summa
 		return
 	}
 
-	issuesPrefixPlain := LineHorizontal + LineHorizontal + LineHorizontal + " Issues "
-	issuesPrefixLen := utf8.RuneCountInString(issuesPrefixPlain)
-	issuesDashes := max(0, layout.separatorLen-issuesPrefixLen)
+	messagesPrefixPlain := LineHorizontal + LineHorizontal + LineHorizontal + " Messages "
+	messagesPrefixLen := utf8.RuneCountInString(messagesPrefixPlain)
+	messagesDashes := max(0, layout.separatorLen-messagesPrefixLen)
 	sb.WriteString(f.dimRule(3))
-	sb.WriteString(" Issues ")
-	sb.WriteString(f.dimRule(issuesDashes))
+	sb.WriteString(" Messages ")
+	sb.WriteString(f.dimRule(messagesDashes))
 	sb.WriteString("\n")
 
 	for _, pkgName := range pkgOrder {
@@ -389,9 +390,16 @@ type summaryTableLayout struct {
 	separatorLen    int
 }
 
+const maxSummaryWidth = 150
+
 func (f *SummaryFormatter) computeTableLayout(summary *Summary) summaryTableLayout {
+	maxWidth := maxSummaryWidth
+	if f.width > 0 && f.width < maxWidth {
+		maxWidth = f.width
+	}
+
 	if len(summary.Packages) == 0 {
-		return summaryTableLayout{separatorLen: f.width}
+		return summaryTableLayout{separatorLen: maxWidth}
 	}
 
 	lines := make([]pkgLine, 0, len(summary.Packages))
@@ -425,6 +433,7 @@ func (f *SummaryFormatter) computeTableLayout(summary *Summary) summaryTableLayo
 			nameIdx := strings.Index(output, pkg.Name)
 			if nameIdx >= 0 {
 				rest := strings.TrimSpace(output[nameIdx+len(pkg.Name):])
+				rest = stripLeadingDuration(rest)
 				if rest != "" {
 					pl.extra = rest
 				}
@@ -464,8 +473,8 @@ func (f *SummaryFormatter) computeTableLayout(summary *Summary) summaryTableLayo
 		if pl.extra != "" {
 			nameExtra += " " + pl.extra
 		}
-		if len(nameExtra) > maxNameExtraLen {
-			maxNameExtraLen = len(nameExtra)
+		if nameExtraLen := utf8.RuneCountInString(nameExtra); nameExtraLen > maxNameExtraLen {
+			maxNameExtraLen = nameExtraLen
 		}
 
 		lines = append(lines, pl)
@@ -485,7 +494,8 @@ func (f *SummaryFormatter) computeTableLayout(summary *Summary) summaryTableLayo
 
 	pkgLabel := fmt.Sprintf("(%d packages)", summary.PackageCount)
 	summaryPrefixLen := utf8.RuneCountInString(LineHorizontal + LineHorizontal + LineHorizontal + " Summary ")
-	minLabelWidth := max(len(pkgLabel), summaryPrefixLen)
+	messagesPrefixLen := utf8.RuneCountInString(LineHorizontal + LineHorizontal + LineHorizontal + " Messages ")
+	minLabelWidth := max(len(pkgLabel), summaryPrefixLen, messagesPrefixLen)
 	if maxStatusLen+4+maxNameExtraLen < minLabelWidth {
 		maxNameExtraLen = minLabelWidth - maxStatusLen - 4
 	}
@@ -493,7 +503,13 @@ func (f *SummaryFormatter) computeTableLayout(summary *Summary) summaryTableLayo
 
 	// NN   NN   NN   NN (4 count columns separated by 3 spaces so " ─ <icon>" fits above each gap)
 	countsWidth := maxPassedLen + 3 + maxFailedLen + 3 + maxSkippedLen + 3 + maxTotalLen
-	lineWidth := labelWidth + 2 + countsWidth + 2 + maxElapsedLen
+	rightWidth := 2 + countsWidth + 2 + maxElapsedLen
+	if labelWidth+rightWidth > maxWidth {
+		maxNameExtraLen = max(minLabelWidth-maxStatusLen-4, maxWidth-rightWidth-maxStatusLen-4)
+		labelWidth = maxStatusLen + 4 + maxNameExtraLen
+	}
+	lineWidth := labelWidth + rightWidth
+	separatorLen := min(lineWidth, maxWidth)
 
 	return summaryTableLayout{
 		lines:           lines,
@@ -508,7 +524,7 @@ func (f *SummaryFormatter) computeTableLayout(summary *Summary) summaryTableLayo
 		labelWidth:      labelWidth,
 		countsWidth:     countsWidth,
 		lineWidth:       lineWidth,
-		separatorLen:    lineWidth,
+		separatorLen:    separatorLen,
 	}
 }
 
@@ -527,9 +543,7 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 	summaryPrefixPlain := LineHorizontal + LineHorizontal + LineHorizontal + " Summary "
 	summaryPrefixLen := utf8.RuneCountInString(summaryPrefixPlain)
 	leadDashes := max(0, layout.labelWidth+layout.maxPassedLen-summaryPrefixLen)
-	fmt.Fprintf(sb, "%s Summary %s %s %s %s %s %s %s %s %s\n",
-		f.dimRule(3),
-		f.dimRule(leadDashes),
+	headerColumns := fmt.Sprintf("%s %s %s %s %s %s %s %s %s",
 		f.passStyle.Render(SymbolPass),
 		f.dimRule(layout.maxFailedLen),
 		f.failStyle.Render(SymbolFail),
@@ -537,7 +551,13 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		f.skipStyle.Render(SymbolSkip),
 		f.dimRule(layout.maxTotalLen),
 		f.neutralStyle.Render(SymbolTotal),
-		f.dimRule(layout.maxElapsedLen+1),
+		f.dimRule(max(1, layout.maxElapsedLen-1)),
+		f.neutralStyle.Render(SymbolTime),
+	)
+	fmt.Fprintf(sb, "%s Summary %s %s\n",
+		f.dimRule(3),
+		f.dimRule(leadDashes),
+		headerColumns,
 	)
 
 	for _, pl := range layout.lines {
@@ -555,6 +575,7 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		if pl.extra != "" {
 			nameExtra += " " + pl.extra
 		}
+		nameExtra = truncateStr(nameExtra, layout.maxNameExtraLen)
 
 		// Package name+info renders in the terminal's default foreground; the
 		// color-coded status word (FAIL/ok/?) alone signals package status.
@@ -588,8 +609,11 @@ func (f *SummaryFormatter) formatPackageSummary(sb *strings.Builder, summary *Su
 		}
 	}
 
-	sb.WriteString(f.dimRule(layout.separatorLen))
-	sb.WriteString("\n")
+	bottomLeadDashes := layout.labelWidth + layout.maxPassedLen
+	fmt.Fprintf(sb, "%s %s\n",
+		f.dimRule(bottomLeadDashes),
+		headerColumns,
+	)
 
 	var passColorForSummary lipgloss.Style
 	if summary.PassedTests > 0 {
@@ -629,3 +653,30 @@ func formatCount(count int, width int, style lipgloss.Style, hideZero bool) stri
 	raw := fmt.Sprintf("%*d", width, count)
 	return style.Render(raw)
 }
+
+func stripLeadingDuration(s string) string {
+	fields := strings.Fields(s)
+	if len(fields) > 0 {
+		if _, err := time.ParseDuration(fields[0]); err == nil {
+			idx := strings.Index(s, fields[0])
+			return strings.TrimSpace(s[idx+len(fields[0]):])
+		}
+	}
+	return s
+}
+
+func truncateStr(s string, maxLen int) string {
+	if maxLen <= 0 {
+		return ""
+	}
+	runes := []rune(s)
+	if len(runes) <= maxLen {
+		return s
+	}
+	if maxLen == 1 {
+		return "…"
+	}
+	return string(runes[:maxLen-1]) + "…"
+}
+
+

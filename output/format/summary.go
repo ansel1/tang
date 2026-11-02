@@ -29,6 +29,7 @@ const (
 	SymbolFail  = "✗"
 	SymbolSkip  = "∅"
 	SymbolTotal = "∑"
+	SymbolTime  = "⏱"
 
 	LineHorizontal = "─"
 )
