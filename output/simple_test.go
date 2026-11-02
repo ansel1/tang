@@ -91,14 +91,14 @@ func TestSimpleOutput_Verbose_FailedTest(t *testing.T) {
 func TestSimpleOutput_NonVerbose_PassingTest(t *testing.T) {
 	collector := results.NewCollector()
 	var buf bytes.Buffer
-	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, false)
+	simple := NewSimpleOutput(&buf, collector, 10*time.Second, format.SummaryOptions{}, false, 80, true)
 
 	processEvents(simple, collector, passingPackageEvents("example.com/pkg"))
 
 	output := buf.String()
 	assert.NotContains(t, output, "=== RUN")
 	assert.NotContains(t, output, "--- PASS")
-	assert.Contains(t, output, "ok  \texample.com/pkg")
+	assert.Contains(t, output, "ok  \texample.com/pkg\t0.100s\n\n─── Summary ")
 	assert.Contains(t, output, "(1 packages)")
 }
 

@@ -436,9 +436,7 @@ func (s *SimpleOutput) writeRunSummary(run *results.Run) {
 	}
 
 	summaryText := format.NewSummaryFormatter(s.width, s.noColor, s.summaryOptions).Format(summary)
-	if summary.HasTestDetailsWithOptions(s.summaryOptions) {
-		_, _ = fmt.Fprintln(s.writer)
-	}
+	_, _ = fmt.Fprintln(s.writer)
 	_, _ = fmt.Fprintln(s.writer, summaryText)
 }
 
