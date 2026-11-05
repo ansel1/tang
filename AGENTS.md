@@ -14,6 +14,10 @@ future agents from having the same issue.
 
 ## Confusion points
 
+- Color profile detection is separate from terminal detection for the live UI.
+  Use `term.IsTerminal(os.Stdout.Fd())` to decide whether to start Bubble Tea;
+  color settings can be overridden independently of terminal availability.
+
 - `sample/` is a **separate Go module** (its own `go.mod`). Running
   `tang test ./sample/...` from the repo root fails with "main module does
   not contain package". Run tang from inside `sample/` to use those fixture

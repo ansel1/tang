@@ -37,6 +37,10 @@ Advanced usage for CI:
     set -euo pipefail
     go test -json ./... 2>&1 | tang
 
+Tang automatically disables the live UI when stdout is not a terminal, such as
+when output is captured by a task runner or redirected to a file. Use `-notty`
+to disable it explicitly when stdout is a terminal.
+
 To see help and available options:
 
     tang -h

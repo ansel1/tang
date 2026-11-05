@@ -228,6 +228,14 @@ func TestErrorRecordingWriter(t *testing.T) {
 func TestTangTestSubcommand(t *testing.T) {
 	tangBinary := buildTangBinary(t)
 
+	t.Run("automatically disables live UI for captured stdout", func(t *testing.T) {
+		exitCode, stdout, stderr := runTangCommand(t, tangBinary, "test", "-count", "1", "./output/format")
+		require.Equal(t, 0, exitCode)
+		require.Empty(t, stderr)
+		require.Contains(t, stdout, "github.com/ansel1/tang/output/format")
+		require.Contains(t, stdout, "ok")
+	})
+
 	t.Run("passes through notty test invocation", func(t *testing.T) {
 		exitCode, stdout, stderr := runTangCommand(t, tangBinary, "-notty", "test", "-count", "1", "-run", "TestOutfileFlag", ".")
 		require.Equal(t, 0, exitCode)
@@ -275,7 +283,7 @@ func TestTangPipeModeRegression(t *testing.T) {
 	tangBinary := buildTangBinary(t)
 
 	goTestCmd := exec.Command("go", "test", "-json", "-count", "1", "-run", "TestOutfileFlag", ".")
-	tangCmd := exec.Command(tangBinary, "-notty")
+	tangCmd := exec.Command(tangBinary)
 
 	pipeReader, err := goTestCmd.StdoutPipe()
 	require.NoError(t, err)

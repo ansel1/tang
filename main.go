@@ -24,6 +24,7 @@ import (
 	"github.com/ansel1/tang/results"
 	"github.com/ansel1/tang/tui"
 	"github.com/charmbracelet/colorprofile"
+	"github.com/charmbracelet/x/term"
 )
 
 func main() {
@@ -331,7 +332,7 @@ func run() int {
 
 	var exitCode int
 
-	skipLive := *notty || (*infile != "" && !*replay)
+	skipLive := *notty || !term.IsTerminal(os.Stdout.Fd()) || (*infile != "" && !*replay)
 
 	termWidth := termwidth.Get(os.Stdout.Fd())
 	columnsOverride := termwidth.FromEnv()
