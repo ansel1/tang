@@ -46,3 +46,11 @@ tidy:
 # Install the binary
 install:
     go build -o $(go env GOPATH)/bin/{{ binary_name }} .
+
+# Generate README screenshots using vhs and freeze
+screenshots: build
+    vhs docs/tui.tape
+    CLICOLOR_FORCE=1 COLUMNS=100 {{ gobin }}/{{ binary_name }} -notty -include-skipped -include-slow -f sample/artifacts/gotest_json.out \
+        | sed -n '/Messages/,$p' \
+        | PATH="$(go env GOPATH)/bin:$PATH" freeze --window --padding 20 --margin 0 --border.radius 8 --font.family "JetBrainsMono Nerd Font Mono" -o docs/summary.png
+

@@ -3,6 +3,14 @@ tang
 
 A command line tool for summarizing the results of go test, in real time.
 
+**Live feedback while tests run:**
+
+![Live Feedback](docs/tui.gif)
+
+**Summary when tests finish:**
+
+![Summary](docs/summary.png)
+
 Installation
 ------------
 
