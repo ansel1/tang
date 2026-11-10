@@ -307,3 +307,33 @@ func TestTangPipeModeRegression(t *testing.T) {
 	require.Empty(t, tangStderr.String())
 	require.Empty(t, goTestStderr.String())
 }
+
+func TestVersionFlag(t *testing.T) {
+	t.Run("default fallback version with buildvcs disabled", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		tangBinary := filepath.Join(tmpDir, "tang")
+		buildCmd := exec.Command("go", "build", "-buildvcs=false", "-o", tangBinary, ".")
+		buildCmd.Stdout = os.Stdout
+		buildCmd.Stderr = os.Stderr
+		require.NoError(t, buildCmd.Run())
+
+		exitCode, stdout, stderr := runTangCommand(t, tangBinary, "-version")
+		require.Equal(t, 0, exitCode)
+		require.Empty(t, stderr)
+		require.Equal(t, "tang version dev\n", stdout)
+	})
+
+	t.Run("custom ldflags version", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		tangBinary := filepath.Join(tmpDir, "tang")
+		buildCmd := exec.Command("go", "build", "-ldflags", "-X main.version=1.2.3", "-o", tangBinary, ".")
+		buildCmd.Stdout = os.Stdout
+		buildCmd.Stderr = os.Stderr
+		require.NoError(t, buildCmd.Run())
+
+		exitCode, stdout, stderr := runTangCommand(t, tangBinary, "-version")
+		require.Equal(t, 0, exitCode)
+		require.Empty(t, stderr)
+		require.Equal(t, "tang version 1.2.3\n", stdout)
+	})
+}

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime/debug"
 	"sort"
 	"sync"
 	"sync/atomic"
@@ -26,6 +27,18 @@ import (
 	"github.com/charmbracelet/colorprofile"
 	"github.com/charmbracelet/x/term"
 )
+
+var version = ""
+
+func getVersion() string {
+	if version != "" {
+		return version
+	}
+	if info, ok := debug.ReadBuildInfo(); ok && info.Main.Version != "" && info.Main.Version != "(devel)" {
+		return info.Main.Version
+	}
+	return "dev"
+}
 
 func main() {
 	os.Exit(run())
@@ -105,6 +118,7 @@ func run() int {
 	includeSkipped := flag.Bool("include-skipped", false, "Include skipped tests in summary")
 	includeSlow := flag.Bool("include-slow", false, "Include slow tests in summary")
 	noColorFlag := flag.Bool("no-color", false, "Disable all ANSI color and style escape codes")
+	showVersion := flag.Bool("version", false, "Print version and exit")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: tang [flags] [test [go test flags]]\n\n")
@@ -140,6 +154,11 @@ func run() int {
 	}
 
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("tang version %s\n", getVersion())
+		return 0
+	}
 
 	if err := validateDistinctOutputFiles(map[string]string{
 		"-outfile":   *outfile,

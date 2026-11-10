@@ -24,3 +24,8 @@ future agents from having the same issue.
   packages. (`sample/broken/` and `testdata2/keys/` also intentionally
   contain code that does not compile, so `go vet ./...`-style commands that
   traverse them will report errors that are not real problems.)
+
+- `.gitignore` contains a blanket `.*` rule that ignores all dotfiles/dot-directories
+  by default. Any new tracked dotfile (such as `.goreleaser.yaml`) must be
+  explicitly negated with `!<filename>` in `.gitignore`.
+
