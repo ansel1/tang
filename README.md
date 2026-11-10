@@ -18,7 +18,13 @@ A command line tool for summarizing the results of go test, in real time.
 Installation
 ------------
 
-    go install github.com/ansel1/tang
+Using Homebrew:
+
+    brew install ansel1/tap/tang
+
+Or using `go install`:
+
+    go install github.com/ansel1/tang@latest
 
 Usage
 -----
@@ -82,6 +88,7 @@ The `-v` flag after `test` is special: it enables tang's verbose output *and* is
 | `-replay` | `false` | Replay events from file (incompatible with `test` subcommand) |
 | `-rate` | `1` | Replay rate multiplier (incompatible with `test` subcommand) |
 | `-no-color` | `false` | Disable all ANSI color and style escape codes |
+| `-version` | `false` | Print version and exit |
 
 The `NO_COLOR` environment variable is also respected. Setting `NO_COLOR=1` (or any non-empty value) has the same effect as `-no-color`. See [no-color.org](https://no-color.org) for details.
 

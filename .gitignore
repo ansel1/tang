@@ -1,6 +1,8 @@
 tang
+dist/
 .*
 !.gitignore
+!.goreleaser.yaml
 !.github/
 !.github/**
 solo.test.out
