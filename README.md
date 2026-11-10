@@ -1,6 +1,10 @@
 tang
 ====
 
+[![CI](https://github.com/ansel1/tang/actions/workflows/ci.yml/badge.svg)](https://github.com/ansel1/tang/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/tag/ansel1/tang?label=release)](https://github.com/ansel1/tang/tags)
+[![License: MIT](https://img.shields.io/github/license/ansel1/tang)](https://github.com/ansel1/tang/blob/main/LICENSE)
+
 A command line tool for summarizing the results of go test, in real time.
 
 **Live feedback while tests run:**
